@@ -1,0 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-serif: 'Inter', sans-serif;
+}
+
+body {
+  @apply bg-[#F3F4F6] text-slate-900 font-sans antialiased selection:bg-red-100 selection:text-red-900;
+}
+

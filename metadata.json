@@ -1,0 +1,6 @@
+{
+  "name": "Nusantara Economy Simulator",
+  "description": "Permainan roleplay turn-based tentang kebijakan ekonomi negara. 5 Pemain (Pemerintah, Bank Sentral, Pengusaha, Serikat Buruh, Masyarakat).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
