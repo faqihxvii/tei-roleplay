@@ -1,0 +1,15 @@
+services:
+  - type: web
+    runtime: node
+    name: tei-roleplay
+    plan: free
+    repo: https://github.com/faqihxvii/tei-roleplay
+    branch: main
+    buildCommand: bun install && bun run build
+    startCommand: NODE_ENV=production bun run start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
