@@ -52,11 +52,11 @@ export const createInitialState = (): GameState => ({
 
 export const applyActionToMetrics = (base: Metrics, action: Action): Metrics => {
   const result = { ...base };
-  if (action.effects.mood) result.mood += action.effects.mood;
-  if (action.effects.kas) result.kas += action.effects.kas;
-  if (action.effects.chaos) result.chaos += action.effects.chaos;
-  if (action.effects.cuanPengusaha) result.cuanPengusaha += action.effects.cuanPengusaha;
-  if (action.effects.penaltyPengusaha) result.penaltyPengusaha += action.effects.penaltyPengusaha;
+  if (action.effects.mood !== undefined) result.mood += action.effects.mood;
+  if (action.effects.kas !== undefined) result.kas += action.effects.kas;
+  if (action.effects.chaos !== undefined) result.chaos += action.effects.chaos;
+  if (action.effects.cuanPengusaha !== undefined) result.cuanPengusaha += action.effects.cuanPengusaha;
+  if (action.effects.penaltyPengusaha !== undefined) result.penaltyPengusaha += action.effects.penaltyPengusaha;
   
   result.mood = Math.min(10, Math.max(0, result.mood));
   result.kas = Math.min(10, Math.max(0, result.kas));
@@ -64,8 +64,8 @@ export const applyActionToMetrics = (base: Metrics, action: Action): Metrics => 
   result.cuanPengusaha = Math.max(0, result.cuanPengusaha);
   result.penaltyPengusaha = Math.max(0, result.penaltyPengusaha);
 
-  if (result.mood < 5) result.moodEverBelow5 = true;
   if (result.chaos >= 7) result.mood = Math.max(0, result.mood - 1); // Natural consequence of high chaos
+  if (result.mood < 5) result.moodEverBelow5 = true;
 
   return result;
 };
@@ -82,6 +82,7 @@ export const applyNaturalDrift = (base: Metrics): Metrics => {
   if (result.mood >= 8) {
     result.chaos = Math.max(0, result.chaos - 1);
   }
+  if (result.mood < 5) result.moodEverBelow5 = true;
   return result;
 };
 

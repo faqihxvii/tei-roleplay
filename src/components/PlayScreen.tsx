@@ -5,13 +5,14 @@ import { ROLE_DESIGN_TOKENS } from '../lib/theme';
 import { getNationSurvivalStatus, BASELINE_THRESHOLDS } from '../lib/survivalBaseline';
 import GlossaryText from './GlossaryText';
 import RoleIntroModal from './RoleIntroModal';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Eye, EyeOff, Landmark, Building2, Briefcase, Megaphone, Users, 
   Flame, Heart, Coins, ShieldAlert, CheckCircle2, Lock, Sparkles, Volume2, VolumeX,
   Clock, Activity, Info, X, AlertTriangle, ShieldCheck
 } from 'lucide-react';
 import clsx from 'clsx';
+import type { LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface PlayScreenProps {
@@ -25,7 +26,7 @@ interface PlayScreenProps {
 
 const ROLES_LIST: Role[] = ['Pemerintah', 'Bank Sentral', 'Pengusaha', 'Serikat Buruh', 'Masyarakat'];
 
-const ROLE_ICONS: Record<Role, any> = {
+const ROLE_ICONS: Record<Role, LucideIcon> = {
   'Pemerintah': Landmark,
   'Bank Sentral': Building2,
   'Pengusaha': Briefcase,
@@ -33,12 +34,20 @@ const ROLE_ICONS: Record<Role, any> = {
   'Masyarakat': Users,
 };
 
-const CompactProgressBar = ({ label, value, color, icon: Icon, warning }: { label: string, value: number, color: string, icon: any, warning?: boolean }) => {
+const CompactProgressBar = ({ label, value, color, icon: Icon, warning }: { label: string, value: number, color: string, icon: LucideIcon, warning?: boolean }) => {
   return (
     <div className="flex items-center gap-1.5 bg-slate-100/80 px-2 py-1 rounded-lg border border-slate-200/80">
-      <Icon size={12} className={clsx(warning ? "text-rose-600 animate-pulse" : "text-slate-600")} />
+      <Icon size={12} aria-hidden="true" className={clsx(warning ? "text-rose-600 animate-pulse" : "text-slate-600")} />
       <span className="text-[10px] font-black uppercase text-slate-700 tracking-wider">{label}</span>
-      <div className="w-14 sm:w-20 h-2 bg-slate-200 rounded-full overflow-hidden relative">
+      <div
+        role="progressbar"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={10}
+        aria-valuenow={Math.min(10, Math.max(0, value))}
+        aria-valuetext={`${value} dari 10`}
+        className="w-14 sm:w-20 h-2 bg-slate-200 rounded-full overflow-hidden relative"
+      >
         <motion.div 
           className={clsx("absolute top-0 left-0 h-full rounded-full", color)}
           initial={false}
@@ -56,9 +65,14 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
   const [showMission, setShowMission] = useState(false);
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
   const [timeLeft, setTimeLeft] = useState(60);
+  const [timerEnabled, setTimerEnabled] = useState(true);
   const [timeoutNotice, setTimeoutNotice] = useState<string | null>(null);
   const [showIntroModal, setShowIntroModal] = useState(false);
   const [showBaselineModal, setShowBaselineModal] = useState(false);
+  const introModalRef = useRef<HTMLDivElement>(null);
+  const baselineModalRef = useRef<HTMLDivElement>(null);
+  const introTriggerRef = useRef<HTMLButtonElement>(null);
+  const baselineTriggerRef = useRef<HTMLButtonElement>(null);
 
   const secretMission = SECRET_MISSIONS[currentRole];
   const CurrentRoleIcon = ROLE_ICONS[currentRole];
@@ -73,8 +87,56 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
     setTimeoutNotice(null);
   }, [currentRole, year]);
 
+  useEffect(() => {
+    const dialog: HTMLDivElement | null = showIntroModal ? introModalRef.current : showBaselineModal ? baselineModalRef.current : null;
+    if (!dialog) return;
+
+    const focusElement = (element: unknown) => {
+      if (element instanceof HTMLElement) element.focus();
+    };
+    const returnFocusTo = showIntroModal ? introTriggerRef.current : baselineTriggerRef.current;
+    const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const getFocusableElements = () => Array.from(dialog.querySelectorAll(focusableSelector)) as HTMLElement[];
+    const focusableElements = getFocusableElements();
+    focusElement(focusableElements[0] ?? dialog);
+
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+
+      const elements = getFocusableElements();
+      if (elements.length === 0) {
+        event.preventDefault();
+        focusElement(dialog);
+        return;
+      }
+
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (!first || !last) {
+        event.preventDefault();
+        focusElement(dialog);
+        return;
+      }
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        focusElement(last);
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        focusElement(first);
+      }
+    };
+
+    document.addEventListener('keydown', handleDialogKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleDialogKeyDown);
+      if (returnFocusTo?.isConnected) returnFocusTo.focus();
+    };
+  }, [showIntroModal, showBaselineModal]);
+
   // Countdown timer logic
   useEffect(() => {
+    if (!timerEnabled) return;
+
     if (timeLeft <= 0) {
       playTimeoutSound();
       const defaultAction = selectedId 
@@ -110,7 +172,7 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, currentRole, selectedId, availableActions, onSelectAction]);
+  }, [timeLeft, timerEnabled, currentRole, selectedId, availableActions, onSelectAction]);
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -119,6 +181,7 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
   };
 
   const handleSelectCard = (id: string) => {
+    if (!availableActions.some(action => action.id === id)) return;
     playSelectSound();
     setSelectedId(id);
   };
@@ -185,16 +248,31 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
   return (
     <div className="h-full w-full bg-[#F3F4F6] overflow-y-auto flex flex-col items-center relative">
       {/* Role Introduction Modal */}
-      <AnimatePresence>
-        {showIntroModal && (
-          <RoleIntroModal onStartGame={() => setShowIntroModal(false)} />
-        )}
-      </AnimatePresence>
+      {showIntroModal && (
+        <RoleIntroModal
+          modalRef={introModalRef}
+          onClose={() => setShowIntroModal(false)}
+          onStartGame={() => setShowIntroModal(false)}
+        />
+      )}
 
       {/* Baseline Health Detail Modal */}
-      <AnimatePresence>
-        {showBaselineModal && (
-          <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4">
+      {showBaselineModal && (
+          <div
+            ref={baselineModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="baseline-modal-title"
+            tabIndex={-1}
+            onKeyDown={event => {
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                setShowBaselineModal(false);
+              }
+            }}
+            className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 outline-none"
+          >
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -203,14 +281,16 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
             >
               <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div className="flex items-center gap-2">
-                  <Activity size={18} className="text-[#c91212]" />
-                  <h3 className="font-black uppercase text-sm text-slate-900">Batas Aman Ketahanan Negara</h3>
+                  <Activity size={18} aria-hidden="true" className="text-[#c91212]" />
+                  <h3 id="baseline-modal-title" className="font-black uppercase text-sm text-slate-900">Batas Aman Ketahanan Negara</h3>
                 </div>
-                <button 
+                <button
+                  type="button"
+                  aria-label="Tutup laporan ketahanan negara"
                   onClick={() => setShowBaselineModal(false)}
-                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
+                  className="min-h-10 min-w-10 text-slate-600 hover:text-slate-900 hover:bg-slate-100 p-2 rounded-lg cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
                 >
-                  <X size={16} />
+                  <X size={16} aria-hidden="true" />
                 </button>
               </div>
 
@@ -263,15 +343,15 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
               </div>
 
               <button
+                type="button"
                 onClick={() => setShowBaselineModal(false)}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer"
+                className="w-full min-h-11 bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
               >
                 Tutup Laporan
               </button>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+      )}
 
       {/* Top Header + Compact Dashboard Bar */}
       <motion.div 
@@ -286,24 +366,47 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
           </span>
 
           {/* Turn Timer Countdown */}
-          <div className={clsx(
-            "flex items-center gap-1 font-mono text-[11px] font-black px-2 py-0.5 rounded-md border shadow-2xs transition-colors shrink-0",
-            timeLeft <= 10 
-              ? "bg-rose-600 text-white border-rose-700 animate-pulse" 
-              : timeLeft <= 20 
-              ? "bg-amber-500 text-white border-amber-600" 
-              : "bg-slate-900 text-white border-slate-800"
-          )}>
-            <Clock size={12} />
-            <span>{formatTime(timeLeft)}</span>
-          </div>
+          {timerEnabled ? (
+            <div
+              role="timer"
+              aria-label={`Sisa waktu ${formatTime(timeLeft)}`}
+              className={clsx(
+                "flex items-center gap-1 font-mono text-[11px] font-black px-2 py-0.5 rounded-md border shadow-2xs transition-colors shrink-0",
+                timeLeft <= 10
+                  ? "bg-rose-600 text-white border-rose-700 animate-pulse"
+                  : timeLeft <= 20
+                    ? "bg-amber-500 text-white border-amber-600"
+                    : "bg-slate-900 text-white border-slate-800"
+              )}
+            >
+              <Clock size={12} aria-hidden="true" />
+              <span>{formatTime(timeLeft)}</span>
+            </div>
+          ) : (
+            <span role="status" aria-live="polite" className="text-[10px] font-bold text-slate-600">
+              Timer nonaktif
+            </span>
+          )}
 
-          <button 
-            onClick={handleToggleAudio}
-            className="p-1 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
-            title={soundOn ? 'Matikan Suara' : 'Aktifkan Suara'}
+          <button
+            type="button"
+            aria-label={timerEnabled ? 'Matikan timer' : 'Aktifkan timer'}
+            aria-pressed={timerEnabled}
+            onClick={() => setTimerEnabled(enabled => !enabled)}
+            className="min-h-10 min-w-10 p-2 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+            title={timerEnabled ? 'Matikan batas waktu giliran' : 'Aktifkan batas waktu giliran'}
           >
-            {soundOn ? <Volume2 size={14} className="text-[#c91212]" /> : <VolumeX size={14} className="text-slate-400" />}
+            <Clock size={14} aria-hidden="true" />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleToggleAudio}
+            aria-label={soundOn ? 'Matikan suara' : 'Aktifkan suara'}
+            aria-pressed={soundOn}
+            className="min-h-10 min-w-10 p-2 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+          >
+            {soundOn ? <Volume2 size={14} aria-hidden="true" className="text-[#c91212]" /> : <VolumeX size={14} aria-hidden="true" className="text-slate-500" />}
           </button>
         </div>
 
@@ -311,6 +414,9 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Survival Status Badge */}
           <button
+            ref={baselineTriggerRef}
+            type="button"
+            aria-label={`Detail ketahanan negara: ${survival.status}, ${survival.healthPercentage}%`}
             onClick={() => setShowBaselineModal(true)}
             className={clsx(
               "flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border shadow-2xs cursor-pointer transition-all hover:scale-[1.02] shrink-0",
@@ -319,17 +425,20 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
             )}
             title="Klik untuk detail ambang batas ketahanan negara"
           >
-            <Activity size={12} />
+            <Activity size={12} aria-hidden="true" />
             <span className="hidden sm:inline">{survival.status}</span>
             <span>({survival.healthPercentage}%)</span>
           </button>
 
           <button
+            ref={introTriggerRef}
+            type="button"
+            aria-label="Buka panduan peran"
             onClick={() => setShowIntroModal(true)}
             className="flex items-center gap-1 text-[10px] font-black uppercase text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2 py-1 rounded-lg transition-colors cursor-pointer shrink-0"
             title="Buka Panduan Peran"
           >
-            <Info size={12} className="text-[#c91212]" />
+            <Info size={12} aria-hidden="true" className="text-[#c91212]" />
             <span className="hidden md:inline">Peran</span>
           </button>
 
@@ -341,7 +450,7 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
 
       {/* Role Progress Steps Bar */}
       <div className="w-full max-w-5xl px-3 pt-3">
-        <div className="bg-white border border-slate-200/80 rounded-xl p-1.5 shadow-2xs flex items-center justify-between overflow-x-auto gap-1">
+        <div role="list" aria-label="Urutan peran pemain" className="bg-white border border-slate-200/80 rounded-xl p-1.5 shadow-2xs flex items-center justify-between overflow-x-auto gap-1">
           <div className="flex items-center gap-1 shrink-0 w-full justify-between">
             {ROLES_LIST.map((role, idx) => {
               const isCurrent = role === currentRole;
@@ -349,8 +458,10 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
               const RoleIcon = ROLE_ICONS[role];
 
               return (
-                <div 
-                  key={role} 
+                <div
+                  key={role}
+                  role="listitem"
+                  aria-current={isCurrent ? 'step' : undefined}
                   className={clsx(
                     "flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black transition-all flex-1 text-center shrink-0 min-w-max",
                     isCurrent 
@@ -360,7 +471,7 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
                       : "bg-slate-50 text-slate-600 border border-slate-200/60"
                   )}
                 >
-                  <RoleIcon size={12} className={isCurrent ? "text-white" : "text-slate-500"} />
+                  <RoleIcon size={12} aria-hidden="true" className={isCurrent ? "text-white" : "text-slate-500"} />
                   <span>{role}</span>
                   {isCurrent && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-0.5"></span>}
                 </div>
@@ -379,13 +490,13 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
             exit={{ opacity: 0, y: -10 }}
             className="w-full max-w-5xl px-3 pt-2"
           >
-            <div className="bg-rose-600 text-white px-3 py-2 rounded-xl text-xs font-black flex items-center justify-between shadow-md">
+            <div role="alert" className="bg-rose-600 text-white px-3 py-2 rounded-xl text-xs font-black flex items-center justify-between shadow-md">
               <span className="flex items-center gap-1.5">
-                <AlertTriangle size={14} className="animate-bounce shrink-0" />
+                <AlertTriangle size={14} aria-hidden="true" className="animate-bounce shrink-0" />
                 {timeoutNotice}
               </span>
-              <button onClick={() => setTimeoutNotice(null)} className="text-white/80 hover:text-white cursor-pointer">
-                <X size={14} />
+              <button type="button" aria-label="Tutup notifikasi waktu habis" onClick={() => setTimeoutNotice(null)} className="min-h-10 min-w-10 text-white/90 hover:text-white cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                <X size={14} aria-hidden="true" />
               </button>
             </div>
           </motion.div>
@@ -403,15 +514,15 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
           className="w-full max-w-5xl space-y-3 p-3 sm:p-4"
         >
           {/* Transition Role Alert Indicator */}
-          <div className="flex items-center justify-between bg-slate-900/90 text-white px-3 py-1.5 rounded-lg border border-slate-800 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+          <div role="status" aria-live="polite" className="flex items-center justify-between bg-slate-900/90 text-white px-3 py-1.5 rounded-lg border border-slate-800 text-[10px] font-black uppercase tracking-wider shadow-2xs">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#c91212] animate-ping"></span>
               <span>GILIRAN SEKARANG: <span className="text-amber-400 font-extrabold">{currentRole}</span></span>
             </div>
-            <div className="flex items-center gap-3 text-slate-400 text-[9px] font-mono">
+            <div className="flex items-center gap-3 text-slate-300 text-[9px] font-mono">
               <span className="hidden sm:inline">Pemain {activeRoleIndex + 1} dari 5</span>
               <span className="text-rose-400 font-bold flex items-center gap-1">
-                <Clock size={11} /> {timeLeft}s
+                <Clock size={11} aria-hidden="true" /> {timeLeft}s
               </span>
             </div>
           </div>
@@ -471,7 +582,7 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
 
                 <div className="flex items-center gap-2.5">
                   <div className={clsx("w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-xs shrink-0", roleStyle.badgeBg)}>
-                    <CurrentRoleIcon size={20} />
+                    <CurrentRoleIcon size={20} aria-hidden="true" />
                   </div>
                   <div>
                     <h3 className="text-base font-black text-slate-900 tracking-tight">{currentRole}</h3>
@@ -487,15 +598,18 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
                     <Lock size={11} className="text-rose-600" />
                     Misi Rahasia Anda
                   </p>
-                  <button 
+                  <button
+                    type="button"
+                    aria-expanded={showMission}
+                    aria-controls="secret-mission-text"
                     onClick={() => setShowMission(!showMission)}
-                    className="text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1 text-[9px] font-black cursor-pointer"
+                    className="min-h-10 px-2 text-slate-700 hover:text-slate-900 transition-colors flex items-center gap-1 text-[9px] font-black cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
                   >
-                    {showMission ? <EyeOff size={12} /> : <Eye size={12} />}
+                    {showMission ? <EyeOff size={12} aria-hidden="true" /> : <Eye size={12} aria-hidden="true" />}
                     <span>{showMission ? 'Sembunyikan' : 'Buka'}</span>
                   </button>
                 </div>
-                <p className={clsx("text-xs font-semibold text-slate-800 leading-snug transition-all duration-200", !showMission && "blur-xs select-none opacity-40")}>
+                <p id="secret-mission-text" className={clsx("text-xs font-semibold text-slate-800 leading-snug transition-all duration-200", !showMission && "blur-xs select-none opacity-40")}>
                   {secretMission}
                 </p>
               </div>
@@ -510,7 +624,8 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
           </div>
 
           {/* Action Selection Deck */}
-          <motion.section 
+          <motion.section
+            aria-labelledby="policy-selection-heading"
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.2, delay: 0.15 }}
@@ -518,7 +633,7 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
           >
             <div className="flex items-center gap-2 mb-2.5 justify-center">
               <span className="h-px bg-slate-300 flex-1 max-w-[80px]"></span>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center flex items-center gap-1">
+              <p id="policy-selection-heading" className="text-[10px] font-black text-slate-600 uppercase tracking-widest text-center flex items-center gap-1">
                 <Sparkles size={12} className="text-[#c91212]" />
                 PILIH KARTU KEBIJAKAN EKONOMI
               </p>
@@ -536,6 +651,8 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.18, delay: 0.12 + actionIdx * 0.05 }}
+                    type="button"
+                    aria-pressed={isSelected}
                     onClick={() => handleSelectCard(action.id)}
                     className={clsx(
                       "text-left p-3.5 sm:p-4 rounded-xl transition-all duration-150 shadow-2xs flex flex-col justify-between border-2 relative overflow-hidden cursor-pointer",
@@ -546,7 +663,7 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
                   >
                     {isSelected && (
                       <div className="absolute top-0 right-0 bg-[#c91212] text-white px-2 py-0.5 rounded-bl text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
-                        <CheckCircle2 size={10} />
+                        <CheckCircle2 size={10} aria-hidden="true" />
                         DIPILIH
                       </div>
                     )}
@@ -561,7 +678,7 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
                     </div>
 
                     <div className="mt-3 pt-2 border-t border-slate-100">
-                      <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mb-1">Estimasi Dampak:</p>
+                      <p className="text-[10px] font-black uppercase text-slate-600 tracking-wider mb-1">Estimasi Dampak:</p>
                       <div className="flex flex-wrap gap-1">
                         {effectBadges.map((badge, bIdx) => {
                           const BadgeIcon = badge.icon;
@@ -600,7 +717,7 @@ export default function PlayScreen({ currentRole, year, metrics, scenario, avail
                   : "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200"
               )}
             >
-              <CheckCircle2 size={15} />
+              <CheckCircle2 size={15} aria-hidden="true" />
               {selectedId ? 'Sahkan Kebijakan Ini' : 'Pilih Salah Satu Kebijakan'}
             </button>
           </div>

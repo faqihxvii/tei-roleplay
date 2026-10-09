@@ -1,16 +1,19 @@
 import { useEffect } from 'react';
 import { GameState } from '../types';
 import { motion } from 'motion/react';
-import { Heart, Repeat2, MessageCircle, Sparkles, CheckCircle, ArrowRight, Activity, ShieldAlert, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Heart, Repeat2, MessageCircle, Sparkles, CheckCircle, ArrowRight, Activity, ShieldAlert, ShieldCheck, AlertTriangle, RefreshCw } from 'lucide-react';
 import { playTurnEndSound, playSelectSound } from '../lib/audio';
 import { getNationSurvivalStatus, BASELINE_THRESHOLDS } from '../lib/survivalBaseline';
 
 interface YearRecapScreenProps {
   state: GameState;
+  recapError: string | null;
+  isRetryingRecap: boolean;
+  onRetryRecap: () => void;
   onNextYear: () => void;
 }
 
-export default function YearRecapScreen({ state, onNextYear }: YearRecapScreenProps) {
+export default function YearRecapScreen({ state, recapError, isRetryingRecap, onRetryRecap, onNextYear }: YearRecapScreenProps) {
   const lastRecord = state.history[state.history.length - 1];
   const survival = getNationSurvivalStatus(state.metrics);
 
@@ -19,6 +22,7 @@ export default function YearRecapScreen({ state, onNextYear }: YearRecapScreenPr
   }, []);
 
   const handleNext = () => {
+    if (isRetryingRecap) return;
     playSelectSound();
     onNextYear();
   };
@@ -39,15 +43,17 @@ export default function YearRecapScreen({ state, onNextYear }: YearRecapScreenPr
         </div>
 
         <button
+          type="button"
           onClick={handleNext}
-          className="bg-[#c91212] hover:bg-[#a00e0e] text-white px-4 py-2 rounded-xl font-black uppercase tracking-wider text-xs transition-all shadow-xs hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer"
+          disabled={isRetryingRecap}
+          className="bg-[#c91212] hover:bg-[#a00e0e] disabled:opacity-50 disabled:cursor-wait text-white px-4 py-2 rounded-xl font-black uppercase tracking-wider text-xs transition-all shadow-xs hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer"
         >
           <span>{state.gameOver ? 'Evaluasi Akhir' : `Tahun ${state.currentYear + 1}`}</span>
           <ArrowRight size={13} />
         </button>
       </motion.header>
 
-      <main className="flex-1 overflow-y-auto p-3 sm:p-5 flex justify-center bg-slate-100">
+      <section aria-label="Ringkasan tahunan" className="flex-1 overflow-y-auto p-3 sm:p-5 flex justify-center bg-slate-100">
         <div className="w-full max-w-xl space-y-3 pb-8">
           
           {/* National Survival Baseline Card */}
@@ -95,6 +101,24 @@ export default function YearRecapScreen({ state, onNextYear }: YearRecapScreenPr
             </div>
           </motion.div>
 
+          {recapError && (
+            <div role="alert" aria-live="polite" className="bg-amber-50 border border-amber-300 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2 text-amber-950 text-xs font-semibold">
+                <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber-700" />
+                <p>{recapError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={onRetryRecap}
+                disabled={isRetryingRecap}
+                className="min-h-10 px-3 py-2 rounded-lg bg-amber-900 text-white hover:bg-amber-800 disabled:opacity-60 disabled:cursor-wait text-xs font-black flex items-center justify-center gap-2 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-900"
+              >
+                <RefreshCw size={14} className={isRetryingRecap ? 'animate-spin' : ''} aria-hidden="true" />
+                {isRetryingRecap ? 'Memuat ulang feed...' : 'Coba lagi memuat feed'}
+              </button>
+            </div>
+          )}
+
           {/* Header Sentiment Radar */}
           <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -132,17 +156,17 @@ export default function YearRecapScreen({ state, onNextYear }: YearRecapScreenPr
                   {post.content}
                 </p>
 
-                <div className="flex items-center gap-5 text-slate-400 text-[11px] font-bold pt-2 border-t border-slate-100">
-                  <span className="flex items-center gap-1 hover:text-rose-600 cursor-pointer transition-colors">
-                    <Heart size={13} className="hover:fill-rose-600" />
+                <div className="flex items-center gap-5 text-slate-500 text-[11px] font-bold pt-2 border-t border-slate-100">
+                  <span className="flex items-center gap-1">
+                    <Heart size={13} aria-hidden="true" />
                     <span>{post.likes}</span>
                   </span>
-                  <span className="flex items-center gap-1 hover:text-emerald-600 cursor-pointer transition-colors">
-                    <Repeat2 size={13} />
+                  <span className="flex items-center gap-1">
+                    <Repeat2 size={13} aria-hidden="true" />
                     <span>{post.retweets}</span>
                   </span>
-                  <span className="flex items-center gap-1 hover:text-sky-600 cursor-pointer transition-colors">
-                    <MessageCircle size={13} />
+                  <span className="flex items-center gap-1">
+                    <MessageCircle size={13} aria-hidden="true" />
                     <span>{Math.floor(post.likes / 3)}</span>
                   </span>
                 </div>
@@ -176,15 +200,17 @@ export default function YearRecapScreen({ state, onNextYear }: YearRecapScreenPr
              </div>
 
              <button
+               type="button"
                onClick={handleNext}
-               className="w-full sm:w-auto bg-[#c91212] hover:bg-[#a00e0e] text-white px-5 py-2.5 rounded-xl font-black uppercase tracking-wider text-xs transition-all shadow-xs cursor-pointer shrink-0"
+               disabled={isRetryingRecap}
+               className="w-full sm:w-auto bg-[#c91212] hover:bg-[#a00e0e] disabled:opacity-50 disabled:cursor-wait text-white px-5 py-2.5 rounded-xl font-black uppercase tracking-wider text-xs transition-all shadow-xs cursor-pointer shrink-0"
              >
                {state.gameOver ? 'Lihat Hasil Akhir' : 'Mulai Ronde Berikutnya'}
              </button>
           </motion.div>
 
         </div>
-      </main>
+      </section>
     </div>
   );
 }
