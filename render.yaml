@@ -5,11 +5,13 @@ services:
     plan: free
     repo: https://github.com/faqihxvii/tei-roleplay
     branch: main
-    buildCommand: bun install && bun run build
-    startCommand: NODE_ENV=production bun run start
+    buildCommand: npm ci && npm run build
+    startCommand: NODE_ENV=production npm start
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD
+        value: "1"
       - key: GEMINI_API_KEY
         sync: false
