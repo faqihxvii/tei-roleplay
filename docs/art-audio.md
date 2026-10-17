@@ -12,21 +12,29 @@ Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon, ikon generik seb
 
 ## Yang sudah ada di kode
 
-### Warna
+### Token
 
-Token ada di `web/src/styles.css` (`:root`). Lapisan merek ada di bagian akhir file yang sama ("identity: TEI brand").
+Semua nilai desain ada di satu file: `web/src/styles/tokens.css`. Isinya tiga lapis, dan setiap lapis hanya membaca lapis di atasnya:
 
-| Token | Nilai | Dipakai untuk |
+1. **Primitif:** palet mentah merek (`--tei-red-600`, `--neutral-100`, …). Komponen tidak boleh memakainya langsung.
+2. **Semantik:** kegunaan sebuah nilai. Lapis ini yang dipakai komponen.
+3. **Token komponen:** nilai milik satu komponen saja, misalnya ukuran teks SVG dan tekstur halftone.
+
+`web/src/styles.css` hanya boleh memakai token. Tes `web/test/tokens.test.ts` gagal kalau ada ukuran huruf, bobot, jarak huruf, tinggi baris, atau warna mentah di luar file token.
+
+| Token semantik | Nilai | Dipakai untuk |
 | --- | --- | --- |
-| `--paper` | `#f7f6f2` | Latar, putih gading seperti economic.co.id |
-| `--paper-2` | `#f2eee7` | Tombol sekunder, jalur papan indikator |
-| `--card` | `#ffffff` | Kartu, dengan garis `--rule` (`#e2ddd3`) |
-| `--ink` | `#171717` | Teks dan garis |
-| `--red` | `#c30700` | Merah TEI: logo, tombol utama, judul koran, krisis, bahaya |
-| `--red-deep` | `#8d1b16` | Kicker, hover tombol, cincin fokus keyboard |
-| `--pink` | `#f5a99d` | Aksen di atas latar gelap, busur di sudut kartu krisis |
-| `--dark` | `#1a1a18` | Panel gelap (agenda rahasia) |
-| `--highlight` | `#fde4df` | Pertanyaan tim, kartu pemandu |
+| `--color-bg` | `#f7f6f2` | Latar, putih gading seperti economic.co.id |
+| `--color-surface` | `#ffffff` | Kartu dan isian, dengan garis `--color-border` (`#e2ddd3`) |
+| `--color-surface-sunken` | `#f2eee7` | Tombol sekunder, jalur papan indikator |
+| `--color-surface-paper` | `#fdfcf9` | Halaman Harian TEI |
+| `--color-inverse` | `#1a1a18` | Panel gelap (agenda rahasia) |
+| `--color-text` / `--color-text-muted` | `#171717` / `#5b5852` | Teks utama dan teks pendamping |
+| `--color-brand` | `#c30700` | Merah TEI: logo, tombol utama, judul koran, krisis |
+| `--color-brand-strong` | `#8d1b16` | Kicker, hover tombol, cincin fokus keyboard |
+| `--color-brand-soft` | `#f5a99d` | Aksen di atas latar gelap, busur di sudut kartu krisis |
+| `--color-highlight` | `#fde4df` | Pertanyaan tim, kartu pemandu |
+| `--color-success` / `--color-warning` / `--color-danger` | hijau, cokelat, merah TEI | Naik-turun angka, zona bahaya |
 
 Komponen pokok:
 
@@ -40,11 +48,33 @@ Komponen pokok:
 
 Semua font di-host sendiri lewat npm, sehingga tidak ada permintaan ke layanan luar. Semuanya berlisensi SIL OFL 1.1, yang mengizinkan embed web.
 
-| Peran | Font | Bobot |
+| Token | Font | Dipakai untuk |
 | --- | --- | --- |
-| Judul, teks isi, dan UI | Geist (variable) | 100–900; judul 800 dengan jarak huruf −0,035 em |
-| Nama koran, kutipan warga, aksen miring | Instrument Serif | 400, 400 italic |
-| Angka: timer, papan, skor, kode ruangan | Geist Mono (variable) | 100–900 |
+| `--font-sans` | Geist (variable) | Judul, teks isi, dan UI |
+| `--font-serif` | Instrument Serif | Nama koran, kutipan warga, satu kata aksen miring |
+| `--font-mono` | Geist Mono (variable) | Angka: timer, papan, skor, kode ruangan |
+
+Skala hurufnya tertutup. Ukuran baru harus masuk ke token lebih dulu, dengan nama yang menjelaskan kegunaannya.
+
+| Token | Ukuran | Dipakai untuk |
+| --- | --- | --- |
+| `--text-2xs` | 12 px | Kicker, label, tag |
+| `--text-xs` | 14 px | Keterangan dan teks pendamping |
+| `--text-sm` | 16 px | Teks isi |
+| `--text-md` | 20 px | Teks pembuka, daftar di layar utama |
+| `--text-lg` | 24 px | Judul kartu, judul di HP |
+| `--text-xl` | 32 px | Angka besar di kartu, cap SAH |
+| `--text-2xl` | 56 px | Skor akhir di HP |
+| `--display-sm` | 20–30 px | Narasi, pertanyaan diskusi, petunjuk layar |
+| `--display-md` | 28–48 px | Judul layar dan judul bagian |
+| `--display-lg` | 36–72 px | Judul krisis, headline koran, pertanyaan besar |
+| `--display-xl` | 48–112 px | Kode ruangan, timer briefing, nama koran di Edisi Khusus |
+
+Ukuran display mengikuti lebar layar (`clamp`), supaya tetap terbaca dari bangku belakang. Pilihan lainnya juga sedikit:
+
+- **Bobot:** `--weight-regular` 400, `--weight-semibold` 600, `--weight-bold` 700, `--weight-black` 800 (judul).
+- **Jarak huruf:** `--tracking-display` −0,035 em (judul), `--tracking-tight` −0,02 em, `--tracking-caps` 0,1 em (huruf kapital kecil), `--tracking-code` 0,3 em (isian kode ruangan).
+- **Tinggi baris:** `--leading-display` 1,05, `--leading-snug` 1,25, `--leading-body` 1,45.
 
 Hanya subset latin yang diunduh browser. Muatan awal HP (JS, CSS, dan font) sekitar 170 KB, masih di dalam anggaran 300 KB.
 
