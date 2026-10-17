@@ -484,3 +484,37 @@ test('quiz: the section is refused when the room plays without it', () => {
   assert.throws(() => room.setDebrief({ section: 'kuis' }, T0), (e: RoomError) => e.code === 'fase-salah');
   assert.equal(hostView(room).quiz, null);
 });
+
+test('Harian TEI copy follows the GDD rules', async () => {
+  const { HEADLINES, COMBO_HEADLINES, TAG_WEIGHT, ADS } = await import('../src/content/koran');
+  const all: string[] = [];
+  for (const tag of Object.keys(TAG_WEIGHT) as (keyof typeof HEADLINES)[]) {
+    const variants = HEADLINES[tag];
+    assert.ok(variants.length >= 8, `${tag} has ${variants.length} variants; the GDD asks for at least 8`);
+    for (const text of variants) {
+      const slots = text.match(/\{[a-z]+\}/g) ?? [];
+      // Only broken-pact headlines know who to name.
+      assert.ok(slots.every(s => tag === 'pakta_dilanggar' && (s === '{pelanggar}' || s === '{korban}')), `${tag}: unknown slot in "${text}"`);
+      assert.ok(text.length <= 100, `too long for a front page: "${text}"`);
+      all.push(text);
+    }
+  }
+  assert.equal(new Set(all).size, all.length, 'every headline is unique');
+  const pairs = COMBO_HEADLINES.map(c => [...c.tags].sort().join('+'));
+  assert.equal(new Set(pairs).size, pairs.length, 'one combination headline per tag pair');
+  for (const combo of COMBO_HEADLINES) assert.ok(combo.tags.every(t => t in TAG_WEIGHT));
+  // No real brands or platforms (GDD, "Pedoman menulis satir").
+  const banned = /whatsapp|instagram|tiktok|facebook|twitter|gojek|grab|shopee|tokopedia|indomie|pertamina|\bpln\b|\bbi\b|\bojk\b/i;
+  for (const text of [...all, ...COMBO_HEADLINES.map(c => c.text), ...ADS.map(a => a.text)]) assert.ok(!banned.test(text), `real brand or institution in "${text}"`);
+});
+
+test('a session of five years can print a fresh headline every year', () => {
+  for (let seed = 1; seed <= 20; seed++) {
+    const room = Room.create({ code: 'BCDF', hostToken: 'host-token-aaaaaaaaaaaa', seed, options: { oknum: false }, now: T0 });
+    ['A', 'B', 'C', 'D', 'E'].forEach((n, i) => room.join(n, ids(), T0 + i));
+    room.startBriefing(T0);
+    playOut(room);
+    const headlines = room.state.years.map(y => y.frontPage.headline);
+    assert.equal(new Set(headlines).size, headlines.length, `seed ${seed}: ${headlines.join(' | ')}`);
+  }
+});

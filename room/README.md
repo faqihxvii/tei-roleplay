@@ -31,7 +31,7 @@ TEI_BASE=http://<alamat-jaringan>:5173 npm run room:e2e -- <folder-tangkapan-lay
 - `src/room.ts`: kelas `Room` murni, tanpa jaringan. Gabung, sambung ulang, pembagian tim, briefing, putaran tahunan enam fase, voting anggota dan SAH Juru Bicara, pakta, resolusi lewat engine, tebakan akhir, voting Oknum, dan skor. Bisa dipindah ke Durable Object atau PartyKit tanpa diubah.
 - `src/views.ts`: apa yang boleh dilihat tiap layar. Layar utama tidak pernah menerima agenda, kartu di tangan, atau sumber daya pribadi. HP hanya menerima milik timnya.
 - `src/labels.ts`: bahasa sebab-akibat untuk pengungkapan ("Upah naik, Pengusaha menaikkan harga").
-- `src/koran.ts` dan `src/content/koran.ts`: halaman depan Harian TEI dari tag peristiwa tahun itu, templat headline, Suara Warga, dan iklan satir.
+- `src/koran.ts` dan `src/content/koran.ts`: halaman depan Harian TEI dari tag peristiwa tahun itu: 33 tag × 8 varian headline, 20 headline kombinasi dua tag, Suara Warga, dan iklan satir. Tes menjaga aturan GDD: minimal 8 varian, tidak ada duplikat, tidak ada merek atau lembaga nyata.
 - `src/debrief.ts`: titik balik, rantai sebab-akibat (efek tertunda dilacak ke keputusan asalnya), gelar akhir, pembukaan agenda, pertanyaan diskusi, dan riwayat lengkap untuk ekspor.
 - `src/content/realWorld.ts`: kartu Di Dunia Nyata, satu peristiwa nyata bersumber untuk setiap kartu krisis.
 - `src/protocol.ts`: format pesan dan validasi ketat untuk semua input klien.
@@ -98,5 +98,5 @@ Ekspor di konsol (K): tiga CSV (garis waktu, keputusan per tim, log pakta; pemis
 ## Belum dibuat
 
 - Narasi, pertanyaan tim, dan "Tahukah Anda" di kartu krisis (belum ada di data engine).
-- Templat headline baru 2–3 varian per tag; GDD meminta minimal 8. Perlu ruang penulis.
+- Teks Harian TEI (8 varian per tag, 20 kombinasi) perlu ditinjau editor ekonomi dan pembaca sensitivitas sebelum pilot.
 - Audio, animasi Rive, dan art direction final.
