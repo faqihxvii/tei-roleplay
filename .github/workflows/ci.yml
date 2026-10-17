@@ -25,3 +25,33 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  # One host and four phones play a whole game in Chromium against the production build.
+  # Each run gets a fresh random game, so different crises and frozen levers are covered over time.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Start the server
+        run: |
+          PORT=8787 NODE_ENV=production node dist/room.mjs > server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8787/healthz && exit 0; sleep 1; done
+          cat server.log; exit 1
+      - run: npm run room:e2e -- e2e-shots
+        env:
+          TEI_BASE: http://127.0.0.1:8787
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-shots
+          path: |
+            e2e-shots
+            server.log

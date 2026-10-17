@@ -1,6 +1,7 @@
 // One host and four phones play a whole game in Chromium: join, teams, five years (votes, a pact,
 // SAH, a team played from the console, reveal, front page), guesses and results.
-// Needs `npm run room` and `npm run room:web` running. Usage:
+// Needs the server running: `npm run room` with `npm run room:web`, or a production build
+// (`npm run build && npm start`, then TEI_BASE=http://127.0.0.1:8787). CI runs it this way. Usage:
 //   TEI_BASE=http://<lan-ip>:5173 node web/e2e/full-game.mjs [screenshot-dir]
 // Open the host through a LAN address, not localhost, as a facilitator would.
 import { mkdirSync } from 'node:fs';
@@ -81,7 +82,10 @@ await next(); // rapat
 await host.getByText('Rapat Tim', { exact: false }).first().waitFor();
 for (const p of Object.values(roleOf)) {
   await p.locator('.policy:not(.off)').first().click();
-  await p.locator('.seg:not(.off)').last().click();
+  // A crisis can freeze a lever for the year (its fieldset is disabled), so pick from the open ones.
+  // Pemerintah has only Pajak: when that is frozen there is nothing to set.
+  const open = p.locator('fieldset.choice:not([disabled]) .seg:not(.off)');
+  if (await open.count()) await open.last().click();
 }
 await shot(roleOf['Pemerintah'], 'y1-phone-rapat.png', true);
 await shot(host, 'y1-rapat.png');
