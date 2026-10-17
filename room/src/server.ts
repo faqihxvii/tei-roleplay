@@ -4,9 +4,10 @@ import { createServer, type IncomingMessage, type Server } from 'node:http';
 import path from 'node:path';
 import { WebSocket, WebSocketServer } from 'ws';
 import { newId, newSeed, newToken, RateLimiter, roomCode } from './ids';
-import { HOST_ONLY, parseClientMessage, type ClientMessage, type ServerMessage } from './protocol';
+import { HOST_ONLY, parseClientMessage, PLAYER_ONLY, type ClientMessage, type ServerMessage } from './protocol';
 import { Room, RoomError } from './room';
 import type { SnapshotStore } from './store';
+import { hostView, playerView } from './views';
 
 export interface RoomServerOptions {
   store: SnapshotStore;
@@ -75,7 +76,7 @@ export async function createRoomServer(options: RoomServerOptions) {
     let code = roomCode();
     while (rooms.has(code)) code = roomCode();
     const hostToken = newToken();
-    const room = Room.create({ code, hostToken, seed: newSeed(), options: { oknum: req.body?.oknum === true }, now: now() });
+    const room = Room.create({ code, hostToken, seed: newSeed(), options: { oknum: req.body?.oknum === true }, tempo: req.body?.tempo === 'santai' ? 'santai' : 'normal', now: now() });
     rooms.set(code, { room, conns: new Set() });
     void persist(code);
     res.status(201).json({ code, hostToken });
@@ -182,13 +183,19 @@ export async function createRoomServer(options: RoomServerOptions) {
         send(conn.ws, { t: 'error', code: 'bukan-host', message: 'Hanya fasilitator yang bisa melakukan ini.' });
         return;
       }
+      if (PLAYER_ONLY.has(message.t) && !conn.playerId) {
+        send(conn.ws, { t: 'error', code: 'pesan-salah', message: 'Masuk sebagai pemain dulu.' });
+        return;
+      }
       const room = live.room;
-      const phaseBefore = room.phase;
+      const before = `${room.phase}/${room.step}`;
+      const t = now();
+      const playerId = conn.playerId!;
       switch (message.t) {
-        case 'assign': room.assign(message.mode, newSeed(), now()); break;
-        case 'move': room.move(message.playerId, message.role, now()); break;
+        case 'assign': room.assign(message.mode, newSeed(), t); break;
+        case 'move': room.move(message.playerId, message.role, t); break;
         case 'kick':
-          room.kick(message.playerId, now());
+          room.kick(message.playerId, t);
           for (const other of live.conns) {
             if (other.playerId === message.playerId) {
               send(other.ws, { t: 'kicked' });
@@ -197,11 +204,21 @@ export async function createRoomServer(options: RoomServerOptions) {
             }
           }
           break;
-        case 'startBriefing': room.startBriefing(now()); break;
-        case 'addTime': room.addTime(now()); break;
-        case 'startYear': room.startYear(now()); break;
+        case 'startBriefing': room.startBriefing(t); break;
+        case 'next': room.next(t); break;
+        case 'pause': room.pause(t); break;
+        case 'resume-clock': room.resume(t); break;
+        case 'addTime': room.addTime(t); break;
+        case 'tempo': room.setTempo(message.tempo, t); break;
+        case 'hostDecide': room.hostDecide(message.role, message.decision, t); break;
+        case 'hostFinal': room.hostFinal(message.role, message.vote, t); break;
+        case 'propose': room.propose(playerId, message.decision, t); break;
+        case 'lock': room.lock(playerId, message.decision, t); break;
+        case 'pactPropose': room.proposePact(playerId, message.to, message.fromTerm, message.toTerm, newId(), t); break;
+        case 'pactRespond': room.respondPact(playerId, message.pactId, message.accept, t); break;
+        case 'final': room.submitFinal(playerId, message.vote, t); break;
       }
-      changed(live, room.phase !== phaseBefore);
+      changed(live, `${room.phase}/${room.step}` !== before);
     } catch (error) {
       if (!(error instanceof RoomError)) throw error;
       send(conn.ws, { t: 'error', code: error.code, message: error.message });
@@ -237,10 +254,10 @@ export async function createRoomServer(options: RoomServerOptions) {
 
   function broadcast(live: LiveRoom): void {
     const t = now();
-    const hostView = live.room.hostView();
+    const host = hostView(live.room);
     for (const conn of live.conns) {
-      if (conn.kind === 'host') send(conn.ws, { t: 'host-state', now: t, view: hostView });
-      else if (conn.playerId) send(conn.ws, { t: 'player-state', now: t, view: live.room.playerView(conn.playerId) });
+      if (conn.kind === 'host') send(conn.ws, { t: 'host-state', now: t, view: host });
+      else if (conn.playerId) send(conn.ws, { t: 'player-state', now: t, view: playerView(live.room, conn.playerId) });
     }
   }
 

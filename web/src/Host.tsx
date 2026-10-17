@@ -2,11 +2,13 @@ import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { ROLE_CODE, ROLE_COLOR, ROLE_LABEL } from '../../engine/src/content/roles';
 import { ROLES, type Role } from '../../engine/src/types';
 import type { ClientMessage, ServerMessage } from '../../room/src/protocol';
-import type { HostView, PlayerSummary } from '../../room/src/room';
+import type { HostView, PlayerSummary } from '../../room/src/views';
+import { ClockControls, Console, useConsoleToggle } from './Console';
+import { GuessScreen, ResultsScreen, YearScreen } from './MainScreens';
 import { formatSeconds, storage, useClockOffset, useRoomSocket, useSecondsLeft } from './socket';
 
-// Host screen and facilitator console in one page for now: the projector shows the room code,
-// QR and teams; the controls sit underneath. They split into two views in the year-loop milestone.
+// The projected main screen. Before the game it doubles as the team console (room code, QR,
+// drag-and-drop teams); once the game runs, facilitator controls live in the K overlay.
 
 const hostKey = (code: string) => `tei:host:${code}`;
 const codeFromUrl = () => new URLSearchParams(location.search).get('r')?.toUpperCase() ?? '';
@@ -27,6 +29,7 @@ export function Host() {
 
 function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string) => void }) {
   const [oknum, setOknum] = useState(false);
+  const [santai, setSantai] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +37,7 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/rooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ oknum }) });
+      const res = await fetch('/api/rooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ oknum, tempo: santai ? 'santai' : 'normal' }) });
       const body = (await res.json()) as { code?: string; hostToken?: string; message?: string };
       if (!res.ok || !body.code || !body.hostToken) throw new Error(body.message ?? 'Ruangan gagal dibuat.');
       onCreated(body.code, body.hostToken);
@@ -54,6 +57,10 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
         <input type="checkbox" checked={oknum} onChange={e => setOknum(e.target.checked)} />
         <span><strong>Mode Oknum.</strong> Satu tim diam-diam bermain untuk membuat negara kolaps.</span>
       </label>
+      <label className="check">
+        <input type="checkbox" checked={santai} onChange={e => setSantai(e.target.checked)} />
+        <span><strong>Tempo Santai.</strong> Semua fase 50% lebih lama, untuk kelas yang butuh waktu baca lebih panjang.</span>
+      </label>
       {error && <p className="error" role="alert">{error}</p>}
       <button className="btn primary" onClick={create} disabled={busy}>{busy ? 'Membuka…' : 'Buka ruangan'}</button>
     </main>
@@ -64,6 +71,7 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
   const [view, setView] = useState<HostView | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const clock = useClockOffset();
+  const [consoleOpen, setConsoleOpen] = useConsoleToggle();
 
   const onMessage = (message: ServerMessage) => {
     if (message.t === 'host-state') {
@@ -88,16 +96,17 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
     <main className="host">
       {status !== 'terhubung' && <p className="banner" role="status">Koneksi server putus. Menyambung ulang…</p>}
       {notice && <p className="banner warn" role="alert">{notice}</p>}
-      {view.phase === 'lobi' && <Lobby view={view} send={send} />}
+      {view.phase === 'gabung' && <Lobby view={view} send={send} />}
       {view.phase === 'briefing' && <Briefing view={view} send={send} now={clock.now} />}
-      {view.phase === 'tahun' && (
-        <section className="center grow">
-          <p className="kicker">Ruangan {view.code}</p>
-          <h1>Tahun {view.year} dimulai</h1>
-          <p className="muted">Fase Krisis, Rapat Tim, Lobi, Pengesahan, Pengungkapan dan Koran dibangun di tahap berikutnya.</p>
-          <Teams view={view} />
-        </section>
+      {view.phase === 'tahun' && <YearScreen view={view} now={clock.now} />}
+      {view.phase === 'tebak' && <GuessScreen view={view} now={clock.now} />}
+      {view.phase === 'selesai' && view.results && <ResultsScreen view={view} now={clock.now} />}
+      {view.phase !== 'gabung' && (
+        <button className="console-toggle" onClick={() => setConsoleOpen(!consoleOpen)} aria-expanded={consoleOpen}>
+          Konsol <kbd>K</kbd>
+        </button>
       )}
+      {consoleOpen && <Console view={view} send={send} onClose={() => setConsoleOpen(false)} />}
     </main>
   );
 }
@@ -161,8 +170,8 @@ function Briefing({ view, send, now }: { view: HostView; send: (m: ClientMessage
         <p className="big-timer" aria-live="off">{seconds !== null ? formatSeconds(seconds) : '–'}</p>
         <p className="lead">Baca kartu peran dan agenda rahasia timmu di HP. Jangan perlihatkan ke tim lain.</p>
         <div className="row">
-          <button className="btn" onClick={() => send({ t: 'addTime' })}>+30 detik</button>
-          <button className="btn primary" onClick={() => send({ t: 'startYear' })}>Mulai Tahun 1</button>
+          <ClockControls view={view} send={send} />
+          <button className="btn primary" onClick={() => send({ t: 'next' })}>Mulai Tahun 1</button>
         </div>
       </section>
       <Teams view={view} />

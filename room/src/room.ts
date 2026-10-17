@@ -1,8 +1,10 @@
-import { getAgenda } from '../../engine/src/content/agendas';
-import { ROLE_LABEL } from '../../engine/src/content/roles';
-import { createGame } from '../../engine/src/game';
+import { agendasForRole } from '../../engine/src/content/agendas';
+import { createGame, resolveYear, validateDecisions } from '../../engine/src/game';
+import { checkPacts, emptyTally, PACT_TERMS, type PactTally, type PactTermId } from '../../engine/src/pacts';
 import { Rng } from '../../engine/src/rng';
-import { ROLES, type GameState, type Role } from '../../engine/src/types';
+import { isOknumIdentified, scoreGame, type TeamResult } from '../../engine/src/scoring';
+import { ROLES, type AgendaId, type Decision, type DecisionFor, type GameState, type Role, type YearDecisions } from '../../engine/src/types';
+import { buildFrontPage, type FrontPage } from './koran';
 
 // The authoritative room: who is in it, which team they play, and the game they share.
 // Pure and transport-agnostic: the server feeds it messages and broadcasts its views, so the
@@ -12,9 +14,21 @@ export const MAX_PLAYERS = 40;
 export const NICKNAME_MAX = 16;
 export const BRIEFING_MS = 90_000;
 export const ADD_TIME_MS = 30_000;
+export const GUESS_MS = 120_000;
+export const MAX_PACTS_PER_TEAM = 3;
 
-export type RoomPhase = 'lobi' | 'briefing' | 'tahun';
+export type RoomPhase = 'gabung' | 'briefing' | 'tahun' | 'tebak' | 'selesai';
+export type YearStep = 'krisis' | 'rapat' | 'lobi' | 'pengesahan' | 'pengungkapan' | 'koran';
 export type AssignMode = 'acak' | 'seimbang';
+export type Tempo = 'normal' | 'santai';
+
+/** One year is about 6.5 minutes (GDD, "Struktur sesi & core loop"). */
+export const STEP_ORDER: YearStep[] = ['krisis', 'rapat', 'lobi', 'pengesahan', 'pengungkapan', 'koran'];
+export const STEP_MS: Record<YearStep, number> = { krisis: 45_000, rapat: 75_000, lobi: 120_000, pengesahan: 45_000, pengungkapan: 60_000, koran: 45_000 };
+/** Santai gives classes that read slowly 50% more time (GDD, "Waktu dan gerak"). */
+export const TEMPO_FACTOR: Record<Tempo, number> = { normal: 1, santai: 1.5 };
+/** Steps in which members may still change their proposal. */
+export const DECIDING_STEPS: YearStep[] = ['rapat', 'lobi', 'pengesahan'];
 
 export interface Player {
   id: string;
@@ -31,24 +45,83 @@ export interface RoomOptions {
   oknum: boolean;
 }
 
+export interface Proposal {
+  decision: Decision;
+  /** Order of submission, which breaks ties in the team vote. */
+  seq: number;
+}
+
+export type LockSource = 'jubir' | 'fasilitator' | 'suara';
+
+export type PactStatus = 'diajukan' | 'disepakati' | 'ditolak' | 'ditarik' | 'kedaluwarsa';
+
+export interface PactRecord {
+  id: string;
+  year: number;
+  from: Role;
+  to: Role;
+  fromTerm: PactTermId;
+  toTerm: PactTermId;
+  status: PactStatus;
+}
+
+export interface PactResult {
+  pactId: string;
+  keptFrom: boolean;
+  keptTo: boolean;
+}
+
+export interface YearRecord {
+  year: number;
+  lockSource: Record<Role, LockSource>;
+  pactResults: PactResult[];
+  frontPage: FrontPage;
+}
+
+export interface FinalVote {
+  /** This team's guess of each other team's agenda. */
+  agendas: Partial<Record<Role, AgendaId>>;
+  /** Mode Oknum: the team this team names as the Oknum. */
+  oknum: Role | null;
+}
+
+export interface FinalResults {
+  teams: (TeamResult & { correctGuesses: number; pactsKept: number; pactsBroken: number })[];
+  oknum: { role: Role; identified: boolean; votes: number } | null;
+}
+
 export interface RoomSnapshot {
   code: string;
   hostToken: string;
   createdAt: number;
   updatedAt: number;
   phase: RoomPhase;
+  step: YearStep | null;
   options: RoomOptions;
+  tempo: Tempo;
   seed: number;
   players: Player[];
   /** Teams nobody joined: the facilitator enters their decisions (GDD, "Mode tanpa HP"). */
   offlineRoles: Role[];
   phaseEndsAt: number | null;
+  /** Time left on the clock while the facilitator has paused it. */
+  pausedMs: number | null;
   game: GameState | null;
+  seq: number;
+  proposals: Record<string, Proposal>;
+  locked: Partial<Record<Role, { decision: Decision; source: LockSource }>>;
+  pacts: PactRecord[];
+  years: YearRecord[];
+  finals: Partial<Record<Role, FinalVote>>;
+  results: FinalResults | null;
+  /** Headline variants already printed this session, so none repeats (GDD, "Cara headline disusun"). */
+  usedVariants: string[];
 }
 
 export type RoomErrorCode =
   | 'nama-kosong' | 'nama-dipakai' | 'ruangan-penuh' | 'token-salah'
-  | 'pemain-tidak-ada' | 'fase-salah' | 'belum-ada-pemain';
+  | 'pemain-tidak-ada' | 'fase-salah' | 'belum-ada-pemain'
+  | 'bukan-jubir' | 'keputusan-salah' | 'sudah-dikunci' | 'pakta-salah' | 'pakta-penuh' | 'tanpa-tim';
 
 const ERROR_TEXT: Record<RoomErrorCode, string> = {
   'nama-kosong': 'Isi nama panggilan dulu.',
@@ -58,6 +131,12 @@ const ERROR_TEXT: Record<RoomErrorCode, string> = {
   'pemain-tidak-ada': 'Pemain itu sudah tidak ada di ruangan.',
   'fase-salah': 'Langkah itu tidak bisa dilakukan di fase ini.',
   'belum-ada-pemain': 'Belum ada pemain yang bergabung.',
+  'bukan-jubir': 'Hanya Juru Bicara tim yang bisa melakukan ini.',
+  'keputusan-salah': 'Pilihan itu tidak bisa dipakai tahun ini.',
+  'sudah-dikunci': 'Keputusan tim sudah disahkan.',
+  'pakta-salah': 'Pakta itu tidak bisa dibuat.',
+  'pakta-penuh': `Satu tim paling banyak membuat ${MAX_PACTS_PER_TEAM} pakta per tahun.`,
+  'tanpa-tim': 'Kamu belum masuk tim.',
 };
 
 export class RoomError extends Error {
@@ -72,57 +151,66 @@ export function cleanNickname(raw: string): string | null {
   return cleaned || null;
 }
 
-export interface PlayerSummary {
-  id: string;
-  nickname: string;
-  role: Role | null;
-  connected: boolean;
+export function neutralDecision<R extends Role>(role: R): DecisionFor<R> {
+  const neutral: YearDecisions = {
+    pemerintah: { role: 'pemerintah', cardId: null, pajak: 0 },
+    bankSentral: { role: 'bankSentral', cardId: null, bunga: 0, tolakCetakUang: false },
+    pengusaha: { role: 'pengusaha', cardId: null, hargaNaik: false },
+    buruh: { role: 'buruh', cardId: null, upah: 0, mogok: false },
+    masyarakat: { role: 'masyarakat', cardId: null, konsumsi: 'biasa', viral: null },
+  };
+  return neutral[role] as DecisionFor<R>;
 }
 
-/** What the projected host screen and facilitator console see. Never contains agendas. */
-export interface HostView {
-  code: string;
-  phase: RoomPhase;
-  options: RoomOptions;
-  year: number;
-  players: PlayerSummary[];
-  offlineRoles: Role[];
-  spokespeople: Partial<Record<Role, string>>;
-  phaseEndsAt: number | null;
-}
-
-/** What one phone sees: its own team only. */
-export interface PlayerView {
-  code: string;
-  phase: RoomPhase;
-  year: number;
-  me: { id: string; nickname: string; role: Role | null; isSpokesperson: boolean };
-  team: { role: Role; label: string; members: string[]; agenda: { name: string; description: string } | null } | null;
-  phaseEndsAt: number | null;
-}
+/** The fields a team votes on, per role. */
+export const DECISION_FIELDS: { [R in Role]: (keyof DecisionFor<R> & string)[] } = {
+  pemerintah: ['cardId', 'pajak'],
+  bankSentral: ['cardId', 'bunga', 'tolakCetakUang'],
+  pengusaha: ['cardId', 'hargaNaik'],
+  buruh: ['cardId', 'upah', 'mogok'],
+  masyarakat: ['cardId', 'konsumsi', 'viral'],
+};
 
 export class Room {
   private constructor(private s: RoomSnapshot) {}
 
-  static create(init: { code: string; hostToken: string; seed: number; options: RoomOptions; now: number }): Room {
+  static create(init: { code: string; hostToken: string; seed: number; options: RoomOptions; now: number; tempo?: Tempo }): Room {
     return new Room({
       code: init.code,
       hostToken: init.hostToken,
       createdAt: init.now,
       updatedAt: init.now,
-      phase: 'lobi',
+      phase: 'gabung',
+      step: null,
       options: init.options,
+      tempo: init.tempo ?? 'normal',
       seed: init.seed,
       players: [],
       offlineRoles: [],
       phaseEndsAt: null,
+      pausedMs: null,
       game: null,
+      seq: 0,
+      proposals: {},
+      locked: {},
+      pacts: [],
+      years: [],
+      finals: {},
+      results: null,
+      usedVariants: [],
     });
   }
 
   /** Restores a room from a snapshot; nobody is connected until their socket comes back. */
   static restore(snapshot: RoomSnapshot): Room {
-    const s = structuredClone(snapshot);
+    // Snapshots from the join-flow release predate the year loop: fill in what they lack.
+    const legacyPhase: string = snapshot.phase;
+    const s: RoomSnapshot = {
+      step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, pacts: [], years: [], finals: {}, results: null, usedVariants: [],
+      ...structuredClone(snapshot),
+      phase: legacyPhase === 'lobi' ? 'gabung' : snapshot.phase,
+    };
+    if (s.phase === 'tahun' && !s.step) s.step = 'krisis';
     for (const player of s.players) player.connections = 0;
     return new Room(s);
   }
@@ -131,8 +219,11 @@ export class Room {
     return structuredClone(this.s);
   }
 
+  /** Read-only access for the view builders. */
+  get state(): Readonly<RoomSnapshot> { return this.s; }
   get code() { return this.s.code; }
   get phase() { return this.s.phase; }
+  get step() { return this.s.step; }
   get updatedAt() { return this.s.updatedAt; }
   get playerCount() { return this.s.players.length; }
 
@@ -144,6 +235,14 @@ export class Room {
     return this.s.players.find(p => p.token === token);
   }
 
+  player(playerId: string): Player {
+    const player = this.s.players.find(p => p.id === playerId);
+    if (!player) throw new RoomError('pemain-tidak-ada');
+    return player;
+  }
+
+  // ---------- joining and teams ----------
+
   join(rawNickname: string, ids: { id: string; token: string }, now: number): Player {
     const nickname = cleanNickname(rawNickname);
     if (!nickname) throw new RoomError('nama-kosong');
@@ -152,7 +251,7 @@ export class Room {
     const player: Player = { id: ids.id, nickname, role: null, token: ids.token, joinedAt: now, connections: 0 };
     this.s.players.push(player);
     // Latecomers after the lobby go straight to the smallest team, which also takes it off facilitator control.
-    if (this.s.phase !== 'lobi') this.placeInSmallestTeam(player);
+    if (this.s.phase !== 'gabung') this.placeInSmallestTeam(player);
     this.touch(now);
     return player;
   }
@@ -169,12 +268,13 @@ export class Room {
   kick(playerId: string, now: number): void {
     this.player(playerId);
     this.s.players = this.s.players.filter(p => p.id !== playerId);
+    delete this.s.proposals[playerId];
     this.touch(now);
   }
 
   /** Random deals everyone afresh; balanced keeps current teams and only fills or evens them out. */
   assign(mode: AssignMode, seed: number, now: number): void {
-    this.requirePhase('lobi');
+    this.requirePhase('gabung');
     if (mode === 'acak') {
       const rng = new Rng(seed >>> 0);
       const order = rng.shuffle(ROLES);
@@ -187,43 +287,12 @@ export class Room {
   }
 
   move(playerId: string, role: Role | null, now: number): void {
-    this.player(playerId).role = role;
+    const player = this.player(playerId);
+    if (player.role !== role) delete this.s.proposals[playerId];
+    player.role = role;
     if (role) this.s.offlineRoles = this.s.offlineRoles.filter(r => r !== role);
+    else if (this.s.phase !== 'gabung') this.markEmptyTeamsOffline();
     this.touch(now);
-  }
-
-  startBriefing(now: number): void {
-    this.requirePhase('lobi');
-    if (!this.s.players.length) throw new RoomError('belum-ada-pemain');
-    for (const player of this.s.players) if (!player.role) this.placeInSmallestTeam(player);
-    this.s.offlineRoles = ROLES.filter(role => !this.members(role).length);
-    this.s.game = createGame({ seed: this.s.seed, oknum: this.s.options.oknum });
-    this.s.phase = 'briefing';
-    this.s.phaseEndsAt = now + BRIEFING_MS;
-    this.touch(now);
-  }
-
-  addTime(now: number): void {
-    if (this.s.phaseEndsAt === null) throw new RoomError('fase-salah');
-    this.s.phaseEndsAt = Math.max(this.s.phaseEndsAt, now) + ADD_TIME_MS;
-    this.touch(now);
-  }
-
-  /** Hands over to the year loop; the six year phases are driven from here in the next milestone. */
-  startYear(now: number): void {
-    this.requirePhase('briefing');
-    this.s.phase = 'tahun';
-    this.s.phaseEndsAt = null;
-    this.touch(now);
-  }
-
-  /** Advances a phase whose timer ran out; returns whether anything changed. */
-  tick(now: number): boolean {
-    if (this.s.phase === 'briefing' && this.s.phaseEndsAt !== null && this.s.phaseEndsAt <= now) {
-      this.startYear(now);
-      return true;
-    }
-    return false;
   }
 
   /** Members in join order, which is also the speaking order. */
@@ -237,58 +306,361 @@ export class Room {
     return members.length ? members[(this.year - 1) % members.length] : undefined;
   }
 
+  /** The year being played, or the one just resolved while its results are on screen. */
   get year(): number {
-    return this.s.game?.year ?? 1;
-  }
-
-  hostView(): HostView {
-    const spokespeople: Partial<Record<Role, string>> = {};
-    for (const role of ROLES) {
-      const spokesperson = this.spokesperson(role);
-      if (spokesperson) spokespeople[role] = spokesperson.id;
+    const game = this.s.game;
+    if (!game) return 1;
+    if (this.s.step === 'pengungkapan' || this.s.step === 'koran' || this.s.phase === 'tebak' || this.s.phase === 'selesai') {
+      return game.log.at(-1)?.year ?? game.year;
     }
-    return {
-      code: this.s.code,
-      phase: this.s.phase,
-      options: { ...this.s.options },
-      year: this.year,
-      players: this.s.players.map(p => ({ id: p.id, nickname: p.nickname, role: p.role, connected: p.connections > 0 })),
-      offlineRoles: [...this.s.offlineRoles],
-      spokespeople,
-      phaseEndsAt: this.s.phaseEndsAt,
-    };
+    return game.year;
   }
 
-  playerView(playerId: string): PlayerView {
-    const player = this.player(playerId);
-    const role = player.role;
-    const agendaId = role && this.s.game ? this.s.game.agendas[role] : null;
-    const agenda = agendaId ? getAgenda(agendaId) : null;
-    return {
-      code: this.s.code,
-      phase: this.s.phase,
-      year: this.year,
-      me: { id: player.id, nickname: player.nickname, role, isSpokesperson: !!role && this.spokesperson(role)?.id === player.id },
-      team: role
-        ? {
-            role,
-            label: ROLE_LABEL[role],
-            members: this.members(role).map(p => p.nickname),
-            agenda: agenda && this.s.phase !== 'lobi' ? { name: agenda.name, description: agenda.description } : null,
+  // ---------- clock ----------
+
+  startBriefing(now: number): void {
+    this.requirePhase('gabung');
+    if (!this.s.players.length) throw new RoomError('belum-ada-pemain');
+    for (const player of this.s.players) if (!player.role) this.placeInSmallestTeam(player);
+    this.markEmptyTeamsOffline();
+    this.s.game = createGame({ seed: this.s.seed, oknum: this.s.options.oknum });
+    this.s.phase = 'briefing';
+    this.setTimer(BRIEFING_MS, now);
+    this.touch(now);
+  }
+
+  setTempo(tempo: Tempo, now: number): void {
+    this.s.tempo = tempo;
+    this.touch(now);
+  }
+
+  pause(now: number): void {
+    if (this.s.phaseEndsAt === null) throw new RoomError('fase-salah');
+    this.s.pausedMs = Math.max(0, this.s.phaseEndsAt - now);
+    this.s.phaseEndsAt = null;
+    this.touch(now);
+  }
+
+  resume(now: number): void {
+    if (this.s.pausedMs === null) throw new RoomError('fase-salah');
+    this.s.phaseEndsAt = now + this.s.pausedMs;
+    this.s.pausedMs = null;
+    this.touch(now);
+  }
+
+  addTime(now: number): void {
+    if (this.s.pausedMs !== null) this.s.pausedMs += ADD_TIME_MS;
+    else if (this.s.phaseEndsAt !== null) this.s.phaseEndsAt = Math.max(this.s.phaseEndsAt, now) + ADD_TIME_MS;
+    else throw new RoomError('fase-salah');
+    this.touch(now);
+  }
+
+  /** Advances a phase whose timer ran out; returns whether anything changed. */
+  tick(now: number): boolean {
+    if (this.s.phaseEndsAt !== null && this.s.phaseEndsAt <= now) {
+      this.next(now);
+      return true;
+    }
+    return false;
+  }
+
+  /** Moves to the next phase or step: on the timer, or when the facilitator skips ahead. */
+  next(now: number): void {
+    const s = this.s;
+    if (s.phase === 'briefing') {
+      s.phase = 'tahun';
+      this.enterStep('krisis', now);
+    } else if (s.phase === 'tahun') {
+      switch (s.step) {
+        case 'krisis': this.enterStep('rapat', now); break;
+        case 'rapat': this.enterStep('lobi', now); break;
+        case 'lobi':
+          for (const pact of this.pactsThisYear()) if (pact.status === 'diajukan') pact.status = 'kedaluwarsa';
+          this.enterStep('pengesahan', now);
+          break;
+        case 'pengesahan':
+          this.resolve();
+          this.enterStep('pengungkapan', now);
+          break;
+        case 'pengungkapan': this.enterStep('koran', now); break;
+        case 'koran':
+          if (s.game!.ended) {
+            s.phase = 'tebak';
+            s.step = null;
+            this.setTimer(GUESS_MS, now);
+          } else {
+            this.enterStep('krisis', now);
           }
-        : null,
-      phaseEndsAt: this.s.phaseEndsAt,
+          break;
+      }
+    } else if (s.phase === 'tebak') {
+      this.finish();
+      s.phase = 'selesai';
+      s.phaseEndsAt = null;
+      s.pausedMs = null;
+    } else {
+      throw new RoomError('fase-salah');
+    }
+    this.touch(now);
+  }
+
+  private enterStep(step: YearStep, now: number): void {
+    this.s.step = step;
+    if (step === 'krisis') {
+      this.s.proposals = {};
+      this.s.locked = {};
+    }
+    this.setTimer(STEP_MS[step], now);
+  }
+
+  private setTimer(ms: number, now: number): void {
+    this.s.pausedMs = null;
+    this.s.phaseEndsAt = now + Math.round(ms * TEMPO_FACTOR[this.s.tempo]);
+  }
+
+  // ---------- team decisions ----------
+
+  /** Checks a decision against this year's hand, resources and powers. */
+  validDecision(role: Role, decision: Decision): boolean {
+    if (decision.role !== role || !this.s.game) return false;
+    const decisions = { ...this.currentDecisions(), [role]: decision } as YearDecisions;
+    try {
+      validateDecisions(this.s.game, decisions);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Every member puts forward what they would choose; the counts show on the spokesperson's phone. */
+  propose(playerId: string, decision: Decision, now: number): void {
+    const role = this.requireDeciding(playerId);
+    if (!this.validDecision(role, decision)) throw new RoomError('keputusan-salah');
+    this.s.proposals[playerId] = { decision, seq: ++this.s.seq };
+    this.touch(now);
+  }
+
+  /** The spokesperson holds SAH; returns true when that was the last team and the reveal began. */
+  lock(playerId: string, decision: Decision, now: number): boolean {
+    const role = this.requireDeciding(playerId);
+    if (this.s.step !== 'pengesahan') throw new RoomError('fase-salah');
+    if (this.spokesperson(role)?.id !== playerId) throw new RoomError('bukan-jubir');
+    return this.lockTeam(role, decision, 'jubir', now);
+  }
+
+  /** The facilitator decides for a team: always for offline teams, or to unstick one in class. */
+  hostDecide(role: Role, decision: Decision, now: number): boolean {
+    if (this.s.phase !== 'tahun' || !this.s.step || !DECIDING_STEPS.includes(this.s.step)) throw new RoomError('fase-salah');
+    return this.lockTeam(role, decision, 'fasilitator', now);
+  }
+
+  private lockTeam(role: Role, decision: Decision, source: LockSource, now: number): boolean {
+    if (this.s.locked[role]) throw new RoomError('sudah-dikunci');
+    if (!this.validDecision(role, decision)) throw new RoomError('keputusan-salah');
+    this.s.locked[role] = { decision, source };
+    this.touch(now);
+    if (this.s.step === 'pengesahan' && ROLES.every(r => this.s.locked[r])) {
+      this.next(now);
+      return true;
+    }
+    return false;
+  }
+
+  /** Field by field, the most common choice among members; ties go to the earliest proposal. */
+  majority<R extends Role>(role: R): DecisionFor<R> {
+    const proposals = this.members(role)
+      .map(p => this.s.proposals[p.id])
+      .filter((p): p is Proposal => !!p && p.decision.role === role)
+      .sort((a, b) => a.seq - b.seq);
+    const result = { ...neutralDecision(role) } as Record<string, unknown>;
+    for (const field of DECISION_FIELDS[role] as string[]) {
+      const counts = new Map<string, number>();
+      for (const p of proposals) {
+        const key = JSON.stringify((p.decision as unknown as Record<string, unknown>)[field]);
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+      let best: string | null = null;
+      for (const [key, count] of counts) if (best === null || count > counts.get(best)!) best = key; // Map keeps first-seen order
+      if (best !== null) result[field] = JSON.parse(best);
+    }
+    return result as unknown as DecisionFor<R>;
+  }
+
+  /** Vote counts per field for one team, in first-proposed order. */
+  tally(role: Role): Record<string, { value: unknown; count: number }[]> {
+    const proposals = this.members(role).map(p => this.s.proposals[p.id]).filter((p): p is Proposal => !!p).sort((a, b) => a.seq - b.seq);
+    const out: Record<string, { value: unknown; count: number }[]> = {};
+    for (const field of DECISION_FIELDS[role] as string[]) {
+      const counts = new Map<string, number>();
+      for (const p of proposals) {
+        const key = JSON.stringify((p.decision as unknown as Record<string, unknown>)[field]);
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+      out[field] = [...counts].map(([key, count]) => ({ value: JSON.parse(key), count }));
+    }
+    return out;
+  }
+
+  private currentDecisions(): YearDecisions {
+    const decisions = {} as Record<Role, Decision>;
+    for (const role of ROLES) decisions[role] = this.s.locked[role]?.decision ?? neutralDecision(role);
+    return decisions as YearDecisions;
+  }
+
+  private requireDeciding(playerId: string): Role {
+    const player = this.player(playerId);
+    if (!player.role) throw new RoomError('tanpa-tim');
+    if (this.s.phase !== 'tahun' || !this.s.step || !DECIDING_STEPS.includes(this.s.step)) throw new RoomError('fase-salah');
+    if (this.s.locked[player.role]) throw new RoomError('sudah-dikunci');
+    return player.role;
+  }
+
+  // ---------- pacts ----------
+
+  pactsThisYear(): PactRecord[] {
+    return this.s.pacts.filter(p => p.year === this.year);
+  }
+
+  proposePact(playerId: string, to: Role, fromTerm: PactTermId, toTerm: PactTermId, pactId: string, now: number): PactRecord {
+    const from = this.requireLobbySpokesperson(playerId);
+    if (to === from || !PACT_TERMS[fromTerm] || !PACT_TERMS[toTerm] || PACT_TERMS[fromTerm].role !== from || PACT_TERMS[toTerm].role !== to) {
+      throw new RoomError('pakta-salah');
+    }
+    const live = this.pactsThisYear().filter(p => p.status === 'diajukan' || p.status === 'disepakati');
+    if (live.some(p => p.fromTerm === fromTerm && p.toTerm === toTerm && p.from === from && p.to === to)) throw new RoomError('pakta-salah');
+    if (live.filter(p => p.from === from || p.to === from).length >= MAX_PACTS_PER_TEAM) throw new RoomError('pakta-penuh');
+    if (live.filter(p => p.from === to || p.to === to).length >= MAX_PACTS_PER_TEAM) throw new RoomError('pakta-penuh');
+    const pact: PactRecord = { id: pactId, year: this.year, from, to, fromTerm, toTerm, status: 'diajukan' };
+    this.s.pacts.push(pact);
+    this.touch(now);
+    return pact;
+  }
+
+  respondPact(playerId: string, pactId: string, accept: boolean, now: number): void {
+    const role = this.requireLobbySpokesperson(playerId);
+    const pact = this.pactsThisYear().find(p => p.id === pactId && p.status === 'diajukan');
+    if (!pact) throw new RoomError('pakta-salah');
+    if (pact.from === role && !accept) pact.status = 'ditarik';
+    else if (pact.to === role) pact.status = accept ? 'disepakati' : 'ditolak';
+    else throw new RoomError('pakta-salah');
+    this.touch(now);
+  }
+
+  private requireLobbySpokesperson(playerId: string): Role {
+    const player = this.player(playerId);
+    if (!player.role) throw new RoomError('tanpa-tim');
+    if (this.s.phase !== 'tahun' || this.s.step !== 'lobi') throw new RoomError('fase-salah');
+    if (this.spokesperson(player.role)?.id !== playerId) throw new RoomError('bukan-jubir');
+    return player.role;
+  }
+
+  pactTally(): PactTally {
+    const tally = emptyTally();
+    for (const record of this.s.years) {
+      for (const result of record.pactResults) {
+        const pact = this.s.pacts.find(p => p.id === result.pactId)!;
+        tally[pact.from][result.keptFrom ? 'kept' : 'broken']++;
+        tally[pact.to][result.keptTo ? 'kept' : 'broken']++;
+      }
+    }
+    return tally;
+  }
+
+  // ---------- resolution ----------
+
+  private resolve(): void {
+    const s = this.s;
+    const game = s.game!;
+    const decisions = {} as Record<Role, Decision>;
+    const lockSource = {} as Record<Role, LockSource>;
+    for (const role of ROLES) {
+      const locked = s.locked[role];
+      // An unlocked team plays what most of its members chose (GDD, "Keputusan di dalam tim").
+      decisions[role] = locked?.decision ?? this.majority(role);
+      lockSource[role] = locked?.source ?? 'suara';
+    }
+    const year = game.year;
+    s.game = resolveYear(game, decisions as YearDecisions);
+
+    const agreed = s.pacts.filter(p => p.year === year && p.status === 'disepakati');
+    const outcomes = checkPacts(agreed.map(p => ({ a: p.fromTerm, b: p.toTerm })), decisions as YearDecisions);
+    const pactResults = agreed.map((p, i) => ({ pactId: p.id, keptFrom: outcomes[i]!.keptA, keptTo: outcomes[i]!.keptB }));
+
+    const frontPage = buildFrontPage({
+      state: s.game,
+      log: s.game.log.at(-1)!,
+      pacts: agreed,
+      pactResults,
+      seed: s.seed,
+      used: new Set(s.usedVariants),
+    });
+    s.usedVariants.push(...frontPage.variantIds);
+    s.years.push({ year, lockSource, pactResults, frontPage });
+  }
+
+  // ---------- end of game ----------
+
+  /** Each team guesses the others' agendas and, in Mode Oknum, names the Oknum (GDD, "Skor akhir"). */
+  submitFinal(playerId: string, vote: FinalVote, now: number): boolean {
+    const player = this.player(playerId);
+    if (!player.role) throw new RoomError('tanpa-tim');
+    if (this.spokesperson(player.role)?.id !== playerId) throw new RoomError('bukan-jubir');
+    return this.recordFinal(player.role, vote, now);
+  }
+
+  hostFinal(role: Role, vote: FinalVote, now: number): boolean {
+    return this.recordFinal(role, vote, now);
+  }
+
+  private recordFinal(role: Role, vote: FinalVote, now: number): boolean {
+    if (this.s.phase !== 'tebak') throw new RoomError('fase-salah');
+    if (this.s.finals[role]) throw new RoomError('sudah-dikunci');
+    const agendas: Partial<Record<Role, AgendaId>> = {};
+    for (const [target, agenda] of Object.entries(vote.agendas) as [Role, AgendaId][]) {
+      if (target === role || !ROLES.includes(target)) throw new RoomError('keputusan-salah');
+      if (!agendasForRole(target).some(a => a.id === agenda)) throw new RoomError('keputusan-salah');
+      agendas[target] = agenda;
+    }
+    const oknum = this.s.options.oknum ? vote.oknum : null;
+    if (oknum !== null && (oknum === role || !ROLES.includes(oknum))) throw new RoomError('keputusan-salah');
+    this.s.finals[role] = { agendas, oknum };
+    this.touch(now);
+    // Teams played from the console do not hold up the class; the facilitator may still vote for them first.
+    if (ROLES.every(r => this.s.finals[r] || this.s.offlineRoles.includes(r))) {
+      this.next(now);
+      return true;
+    }
+    return false;
+  }
+
+  private finish(): void {
+    const s = this.s;
+    const game = s.game!;
+    const correct: Partial<Record<Role, number>> = {};
+    const votes: Partial<Record<Role, Role>> = {};
+    for (const role of ROLES) {
+      const final = s.finals[role];
+      correct[role] = Object.entries(final?.agendas ?? {}).filter(([target, agenda]) => game.agendas[target as Role] === agenda).length;
+      if (final?.oknum) votes[role] = final.oknum;
+    }
+    const oknumRole = ROLES.find(r => game.agendas[r] === 'oknum') ?? null;
+    const identified = isOknumIdentified(game, votes);
+    const tally = this.pactTally();
+    const results = scoreGame(game, { correctGuesses: correct, pacts: tally, oknumIdentified: identified });
+    s.results = {
+      teams: results.map(r => ({ ...r, correctGuesses: correct[r.role] ?? 0, pactsKept: tally[r.role].kept, pactsBroken: tally[r.role].broken })),
+      oknum: oknumRole ? { role: oknumRole, identified, votes: Object.values(votes).filter(v => v === oknumRole).length } : null,
     };
   }
 
-  private player(playerId: string): Player {
-    const player = this.s.players.find(p => p.id === playerId);
-    if (!player) throw new RoomError('pemain-tidak-ada');
-    return player;
-  }
+  // ---------- helpers ----------
 
   private requirePhase(phase: RoomPhase): void {
     if (this.s.phase !== phase) throw new RoomError('fase-salah');
+  }
+
+  private markEmptyTeamsOffline(): void {
+    this.s.offlineRoles = ROLES.filter(role => !this.members(role).length);
   }
 
   private placeInSmallestTeam(player: Player): void {
