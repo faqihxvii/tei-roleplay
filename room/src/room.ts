@@ -3,6 +3,8 @@ import { createGame, resolveYear, validateDecisions } from '../../engine/src/gam
 import { TUTORIAL_CRISIS } from '../../engine/src/content/crises';
 import { checkPacts, emptyTally, PACT_TERMS, type PactTally, type PactTermId } from '../../engine/src/pacts';
 import { Rng } from '../../engine/src/rng';
+import { cleanComment, validSurveyAnswers, type SurveyAnswers } from './content/survey';
+import { closeTiming, emptyTelemetry, noteAddTime, noteClientError, noteError, notePause, noteResume, openTiming, type StepEnd, type Telemetry } from './telemetry';
 import { isOknumIdentified, scoreGame, type TeamResult } from '../../engine/src/scoring';
 import { ROLES, type AgendaId, type Decision, type DecisionFor, type GameState, type Role, type YearDecisions } from '../../engine/src/types';
 import { DONT_KNOW, QUIZ } from './content/quiz';
@@ -142,6 +144,12 @@ export interface RoomSnapshot {
   practice: PracticeStash | null;
   /** Headline variants already printed this session, so none repeats (GDD, "Cara headline disusun"). */
   usedVariants: string[];
+  /** Anonymous session telemetry; see telemetry.ts. */
+  telemetry: Telemetry;
+  /** End-of-session survey per player id, submitted once. Reports drop the ids (report.ts). */
+  survey: Record<string, { answers: SurveyAnswers; comment: string | null }>;
+  /** The survey opens when the debrief reaches Penutup and stays open. */
+  surveyOpen: boolean;
 }
 
 export type RoomErrorCode =
@@ -228,6 +236,9 @@ export class Room {
       quiz: {},
       quizPostOpen: false,
       usedVariants: [],
+      telemetry: emptyTelemetry(),
+      survey: {},
+      surveyOpen: false,
     });
   }
 
@@ -236,7 +247,7 @@ export class Room {
     // Snapshots from the join-flow release predate the year loop: fill in what they lack.
     const legacyPhase: string = snapshot.phase;
     const s: RoomSnapshot = {
-      step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, pacts: [], years: [], finals: {}, results: null, debrief: null, practice: null, quiz: {}, quizPostOpen: false, usedVariants: [],
+      step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, pacts: [], years: [], finals: {}, results: null, debrief: null, practice: null, quiz: {}, quizPostOpen: false, usedVariants: [], telemetry: emptyTelemetry(), survey: {}, surveyOpen: false,
       ...structuredClone(snapshot),
       phase: legacyPhase === 'lobi' ? 'gabung' : snapshot.phase,
     };
@@ -300,6 +311,7 @@ export class Room {
     this.player(playerId);
     this.s.players = this.s.players.filter(p => p.id !== playerId);
     delete this.s.proposals[playerId];
+    this.s.telemetry.kicks++;
     this.touch(now);
   }
 
@@ -361,6 +373,7 @@ export class Room {
   }
 
   setTempo(tempo: Tempo, now: number): void {
+    if (tempo !== this.s.tempo) this.s.telemetry.tempoChanges++;
     this.s.tempo = tempo;
     this.touch(now);
   }
@@ -369,6 +382,7 @@ export class Room {
     if (this.s.phaseEndsAt === null) throw new RoomError('fase-salah');
     this.s.pausedMs = Math.max(0, this.s.phaseEndsAt - now);
     this.s.phaseEndsAt = null;
+    notePause(this.s.telemetry, now);
     this.touch(now);
   }
 
@@ -376,6 +390,7 @@ export class Room {
     if (this.s.pausedMs === null) throw new RoomError('fase-salah');
     this.s.phaseEndsAt = now + this.s.pausedMs;
     this.s.pausedMs = null;
+    noteResume(this.s.telemetry, now);
     this.touch(now);
   }
 
@@ -383,21 +398,25 @@ export class Room {
     if (this.s.pausedMs !== null) this.s.pausedMs += ADD_TIME_MS;
     else if (this.s.phaseEndsAt !== null) this.s.phaseEndsAt = Math.max(this.s.phaseEndsAt, now) + ADD_TIME_MS;
     else throw new RoomError('fase-salah');
+    noteAddTime(this.s.telemetry, ADD_TIME_MS);
     this.touch(now);
   }
 
   /** Advances a phase whose timer ran out; returns whether anything changed. */
   tick(now: number): boolean {
     if (this.s.phaseEndsAt !== null && this.s.phaseEndsAt <= now) {
-      this.next(now);
+      this.next(now, 'waktu');
       return true;
     }
     return false;
   }
 
-  /** Moves to the next phase or step: on the timer, or when the facilitator skips ahead. */
-  next(now: number): void {
+  /** Moves to the next phase or step: on the timer, when everyone is done, or when the facilitator skips ahead. */
+  next(now: number, by: StepEnd = 'fasilitator'): void {
     const s = this.s;
+    if (s.phase === 'gabung' || s.phase === 'selesai') throw new RoomError('fase-salah');
+    closeTiming(s.telemetry, by, now);
+    if (by === 'fasilitator') s.telemetry.skips++;
     if (s.phase === 'briefing') {
       this.begin(!!s.options.latihan, now);
       return;
@@ -442,6 +461,7 @@ export class Room {
   begin(practice: boolean, now: number): void {
     const s = this.s;
     this.requirePhase('briefing');
+    closeTiming(s.telemetry, 'fasilitator', now);
     s.phase = 'tahun';
     if (practice) {
       s.practice = { game: s.game!, pacts: s.pacts, years: s.years, usedVariants: s.usedVariants };
@@ -459,6 +479,7 @@ export class Room {
   endPractice(now: number): void {
     const s = this.s;
     if (!s.practice) throw new RoomError('fase-salah');
+    closeTiming(s.telemetry, 'fasilitator', now);
     s.game = s.practice.game;
     s.pacts = s.practice.pacts;
     s.years = s.practice.years;
@@ -478,8 +499,13 @@ export class Room {
   }
 
   private setTimer(ms: number, now: number): void {
-    this.s.pausedMs = null;
-    this.s.phaseEndsAt = now + Math.round(ms * TEMPO_FACTOR[this.s.tempo]);
+    const s = this.s;
+    const plannedMs = Math.round(ms * TEMPO_FACTOR[s.tempo]);
+    s.pausedMs = null;
+    s.phaseEndsAt = now + plannedMs;
+    closeTiming(s.telemetry, 'fasilitator', now); // only if a caller forgot; normally already closed
+    const phase = s.phase as 'briefing' | 'tahun' | 'tebak';
+    openTiming(s.telemetry, { phase, year: phase === 'briefing' || s.practice ? 0 : this.year, step: s.step, plannedMs }, now);
   }
 
   // ---------- team decisions ----------
@@ -524,7 +550,7 @@ export class Room {
     this.s.locked[role] = { decision, source };
     this.touch(now);
     if (this.s.step === 'pengesahan' && ROLES.every(r => this.s.locked[r])) {
-      this.next(now);
+      this.next(now, 'otomatis');
       return true;
     }
     return false;
@@ -691,7 +717,7 @@ export class Room {
     this.touch(now);
     // Teams played from the console do not hold up the class; the facilitator may still vote for them first.
     if (ROLES.every(r => this.s.finals[r] || this.s.offlineRoles.includes(r))) {
-      this.next(now);
+      this.next(now, 'otomatis');
       return true;
     }
     return false;
@@ -727,6 +753,7 @@ export class Room {
       if (patch.section === 'kuis' && !this.s.options.kuis) throw new RoomError('fase-salah');
       d.section = patch.section;
       if (patch.section === 'kuis') this.s.quizPostOpen = true;
+      if (patch.section === 'penutup') this.s.surveyOpen = true;
     }
     if (patch.quizReveal !== undefined) d.quizReveal = patch.quizReveal;
     if (patch.focus !== undefined) {
@@ -759,6 +786,36 @@ export class Room {
     }
     (this.s.quiz[playerId] ??= {})[stage] = [...answers];
     this.touch(now);
+  }
+
+  // ---------- survey ----------
+
+  /** Whether this player may answer the end-of-session survey now. */
+  surveyOpenFor(playerId: string): boolean {
+    return this.s.phase === 'selesai' && this.s.surveyOpen && !this.s.survey[playerId];
+  }
+
+  submitSurvey(playerId: string, answers: SurveyAnswers, comment: string | null, now: number): void {
+    this.player(playerId);
+    if (!this.surveyOpenFor(playerId)) throw new RoomError('fase-salah');
+    if (!validSurveyAnswers(answers)) throw new RoomError('keputusan-salah');
+    this.s.survey[playerId] = { answers: { seru: answers.seru, jelas: answers.jelas, belajar: answers.belajar }, comment: cleanComment(comment) };
+    this.touch(now);
+  }
+
+  // ---------- telemetry ----------
+
+  noteReconnect(kind: 'host' | 'player'): void {
+    if (kind === 'host') this.s.telemetry.hostReconnects++;
+    else this.s.telemetry.reconnects++;
+  }
+
+  noteError(code: string): void {
+    noteError(this.s.telemetry, code);
+  }
+
+  noteClientError(where: 'host' | 'phone', message: string): void {
+    noteClientError(this.s.telemetry, where, message);
   }
 
   // ---------- helpers ----------

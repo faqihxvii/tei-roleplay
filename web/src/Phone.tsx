@@ -6,6 +6,7 @@ import type { PlayerView } from '../../room/src/views';
 import { DecisionForm } from './DecisionForm';
 import { QuizForm, QuizMine } from './Quiz';
 import { Portrait } from './art';
+import { SurveyForm, SurveyThanks } from './Survey';
 import { useHaptics } from './haptics';
 import { Board, HoldButton, RoleMark, RoleName, Timer, roleProps } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
@@ -543,6 +544,13 @@ function ResultsScreen({ view, send }: { view: PlayerView; send: Send }) {
         </div>
       </section>
     );
+  }
+
+  if (d?.section === 'penutup') {
+    // A post quiz still open comes first; the survey follows.
+    if (view.myQuiz?.open === 'pasca') return <QuizForm key="pasca" quiz={view.myQuiz} send={send} />;
+    if (view.mySurvey?.open) return <SurveyForm survey={view.mySurvey} send={send} />;
+    if (view.mySurvey?.done) return <SurveyThanks />;
   }
 
   if (d?.section === 'kuis' && view.myQuiz) {

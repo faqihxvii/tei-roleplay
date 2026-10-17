@@ -1,6 +1,7 @@
 import type { PactTermId } from '../../engine/src/pacts';
 import { PACT_TERMS } from '../../engine/src/pacts';
 import { INDICATORS, ROLES, type AgendaId, type Decision, type Indicator, type Role } from '../../engine/src/types';
+import { SURVEY_COMMENT_MAX, validSurveyAnswers, type SurveyAnswers } from './content/survey';
 import { DEBRIEF_SECTIONS, type DebriefSection, type DebriefState } from './debrief';
 import type { AssignMode, FinalVote, QuizStage, RoomErrorCode, Tempo } from './room';
 import type { HostView, PlayerView } from './views';
@@ -33,7 +34,10 @@ export type ClientMessage =
   | { t: 'pactPropose'; to: Role; fromTerm: PactTermId; toTerm: PactTermId }
   | { t: 'pactRespond'; pactId: string; accept: boolean }
   | { t: 'final'; vote: FinalVote }
-  | { t: 'quiz'; stage: QuizStage; answers: number[] };
+  | { t: 'quiz'; stage: QuizStage; answers: number[] }
+  | { t: 'survey'; answers: SurveyAnswers; comment: string | null }
+  // any bound client: a script error for the anonymous telemetry
+  | { t: 'clientError'; message: string };
 
 export type ServerMessage =
   | { t: 'welcome'; as: 'host' }
@@ -46,7 +50,7 @@ export type ServerMessage =
 export const HOST_ONLY = new Set<ClientMessage['t']>([
   'assign', 'move', 'kick', 'startBriefing', 'next', 'begin', 'endPractice', 'pause', 'resume-clock', 'addTime', 'tempo', 'hostDecide', 'hostFinal', 'debrief',
 ]);
-export const PLAYER_ONLY = new Set<ClientMessage['t']>(['propose', 'lock', 'pactPropose', 'pactRespond', 'final', 'quiz']);
+export const PLAYER_ONLY = new Set<ClientMessage['t']>(['propose', 'lock', 'pactPropose', 'pactRespond', 'final', 'quiz', 'survey']);
 
 const CODE_RE = /^[A-Z]{4}$/;
 const TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;
@@ -185,6 +189,14 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       const vote = parseFinal(m.vote);
       return vote ? { t: 'final', vote } : null;
     }
+    case 'survey': {
+      if (!validSurveyAnswers(m.answers)) return null;
+      if (!(m.comment === null || (typeof m.comment === 'string' && m.comment.length <= SURVEY_COMMENT_MAX * 2))) return null;
+      const a = m.answers;
+      return { t: 'survey', answers: { seru: a.seru, jelas: a.jelas, belajar: a.belajar }, comment: m.comment as string | null };
+    }
+    case 'clientError':
+      return typeof m.message === 'string' && m.message.length <= 2000 ? { t: 'clientError', message: m.message } : null;
     default:
       return null;
   }

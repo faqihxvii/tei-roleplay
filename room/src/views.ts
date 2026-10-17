@@ -10,6 +10,8 @@ import { debriefView, history, type DebriefView, type YearHistory } from './debr
 import type { FrontPage } from './koran';
 import { causeRole, describeDecision, groupDeltas, isIndicator, OWN_RESOURCE, STAT_NAME, type CauseGroup } from './labels';
 import { QUIZ, quizScore } from './content/quiz';
+import { SURVEY } from './content/survey';
+import { sessionReport, surveySummary, type SessionReport, type SurveySummary } from './report';
 import { REAL_WORLD } from './content/realWorld';
 import { DECIDING_STEPS, MAX_PACTS_PER_TEAM, type QuizStage, type FinalVote, type LockSource, type PactRecord, type Room, type RoomOptions, type RoomPhase, type Tempo, type YearStep } from './room';
 
@@ -179,6 +181,10 @@ export interface HostView extends Common {
   history: YearHistory[] | null;
   /** After the game, for the teacher's CSV only (never drawn on the main screen): quiz rows per nickname. */
   quizRows: { nickname: string; role: Role | null; pra: number[] | null; pasca: number[] | null; praScore: number | null; pascaScore: number | null }[] | null;
+  /** End-of-session survey: the count for the main screen; scores and comments for the console. */
+  survey: (SurveySummary & { comments: string[] }) | null;
+  /** After the game: the anonymous session report for the facilitator's download (with comments). */
+  report: SessionReport | null;
   /** Console only: every team's decision form during the deciding steps. */
   console: { decisions: Partial<Record<Role, DecisionContext>>; agendaOptions: Record<Role, { id: string; name: string }[]> } | null;
 }
@@ -204,6 +210,8 @@ export interface PlayerView extends Common {
     review: { text: string; correct: string; explanation: string; pra: number | null; pasca: number | null; right: number }[] | null;
   } | null;
   lobby: { terms: Record<Role, { id: string; text: string }[]>; maxPacts: number } | null;
+  /** End-of-session survey, from the debrief's Penutup on. */
+  mySurvey: { open: boolean; done: boolean; questions: { id: string; text: string; low: string; high: string }[] } | null;
   final: { options: Record<Role, { id: string; name: string; description: string }[]>; mine: FinalVote | null } | null;
 }
 
@@ -391,7 +399,7 @@ function common(room: Room): Common {
 
 const pct = (n: number, d: number) => (d ? Math.round((n / d) * 100) : null);
 
-function quizSummary(room: Room): QuizSummary | null {
+export function quizSummary(room: Room): QuizSummary | null {
   const s = room.state;
   if (!s.options.kuis) return null;
   const entries = Object.values(s.quiz);
@@ -452,6 +460,10 @@ export function hostView(room: Room): HostView {
           return { nickname: p.nickname, role: p.role, pra: q.pra ?? null, pasca: q.pasca ?? null, praScore: q.pra ? quizScore(q.pra) : null, pascaScore: q.pasca ? quizScore(q.pasca) : null };
         })
       : null,
+    survey: s.phase === 'selesai' && s.surveyOpen
+      ? { ...surveySummary(room), comments: Object.values(s.survey).map(e => e.comment).filter((c): c is string => !!c) }
+      : null,
+    report: s.phase === 'selesai' ? sessionReport(room, { includeComments: true }) : null,
     console,
   };
 }
@@ -524,9 +536,14 @@ export function playerView(room: Room, playerId: string): PlayerView {
     };
   }
 
+  const mySurvey: PlayerView['mySurvey'] = s.phase === 'selesai' && s.surveyOpen
+    ? { open: room.surveyOpenFor(playerId), done: !!s.survey[playerId], questions: SURVEY.map(q => ({ ...q })) }
+    : null;
+
   return {
     ...base,
     myQuiz,
+    mySurvey,
     pacts: [...base.pacts, ...ownPacts],
     me: { id: player.id, nickname: player.nickname, role, isSpokesperson: !!role && spokesperson?.id === player.id },
     team,

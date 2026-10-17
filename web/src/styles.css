@@ -517,3 +517,19 @@ h1, h2, h3, .topbar-title, .crisis-title, .fp-headline, .question, .chain-title 
 .portrait.small { display: inline-block; width: 44px; height: 44px; vertical-align: middle; margin-right: 6px; }
 /* Caslon's long descenders need room under big headlines. */
 .ending h1, .crisis-title, .question, .real-world h1 { line-height: 1.08; padding-bottom: 0.08em; margin-bottom: 0.12em; }
+
+/* ---------- survey ---------- */
+.scale legend { line-height: 1.35; }
+.scale-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.scale-pick { position: relative; display: grid; place-items: center; min-height: 52px; border: 2px solid var(--ink); border-radius: var(--radius); background: var(--card); font-family: var(--font-num); font-size: 1.3rem; font-weight: 700; cursor: pointer; }
+.scale-pick input { position: absolute; opacity: 0; pointer-events: none; }
+.scale-pick.on { background: var(--ink); color: var(--paper); box-shadow: 3px 3px 0 var(--red); }
+.scale-pick:focus-within { outline: 3px solid var(--blue); outline-offset: 2px; }
+.scale-ends { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.8rem; color: var(--muted); }
+.field textarea { min-height: 84px; padding: 10px 14px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--card); font: inherit; font-weight: 400; resize: vertical; }
+.closing { max-width: 1000px; margin: clamp(24px, 6vh, 80px) auto 0; text-align: center; display: flex; flex-direction: column; gap: 20px; align-items: center; }
+.closing h1 { font-size: clamp(2.6rem, 6vw, 5rem); line-height: 1.08; padding-bottom: 0.08em; }
+.survey-table { width: 100%; border-collapse: collapse; background: var(--card); font-size: 0.95rem; }
+.survey-table th, .survey-table td { padding: 6px 8px; border-bottom: 1px solid var(--rule); text-align: left; }
+.survey-table td { font-family: var(--font-num); text-align: center; }
+.comments { margin: 8px 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }

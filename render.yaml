@@ -14,3 +14,8 @@ services:
         value: production
       - key: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD
         value: "1"
+      # Optional: free-plan disks are wiped on restart, so post session reports somewhere durable.
+      - key: TELEMETRY_WEBHOOK_URL
+        sync: false
+      - key: TELEMETRY_TOKEN
+        sync: false

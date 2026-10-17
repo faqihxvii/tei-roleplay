@@ -4,8 +4,9 @@ import { ROLES } from '../../engine/src/types';
 import type { DebriefSection } from '../../room/src/debrief';
 import type { ClientMessage } from '../../room/src/protocol';
 import type { HostView } from '../../room/src/views';
-import { exportDecisions, exportPacts, exportQuiz, exportTimeline } from './exports';
+import { exportDecisions, exportPacts, exportQuiz, exportReport, exportSurvey, exportTimeline } from './exports';
 import { QuizSection } from './Quiz';
+import { ClosingSection } from './Survey';
 import { ResultsBody, TimelineTable } from './MainScreens';
 import { RoleName, roleProps } from './shared';
 import { INDICATOR_LABEL, INDICATOR_ORDER, signed } from './text';
@@ -24,8 +25,9 @@ export const SECTION_LABEL: Record<DebriefSection, string> = {
   diskusi: 'Diskusi',
   duniaNyata: 'Di Dunia Nyata',
   kuis: 'Kuis akhir',
+  penutup: 'Penutup',
 };
-const ALL: DebriefSection[] = ['hasil', 'garisWaktu', 'sebab', 'agenda', 'diskusi', 'duniaNyata', 'kuis'];
+const ALL: DebriefSection[] = ['hasil', 'garisWaktu', 'sebab', 'agenda', 'diskusi', 'duniaNyata', 'kuis', 'penutup'];
 
 const bad = (stat: string, amount: number) => ((stat === 'harga' || stat === 'keresahan') ? amount > 0 : amount < 0);
 
@@ -62,6 +64,7 @@ export function DebriefScreen({ view, send, consoleOpen }: { view: HostView; sen
         {d.section === 'diskusi' && <DiscussionSection view={view} send={send} />}
         {d.section === 'duniaNyata' && <RealWorldSection view={view} />}
         {d.section === 'kuis' && <QuizSection view={view} send={send} />}
+        {d.section === 'penutup' && <ClosingSection view={view} />}
       </div>
       <nav className="debrief-nav" aria-label="Bagian debrief">
         <button className="btn" disabled={index === 0} onClick={() => go(ORDER[index - 1]!)} aria-label="Bagian sebelumnya">←</button>
@@ -84,6 +87,7 @@ const HINT: Record<DebriefSection, string> = {
   diskusi: 'Apa yang terjadi? Mengapa? Di mana ini terjadi di dunia nyata?',
   duniaNyata: 'Krisis di permainan ini pernah terjadi sungguhan.',
   kuis: 'Lima soal yang sama seperti sebelum bermain. Jawab di HP.',
+  penutup: 'Survei tiga pertanyaan di HP, anonim.',
 };
 
 function TimelineSection({ view, send }: { view: HostView; send: Send }) {
@@ -242,7 +246,10 @@ export function ExportPanel({ view }: { view: HostView }) {
         <button className="btn" onClick={() => exportDecisions(view)}>Keputusan per tim (CSV)</button>
         <button className="btn" onClick={() => exportPacts(view)}>Log pakta (CSV)</button>
         {view.quizRows && <button className="btn" onClick={() => exportQuiz(view)}>Kuis pra/pasca (CSV)</button>}
+        {view.survey && <button className="btn" onClick={() => exportSurvey(view)}>Survei (CSV)</button>}
+        {view.report && <button className="btn" onClick={() => exportReport(view)}>Laporan sesi (JSON)</button>}
       </div>
+      <p className="muted small">Laporan sesi berisi waktu tiap fase, keputusan per tim, pakta, kuis, dan survei, tanpa nama pemain. Kirimkan ke tim TEI setelah playtest.</p>
       <a className="btn primary" href={`/host?r=${view.code}&cetak=edisi`} target="_blank" rel="noopener">Edisi Khusus (cetak atau simpan PDF)</a>
     </section>
   );

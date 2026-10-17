@@ -25,6 +25,9 @@ TEI_BASE=http://<alamat-jaringan>:5173 npm run room:e2e -- <folder-tangkapan-lay
 | `ROOM_DATA_DIR` | `data/rooms` | Folder snapshot ruangan |
 | `CORS_ORIGIN` | kosong | Origin tambahan yang boleh membuka socket, dipisah koma |
 | `TRUST_PROXY` | 0 | Jumlah reverse proxy di depan server, untuk membaca IP klien |
+| `TELEMETRY_DIR` | `data/telemetry` | Folder laporan sesi anonim |
+| `TELEMETRY_WEBHOOK_URL` | kosong | Jika diisi, setiap laporan sesi juga dikirim (POST JSON) ke alamat ini. Berguna di hosting yang disknya terhapus saat restart, seperti paket gratis Render |
+| `TELEMETRY_TOKEN` | kosong | Jika diisi, `GET /api/telemetry` dengan `Authorization: Bearer <token>` mengembalikan semua laporan yang tersimpan |
 
 ## Modul
 
@@ -82,6 +85,8 @@ Setelah skor keluar, fasilitator memandu enam bagian dari layar utama (tombol di
 | Buka agenda | Agenda dibuka satu per satu, dibandingkan dengan tebakan tim lain | Apakah tebakan timnya benar |
 | Diskusi | Tiga putaran: Apa yang terjadi? Mengapa? Di dunia nyata? Pertanyaan diisi data sesi. | Pertanyaan yang sama plus satu pertanyaan refleksi per peran |
 | Di Dunia Nyata | Peristiwa nyata yang mirip krisis terberat sesi itu, dengan sumber | Teks dan tautan sumber |
+| Kuis akhir | Hasil kelas sebelum dan sesudah (jika kuis aktif) | Lima soal yang sama |
+| Penutup | Ucapan terima kasih dan jumlah pemain yang sudah mengisi survei | Survei tiga pertanyaan dan komentar opsional |
 
 ## Kuis pra/pasca
 
@@ -92,6 +97,28 @@ Opsi saat membuka ruangan. Lima soal skenario, satu per tujuan belajar GDD (fisk
 - Layar utama hanya menampilkan angka kelas: persentase benar per soal sebelum dan sesudah, rata-rata, dan kenaikan untuk pemain yang ikut keduanya (target GDD: +20 poin). Tidak ada nama atau skor perorangan.
 - Kunci jawaban dan penjelasan baru dikirim ke layar dan HP setelah fasilitator menekan "Tampilkan jawaban benar". HP menunjukkan skor sendiri (sebelum → sesudah) setelah kuis akhir dikirim.
 - Setiap pemain menjawab sekali per kuis. Ekspor CSV per nama panggilan tersedia di konsol untuk guru.
+
+## Survei dan telemetri
+
+Survei penutup terbuka di HP ketika debrief sampai di bagian Penutup. Isinya tiga pertanyaan skala 1–5 (keseruan, kejelasan aturan, membantu memahami) dan satu komentar opsional, maksimal 200 karakter. Kalau kuis akhir belum diisi, HP menampilkan kuis dulu.
+
+- **Layar utama** hanya menampilkan jumlah yang sudah mengisi, supaya kelas tidak terpengaruh.
+- **Konsol** menampilkan rata-rata, sebaran per skor, dan komentar. Target GDD: keseruan rata-rata minimal 4.
+
+Telemetri anonim dicatat sepanjang sesi:
+
+- waktu rencana dan waktu nyata tiap fase, berapa lama dijeda, tambahan waktu, dan cara fase berakhir (waktu habis, dilewati fasilitator, atau semua tim selesai lebih cepat);
+- jeda, tambah waktu, lewati fase, ganti tempo, pemain dikeluarkan;
+- sambung ulang HP dan layar utama;
+- aksi yang ditolak per kode galat, dan galat skrip dari browser (baris pertama saja, maksimal 20 pesan berbeda).
+
+Laporan sesi (`src/report.ts`) merangkum semua itu bersama keputusan per tim per tahun, pakta, hasil akhir, kuis, survei, dan tiga ukuran keberhasilan GDD: tim yang membuat pakta, keseruan, dan kenaikan kuis. **Laporan tidak memuat nama panggilan, ID pemain, atau token.** Tim hanya disebut dengan perannya, dan selama Tahun 0 laporan hanya mencakup negara asli.
+
+Laporan dikirim ke tiga tempat:
+
+1. File `data/telemetry/<id>.json`, ditulis ulang sepanjang sesi. Sesi yang berhenti di tengah tetap meninggalkan catatan waktunya.
+2. Webhook (`TELEMETRY_WEBHOOK_URL`): dikirim saat permainan selesai, lalu paling sering sekali per menit, dan sekali lagi saat ruangan dibersihkan. Penerima sebaiknya menyimpan berdasarkan `id`, karena sesi yang sama bisa terkirim beberapa kali.
+3. Konsol fasilitator: tombol "Laporan sesi (JSON)" dan "Survei (CSV)". Hanya versi fasilitator yang memuat komentar survei. Komentar tidak ikut ke file maupun webhook, karena isinya bisa saja menyebut nama.
 
 ## Art & audio
 

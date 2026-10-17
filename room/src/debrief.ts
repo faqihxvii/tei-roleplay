@@ -13,9 +13,9 @@ import type { RoomSnapshot } from './room';
 // agenda reveal against the guesses, three rounds of questions, and a real-world link.
 // Everything here is public: by the end of the game every decision has been revealed.
 
-export type DebriefSection = 'hasil' | 'garisWaktu' | 'sebab' | 'agenda' | 'diskusi' | 'duniaNyata' | 'kuis';
-/** 'kuis' only appears when the room plays with the pre/post quiz. */
-export const DEBRIEF_SECTIONS: DebriefSection[] = ['hasil', 'garisWaktu', 'sebab', 'agenda', 'diskusi', 'duniaNyata', 'kuis'];
+export type DebriefSection = 'hasil' | 'garisWaktu' | 'sebab' | 'agenda' | 'diskusi' | 'duniaNyata' | 'kuis' | 'penutup';
+/** 'kuis' only appears when the room plays with the pre/post quiz; 'penutup' (closing survey) always ends the debrief. */
+export const DEBRIEF_SECTIONS: DebriefSection[] = ['hasil', 'garisWaktu', 'sebab', 'agenda', 'diskusi', 'duniaNyata', 'kuis', 'penutup'];
 
 export interface DebriefState {
   section: DebriefSection;

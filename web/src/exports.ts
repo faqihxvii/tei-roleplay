@@ -12,8 +12,8 @@ const cell = (v: string | number) => {
 
 const csv = (rows: (string | number)[][]) => '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n');
 
-function download(name: string, content: string): void {
-  const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
+function download(name: string, content: string, type = 'text/csv;charset=utf-8'): void {
+  const url = URL.createObjectURL(new Blob([content], { type }));
   const a = document.createElement('a');
   a.href = url;
   a.download = name;
@@ -58,4 +58,20 @@ export function exportQuiz(view: HostView): void {
     ]);
   }
   download(`TEI-${view.code}-kuis.csv`, csv(rows));
+}
+
+/** Survey answers, one row per player but without nicknames; comments in a separate column. */
+export function exportSurvey(view: HostView): void {
+  const survey = view.survey!;
+  const rows: (string | number)[][] = [['Pertanyaan', 'Rata-rata', 'Skor 1', 'Skor 2', 'Skor 3', 'Skor 4', 'Skor 5']];
+  const labels: Record<string, string> = { seru: 'Keseruan', jelas: 'Kejelasan aturan', belajar: 'Membantu memahami' };
+  for (const id of Object.keys(survey.means) as (keyof typeof survey.means)[]) rows.push([labels[id]!, survey.means[id] ?? '', ...survey.dist[id]]);
+  rows.push([], ['Komentar']);
+  for (const comment of survey.comments) rows.push([comment]);
+  download(`TEI-${view.code}-survei.csv`, csv(rows));
+}
+
+/** The anonymous session report (room/src/report.ts), for the team's playtest analysis. */
+export function exportReport(view: HostView): void {
+  download(`TEI-${view.code}-laporan-sesi.json`, JSON.stringify(view.report, null, 2), 'application/json');
 }

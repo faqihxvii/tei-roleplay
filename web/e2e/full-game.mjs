@@ -181,9 +181,42 @@ await shot(host, 'debrief-7-kuis.png', true);
 await roleOf['Pemerintah'].locator('.review').waitFor();
 await shot(roleOf['Pemerintah'], 'phone-kuis-hasil.png', true);
 
-// Export: three CSV files and the printable Edisi Khusus.
+// Penutup: the closing survey on every phone; the main screen shows only the count.
+await host.keyboard.press('ArrowRight');
+await host.locator('.closing').waitFor();
+let score = 3;
+let commented = false;
+for (const p of Object.values(phones)) {
+  await p.locator('.survey').waitFor();
+  for (const fs of await p.locator('.survey fieldset').all()) await fs.locator('.scale-pick').nth(score - 1).click();
+  if (score === 5 && !commented) {
+    await p.locator('.survey textarea').fill('Lobi paling seru, tapi waktunya kurang.');
+    commented = true;
+  }
+  await p.getByRole('button', { name: 'Kirim' }).click();
+  await p.getByText('Jawabanmu terkirim.').waitFor();
+  score = Math.min(5, score + 1);
+}
+await host.locator('.closing .count').getByText(/4\s*dari 4/).waitFor();
+await shot(host, 'debrief-8-penutup.png', true);
+await shot(roleOf['Pengusaha'], 'phone-survei-terkirim.png', true);
+if (await host.locator('.closing').getByText('Lobi paling seru').count()) errors.push('komentar survei tampil di layar utama');
+
+// Export: CSV files, the session report and the printable Edisi Khusus.
 await host.keyboard.press('k');
-for (const name of ['Garis waktu (CSV)', 'Keputusan per tim (CSV)', 'Log pakta (CSV)', 'Kuis pra/pasca (CSV)']) {
+await host.locator('.survey-table').waitFor();
+await shot(host, 'console-survei.png');
+{
+  const [download] = await Promise.all([host.waitForEvent('download'), host.getByRole('button', { name: 'Laporan sesi (JSON)' }).click()]);
+  const { readFileSync } = await import('node:fs');
+  const report = JSON.parse(readFileSync(await download.path(), 'utf8'));
+  if (report.survey?.n !== 4) errors.push(`laporan: survei ${report.survey?.n}`);
+  if (!report.timings?.length) errors.push('laporan: tanpa catatan waktu');
+  if (!report.practicePlayed) errors.push('laporan: latihan tidak tercatat');
+  if (report.comments?.length !== 1) errors.push('laporan: komentar fasilitator hilang');
+  for (const name of ['Ani', 'Budi', 'Citra', 'Dodi', 'Eka', 'Fajar']) if (JSON.stringify(report).includes(`"${name}"`)) errors.push(`laporan memuat nama ${name}`);
+}
+for (const name of ['Garis waktu (CSV)', 'Keputusan per tim (CSV)', 'Log pakta (CSV)', 'Kuis pra/pasca (CSV)', 'Survei (CSV)']) {
   const [download] = await Promise.all([host.waitForEvent('download'), host.getByRole('button', { name }).click()]);
   const path = await download.path();
   const { readFileSync } = await import('node:fs');

@@ -6,6 +6,7 @@ import type { HostView } from '../../room/src/views';
 import { ExportPanel } from './Debrief';
 import { avSettings, useAudioStatus, useAvSettings } from './audio/settings';
 import { DecisionForm } from './DecisionForm';
+import { SurveyResults } from './Survey';
 import { RoleName } from './shared';
 
 // Facilitator console: an overlay on the host laptop, toggled with K (GDD, "UX/UI"). Full control of
@@ -121,6 +122,13 @@ export function Console({ view, send, onClose }: { view: HostView; send: Send; o
             {deciding && view.console.decisions[deciding] && !view.teams.find(t => t.role === deciding)!.locked && (
               <HostDecision key={deciding} role={deciding} view={view} send={send} onDone={() => setDeciding(null)} />
             )}
+          </section>
+        )}
+
+        {view.phase === 'selesai' && (
+          <section className="stack">
+            <h3 className="label">Survei peserta</h3>
+            <SurveyResults view={view} />
           </section>
         )}
 
