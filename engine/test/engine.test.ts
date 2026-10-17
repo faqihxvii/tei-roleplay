@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getCrisis } from '../src/content/crises';
 import { cloneState, createGame, INITIAL_STATS, resolveYear, RULES } from '../src/game';
-import { scoreGame } from '../src/scoring';
+import { checkPacts, emptyTally, tallyPacts } from '../src/pacts';
+import { isOknumIdentified, SCORE, scoreGame } from '../src/scoring';
 import { ROLES, type GameState, type Role, type YearDecisions } from '../src/types';
 
 const neutral = (): YearDecisions => ({
@@ -174,4 +175,36 @@ test('a collapse scores zero for everyone except the Oknum', () => {
   const results = scoreGame(state);
   assert.equal(results.find(r => r.role === 'pengusaha')!.score, 4);
   assert.ok(results.filter(r => r.role !== 'pengusaha').every(r => r.score === 0));
+});
+
+test('a pact is checked side by side against the revealed decisions', () => {
+  const decisions = { ...neutral(), buruh: { role: 'buruh' as const, cardId: null, upah: 1 as const, mogok: true } };
+  const [outcome] = checkPacts([{ a: 'usahaTidakPhk', b: 'buruhTidakMogok' }], decisions);
+  assert.deepEqual(outcome, { pact: { a: 'usahaTidakPhk', b: 'buruhTidakMogok' }, keptA: true, keptB: false });
+  const tally = tallyPacts([outcome!], emptyTally());
+  assert.deepEqual(tally.pengusaha, { kept: 1, broken: 0 });
+  assert.deepEqual(tally.buruh, { kept: 0, broken: 1 });
+});
+
+test('kept and broken pacts move the final score', () => {
+  const state = cloneState(setup());
+  state.ended = true; // a surviving country: pacts only score when it survives
+  const tally = emptyTally();
+  tally.pengusaha = { kept: 2, broken: 1 };
+  const base = scoreGame(state).find(r => r.role === 'pengusaha')!.score;
+  const withPacts = scoreGame(state, { pacts: tally }).find(r => r.role === 'pengusaha')!.score;
+  assert.equal(withPacts - base, 2 * SCORE.pactKept + SCORE.pactBroken);
+});
+
+test('a strict majority of votes unmasks the Oknum, who then loses', () => {
+  const state = cloneState(setup());
+  state.agendas = { ...state.agendas, buruh: 'oknum' };
+  state.ended = true;
+  state.collapses = ['bangkrut'];
+  const threeVotes = { pemerintah: 'buruh', bankSentral: 'buruh', pengusaha: 'buruh', buruh: 'pemerintah', masyarakat: 'pengusaha' } as const;
+  const twoVotes = { ...threeVotes, pengusaha: 'pemerintah' } as const;
+  assert.equal(isOknumIdentified(state, threeVotes), true);
+  assert.equal(isOknumIdentified(state, twoVotes), false);
+  assert.equal(scoreGame(state, { oknumIdentified: true }).find(r => r.role === 'buruh')!.score, 0);
+  assert.equal(scoreGame(state, { oknumIdentified: false }).find(r => r.role === 'buruh')!.score, SCORE.agenda);
 });

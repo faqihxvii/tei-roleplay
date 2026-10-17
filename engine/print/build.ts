@@ -7,6 +7,7 @@ import { AGENDAS } from '../src/content/agendas';
 import { CRISIS_CARDS } from '../src/content/crises';
 import { POLICY_CARDS } from '../src/content/policies';
 import { GLOBAL_SHOCK_YEAR, HAND_SIZE, INITIAL_BUNGA, INITIAL_STATS, MAX_YEARS, RULES } from '../src/game';
+import { PACT_TEMPLATES, PACT_TERMS } from '../src/pacts';
 import { SCORE } from '../src/scoring';
 import { ROLES, type CrisisCard, type PolicyCard, type Role, type Stat } from '../src/types';
 import {
@@ -240,6 +241,9 @@ function rulesPages(): string {
     <div>
       <h2>Membaca kartu</h2>
       <p>Kartu menunjukkan arah dan besarnya dampak: ▲ kecil, ▲▲ sedang, ▲▲▲ besar. Angka pastinya ada di Buku Fasilitator, karena hasil akhirnya bergantung pada keputusan tim lain.</p>
+      <h2>Contoh pakta</h2>
+      <ul class="pacts">${PACT_TEMPLATES.slice(0, 3).map(p => `<li>${e(PACT_TERMS[p.a].text)}, asalkan ${e(PACT_TERMS[p.b].text.charAt(0).toLowerCase() + PACT_TERMS[p.b].text.slice(1))}.</li>`).join('')}</ul>
+      <p class="small">Pakta boleh apa saja yang bisa dicek dari keputusan yang dibuka. Fasilitator mencatat dan menilainya.</p>
       <h2>Kolaps</h2>
       <p>Diperiksa sekali, di akhir tahun. Negara kolaps jika Kas 0 (Bangkrut), Kepercayaan 0 (Lengser), Keresahan 10 (Anarki), atau Harga 10 (Hiperinflasi). Jika negara kolaps, <b>semua tim kalah</b>, kecuali Oknum.</p>
       <h2>Akhir permainan</h2>
