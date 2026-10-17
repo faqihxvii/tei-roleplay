@@ -32,7 +32,25 @@ export function TopBar({ view, now }: { view: HostView; now: () => number }) {
         <span className="room-tag">Ruangan {view.code}</span>
         <Timer endsAt={view.phaseEndsAt} pausedMs={view.pausedMs} now={now} big />
       </div>
+      {view.phase === 'tahun' && view.step && <StoryRail step={view.step} />}
     </header>
+  );
+}
+
+const CHAPTERS = ['krisis', 'rapat', 'lobi', 'pengesahan', 'pengungkapan', 'koran'] as const;
+
+/** The year as six chapters, told left to right: where the class is in the story right now. */
+function StoryRail({ step }: { step: NonNullable<HostView['step']> }) {
+  const at = CHAPTERS.indexOf(step);
+  return (
+    <ol className="story-rail" aria-label={`Babak ${at + 1} dari ${CHAPTERS.length}`}>
+      {CHAPTERS.map((chapter, i) => (
+        <li key={chapter} className={i < at ? 'done' : i === at ? 'now' : ''} aria-current={i === at ? 'step' : undefined}>
+          <span className="story-num">{i + 1}</span>
+          <span className="story-name">{STEP_LABEL[chapter]}</span>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -46,24 +64,20 @@ export function YearScreen({ view, now }: { view: HostView; now: () => number })
       </>
     );
   }
+  // One focus per chapter. The country's numbers sit in a quiet strip at the foot of the screen;
+  // they take the stage only when decisions move them (Pengungkapan).
   return (
     <>
       <TopBar view={view} now={now} />
-      <div className="year-grid">
-        <div className="year-main">
-          {step === 'krisis' && <CrisisStage view={view} />}
-          {(step === 'rapat' || step === 'pengesahan') && <TeamsStage view={view} />}
-          {step === 'lobi' && <LobbyTable view={view} />}
-          {(step === 'rapat' || step === 'lobi' || step === 'pengesahan') && view.stats && <Diorama stats={view.stats} />}
-
-          {step === 'koran' && <FrontPageStage view={view} />}
-        </div>
-        {step !== 'koran' && view.stats && (
-          <aside className="year-side">
-            <Board stats={view.stats} />
-          </aside>
-        )}
+      <div className={`chapter chapter-${step}`}>
+        {step === 'krisis' && <CrisisStage view={view} />}
+        {step === 'rapat' && <TeamsStage view={view} />}
+        {step === 'rapat' && view.stats && <Diorama stats={view.stats} />}
+        {step === 'lobi' && <LobbyTable view={view} />}
+        {step === 'pengesahan' && <TeamsStage view={view} />}
+        {step === 'koran' && <FrontPageStage view={view} />}
       </div>
+      {step !== 'koran' && view.stats && <div className="country-strip"><Board stats={view.stats} strip /></div>}
     </>
   );
 }
@@ -77,34 +91,45 @@ function CrisisStage({ view }: { view: HostView }) {
         <p className="survey">Tahun pemilu. Hasil survei Kepercayaan Publik: <strong>{view.stats.kepercayaan}</strong> dari 10.</p>
       )}
       <div className="crisis-top">
-        <div className="stack">
+        <div className="crisis-story">
           <p className="kicker">Krisis tahun {view.year} · {crisis.category}</p>
           <h1 className="crisis-title">{crisis.title}</h1>
           <p className="crisis-narrative"><Glossed text={crisis.narrative} /></p>
+          <div className="crisis-effects">
+            {crisis.opening.map(o => (
+              <span key={o.stat} className={`chip-effect ${(o.stat === 'harga' || o.stat === 'keresahan') === o.amount > 0 ? 'bad' : 'good'}`}>
+                {INDICATOR_LABEL[o.stat as keyof typeof INDICATOR_LABEL]} {signed(o.amount)}
+              </span>
+            ))}
+          </div>
+          <Concepts list={crisis.concepts} />
         </div>
-        <CrisisArt id={crisis.id} className="crisis-art" />
+        <div className="crisis-side">
+          <CrisisArt id={crisis.id} className="crisis-art" />
+          <p className="crisis-rule"><span className="kicker">Aturan tahun ini</span><br />{crisis.ruleText}</p>
+          <p className="crisis-question"><span className="kicker">Pertanyaan untuk Rapat Tim</span><br /><Glossed text={crisis.question} /></p>
+          {view.year >= 3 && <p className="muted">Mulai tahun 3, krisis menghantam dua kali lebih keras.</p>}
+        </div>
       </div>
-      <div className="crisis-effects">
-        {crisis.opening.map(o => (
-          <span key={o.stat} className={`chip-effect ${(o.stat === 'harga' || o.stat === 'keresahan') === o.amount > 0 ? 'bad' : 'good'}`}>
-            {INDICATOR_LABEL[o.stat as keyof typeof INDICATOR_LABEL]} {signed(o.amount)}
-          </span>
-        ))}
-      </div>
-      <p className="crisis-rule"><span className="kicker">Aturan tahun ini</span><br />{crisis.ruleText}</p>
-      <p className="crisis-question"><span className="kicker">Pertanyaan untuk Rapat Tim</span><br /><Glossed text={crisis.question} /></p>
-      {view.year >= 3 && <p className="muted">Mulai tahun 3, krisis menghantam dua kali lebih keras.</p>}
-      <Concepts list={crisis.concepts} />
     </article>
   );
 }
 
 function TeamsStage({ view }: { view: HostView }) {
   const pengesahan = view.step === 'pengesahan';
+  const signed5 = view.teams.filter(t => t.locked).length;
   return (
     <>
+    {pengesahan && (
+      <div className="chapter-hero">
+        <h1 className="chapter-question">{signed5 === view.teams.length ? 'Semua tim sudah sah.' : `${signed5} dari ${view.teams.length} tim sudah sah.`}</h1>
+      </div>
+    )}
     {!pengesahan && view.crisis && (
-      <p className="crisis-question big"><span className="kicker">{view.crisis.title}</span><br />{view.crisis.question}</p>
+      <div className="chapter-hero">
+        <p className="chapter-context">{view.crisis.title}</p>
+        <h1 className="chapter-question">{view.crisis.question}</h1>
+      </div>
     )}
     <section className="team-status">
       {view.teams.map(team => (
@@ -130,8 +155,10 @@ function TeamsStage({ view }: { view: HostView }) {
 function LobbyTable({ view }: { view: HostView }) {
   return (
     <section className="lobby-table">
-      <h2>Meja Lobi</h2>
-      {!view.pacts.length && <p className="lead muted">Belum ada pakta. Datangi tim lain: siapa butuh apa darimu?</p>}
+      <div className="chapter-hero">
+        <h1 className="chapter-question">Meja Lobi</h1>
+        {!view.pacts.length && <p className="lead">Belum ada pakta. Datangi tim lain: siapa butuh apa darimu?</p>}
+      </div>
       <ul className="pact-cards">
         {view.pacts.map(p => (
           <li key={p.id} className="pact-card">
@@ -170,7 +197,7 @@ function RevealStage({ reveal }: { reveal: RevealView }) {
   const board = groupsShown >= reveal.groups.length ? reveal.statsAfter : running;
 
   return (
-    <div className="year-grid">
+    <div className="chapter chapter-pengungkapan">
       <section className="reveal">
         <div className="reveal-teams">
           {reveal.teams.map((team, i) => (

@@ -6,8 +6,11 @@
  *   2. Semantic tokens: what a value is for (background, text, brand, danger). Components use these.
  *   3. Component tokens: the few values that belong to one component (charts, diorama, roles).
  *
- * Typography is a closed set: four sizes for UI text, four for the projector, three families, four
- * weights, three trackings and four line heights. web/test/tokens.test.ts fails if a stylesheet uses
+ * Values follow economic.co.id's own stylesheet (its colour, type and spacing tokens), adapted where a
+ * classroom projector needs more: no text under 12px, and fluid display sizes for the back row.
+ *
+ * Typography is a closed set: seven sizes for UI text, four for the projector, three families, four
+ * weights, five trackings and four line heights. web/test/tokens.test.ts fails if a stylesheet uses
  * a raw size, weight, tracking or line height instead of one of these.
  */
 :root {
@@ -17,16 +20,19 @@
   --tei-red-950: #5c120e;
   --tei-pink-300: #f5a99d;
   --tei-pink-100: #fde4df;
-  --neutral-0: #ffffff;
+  --neutral-0: #fffefa;     /* the site's surface: a warm white, never pure */
   --neutral-50: #fdfcf9;
-  --neutral-100: #f7f6f2;
-  --neutral-150: #f2eee7;
-  --neutral-200: #e2ddd3;
-  --neutral-300: #cfc9bf;
+  --neutral-100: #f7f6f2;   /* canvas */
+  --neutral-150: #f2eee7;   /* light action */
+  --neutral-175: #eeece6;   /* soft surface */
+  --neutral-200: #d9d7d0;   /* lines */
+  --neutral-300: #d7d4cc;   /* muted text on dark */
   --neutral-400: #b8b3a8;
-  --neutral-600: #5b5852;
-  --neutral-900: #171717;
-  --neutral-950: #1a1a18;
+  --neutral-600: #5c5b56;   /* muted text */
+  --neutral-700: #4d4c47;   /* body copy */
+  --neutral-900: #171717;   /* ink */
+  --neutral-950: #191918;   /* inverse surface */
+  --neutral-inverse-text: #f8f7f3;
   --green-700: #166534;
   --amber-800: #8a4b0f;
 
@@ -34,11 +40,13 @@
   --color-bg: var(--neutral-100);              /* page background, warm off-white */
   --color-surface: var(--neutral-0);           /* cards, inputs */
   --color-surface-sunken: var(--neutral-150);  /* secondary buttons, gauge tracks, closed cards */
+  --color-surface-soft: var(--neutral-175);    /* callouts inside a card */
   --color-surface-paper: var(--neutral-50);    /* Harian TEI pages */
   --color-inverse: var(--neutral-950);         /* dark panels */
   --color-text: var(--neutral-900);
   --color-text-muted: var(--neutral-600);
-  --color-text-inverse: var(--neutral-0);
+  --color-text-copy: var(--neutral-700);       /* running text under a heading: one step softer than ink */
+  --color-text-inverse: var(--neutral-inverse-text);
   --color-text-inverse-muted: var(--neutral-300);
   --color-text-placeholder: var(--neutral-400);
   --color-border: var(--neutral-200);
@@ -53,7 +61,9 @@
 
   /* ---------- 2. Typography ---------- */
   --font-sans: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  --font-serif: 'Instrument Serif', 'Times New Roman', Georgia, serif;   /* Harian TEI, quotes, one accent word */
+  /* The site's editorial serif is Georgia. Gelasio is drawn to Georgia's metrics and self-hosted, so
+     Android phones (which have no Georgia) see the same letters. */
+  --font-serif: 'Gelasio Variable', 'Gelasio', Georgia, 'Times New Roman', serif;   /* Harian TEI, quotes, one accent word */
   --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;  /* numbers */
 
   /* UI sizes: phones, console, small print on the main screen. */
@@ -74,20 +84,20 @@
   --text-rel-xs: 0.5em;
 
   --weight-regular: 400;
-  --weight-semibold: 600;   /* labels, buttons, emphasis in running text */
-  --weight-bold: 700;       /* names, numbers */
-  --weight-black: 800;      /* headings */
+  --weight-semibold: 650;   /* labels, navigation, emphasis in running text (the site's UI weight) */
+  --weight-bold: 700;       /* buttons, names, numbers */
+  --weight-black: 760;      /* headings, as on the site (730 to 760) */
 
-  --tracking-display: -0.035em;   /* headings, as on economic.co.id */
-  --tracking-tight: -0.02em;      /* large body text */
+  --tracking-display: -0.055em;   /* headings, as on economic.co.id */
+  --tracking-tight: -0.02em;      /* large body text, card titles */
   --tracking-normal: 0;
-  --tracking-caps: 0.1em;         /* small capitals: kickers, labels, room code */
+  --tracking-caps: 0.12em;        /* small capitals: labels, room code */
   --tracking-code: 0.3em;         /* the room-code input */
 
   --leading-none: 1;
-  --leading-display: 1.05;
+  --leading-display: 1.04;
   --leading-snug: 1.25;
-  --leading-body: 1.45;
+  --leading-body: 1.6;
 
   /* ---------- 2. Space, shape, motion ---------- */
   --space-1: 4px;
@@ -98,16 +108,20 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-10: 40px;
-  --radius: 0;            /* the brand is square */
+  --radius: 0;            /* editorial surfaces are square */
+  --radius-control: 2px;  /* buttons, inputs and toggles get the site's 2px */
+  --tap-target: 44px;     /* the smallest thing a finger presses */
   --border-hairline: 1px solid var(--color-border);
   --border-strong: 1px solid var(--color-text);
   --rule-brand: 3px;      /* the short red rule on top of cards */
-  --focus-ring: 3px solid var(--color-brand-strong);
-  --shadow-panel: -4px 0 20px rgba(0, 0, 0, 0.15);   /* the console drawer, the only raised surface */
+  --focus-ring: 3px solid var(--color-brand);
+  --focus-offset: 4px;
+  --shadow-panel: 0 1rem 2rem rgba(0, 0, 0, 0.1);   /* the console drawer, the only raised surface (the site's menu shadow) */
   --overlay-press: rgba(0, 0, 0, 0.28);              /* hold-to-confirm fill */
-  --duration-fast: 160ms;
-  --duration-base: 400ms;
+  --duration-fast: 180ms;   /* hover, press */
+  --duration-base: 520ms;   /* entrances */
   --duration-slow: 700ms;
+  --ease-standard: cubic-bezier(0.2, 0.65, 0.3, 1);
 
   /* ---------- 3. Component tokens ---------- */
   /* SVG text is in drawing units, so it has its own small scale. */

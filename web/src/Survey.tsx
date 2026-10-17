@@ -67,7 +67,6 @@ export function ClosingSection({ view }: { view: HostView }) {
   const survey = view.survey;
   return (
     <section className="closing">
-      <p className="kicker">Harian TEI · edisi terakhir</p>
       <h1>Terima kasih sudah memerintah <span className="accent-serif">negara ini.</span></h1>
       <p className="lead">Isi survei singkat di HP: tiga pertanyaan, kurang dari satu menit, tanpa nama.</p>
       {survey && <p className="count"><strong>{survey.n}</strong> dari {survey.eligible} pemain sudah mengisi</p>}

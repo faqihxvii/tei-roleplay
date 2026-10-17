@@ -34,9 +34,9 @@ export function RoleName({ role }: { role: Role }) {
 }
 
 /** The public board: five indicators on 0–10 with their danger zones, plus the policy rate. */
-export function Board({ stats, compact = false, changes }: { stats: PublicStats; compact?: boolean; changes?: Partial<Record<keyof PublicStats, number>> }) {
+export function Board({ stats, compact = false, strip = false, changes }: { stats: PublicStats; compact?: boolean; strip?: boolean; changes?: Partial<Record<keyof PublicStats, number>> }) {
   return (
-    <section className={`board${compact ? ' compact' : ''}`} aria-label="Papan Negara">
+    <section className={`board${compact || strip ? ' compact' : ''}${strip ? ' strip' : ''}`} aria-label="Papan Negara">
       {INDICATOR_ORDER.map(stat => {
         const value = stats[stat];
         const zone = zoneOf(stat, value);

@@ -3,8 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { Phone } from './Phone';
 import '@fontsource-variable/geist/wght.css';
 import '@fontsource-variable/geist-mono/wght.css';
-import '@fontsource/instrument-serif/latin-400.css';
-import '@fontsource/instrument-serif/latin-400-italic.css';
+import '@fontsource-variable/gelasio/wght.css';
+import '@fontsource-variable/gelasio/wght-italic.css';
 import './styles/tokens.css';
 import './styles.css';
 
