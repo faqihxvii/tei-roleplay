@@ -60,7 +60,6 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
     <main className="host center">
       <header className="masthead">
         <TeiLogo />
-        <p className="kicker">Halaman fasilitator</p>
         <h1>Buka ruangan <span className="accent-serif">baru.</span></h1>
       </header>
       <div className="create-cast" aria-hidden="true">

@@ -152,7 +152,7 @@ Penerima menolak kiriman tanpa kunci yang benar dan isi yang bukan laporan TEI. 
 
 Tampilan mengikuti merek TEI (economic.co.id dan feed Instagram @theeconomicinfluence). Rinciannya ada di [`docs/art-audio.md`](../docs/art-audio.md).
 
-- **Merek:** logo TEI di setiap layar, merah TEI `#c30700` di atas putih gading, judul Geist yang rapat, Instrument Serif untuk Harian TEI dan aksen miring, angka Geist Mono, dan sudut tegas. Judul Harian TEI ditulis seperti sampul feed: klaim tebal merah, lalu penjelasan hitam.
+- **Merek:** logo TEI di setiap layar, merah TEI `#c30700` di atas putih gading, judul Geist yang rapat, Georgia (lewat Gelasio) untuk Harian TEI dan aksen miring, seperti serif editorial di situs TEI, angka Geist Mono, dan sudut tegas. Judul Harian TEI ditulis seperti sampul feed: klaim tebal merah, lalu penjelasan hitam.
 - **Warna peran:** bisa dibedakan oleh pengidap buta warna, dan selalu disertai pola dan kode huruf.
 - **Gerak:** setiap gerak punya makna (cap, kertas, tinta), dengan versi kurangi gerak.
 

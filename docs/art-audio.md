@@ -14,7 +14,7 @@ Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon, ikon generik seb
 
 ### Token
 
-Semua nilai desain ada di satu file: `web/src/styles/tokens.css`. Isinya tiga lapis, dan setiap lapis hanya membaca lapis di atasnya:
+Semua nilai desain ada di satu file: `web/src/styles/tokens.css`. Nilainya diambil dari stylesheet economic.co.id sendiri, lalu disesuaikan untuk proyektor kelas: tidak ada teks di bawah 12 px, dan ukuran display mengikuti lebar layar. Isinya tiga lapis, dan setiap lapis hanya membaca lapis di atasnya:
 
 1. **Primitif:** palet mentah merek (`--tei-red-600`, `--neutral-100`, …). Komponen tidak boleh memakainya langsung.
 2. **Semantik:** kegunaan sebuah nilai. Lapis ini yang dipakai komponen.
@@ -25,13 +25,13 @@ Semua nilai desain ada di satu file: `web/src/styles/tokens.css`. Isinya tiga la
 | Token semantik | Nilai | Dipakai untuk |
 | --- | --- | --- |
 | `--color-bg` | `#f7f6f2` | Latar, putih gading seperti economic.co.id |
-| `--color-surface` | `#ffffff` | Kartu dan isian, dengan garis `--color-border` (`#e2ddd3`) |
+| `--color-surface` | `#fffefa` | Kartu dan isian, dengan garis `--color-border` (`#d9d7d0`) |
 | `--color-surface-sunken` | `#f2eee7` | Tombol sekunder, jalur papan indikator |
 | `--color-surface-paper` | `#fdfcf9` | Halaman Harian TEI |
-| `--color-inverse` | `#1a1a18` | Panel gelap (agenda rahasia) |
-| `--color-text` / `--color-text-muted` | `#171717` / `#5b5852` | Teks utama dan teks pendamping |
-| `--color-brand` | `#c30700` | Merah TEI: logo, tombol utama, judul koran, krisis |
-| `--color-brand-strong` | `#8d1b16` | Kicker, hover tombol, cincin fokus keyboard |
+| `--color-inverse` | `#191918` | Panel gelap (agenda rahasia) |
+| `--color-text` / `--color-text-copy` / `--color-text-muted` | `#171717` / `#4d4c47` / `#5c5b56` | Judul, paragraf di bawah judul, teks pendamping |
+| `--color-brand` | `#c30700` | Merah TEI: logo, tombol utama, judul koran, krisis, cincin fokus keyboard |
+| `--color-brand-strong` | `#8d1b16` | Label kapital, hover tombol |
 | `--color-brand-soft` | `#f5a99d` | Aksen di atas latar gelap, busur di sudut kartu krisis |
 | `--color-highlight` | `#fde4df` | Pertanyaan tim, kartu pemandu |
 | `--color-success` / `--color-warning` / `--color-danger` | hijau, cokelat, merah TEI | Naik-turun angka, zona bahaya |
@@ -40,8 +40,9 @@ Komponen pokok:
 
 - **Logo** (`TeiLogo` di `web/src/shared.tsx`): kotak merah bertuliskan TEI, ditambah nama "The / Economic / Influence" dalam tiga baris. Ini rekonstruksi dari logo economic.co.id dengan huruf Geist. Kalau file SVG resmi tersedia, simpan di `web/public/brand/` dan ganti isi komponennya. Favicon ada di `web/public/favicon.svg`.
 - **Kartu:** putih, garis 1 px, dan garis merah pendek di pojok kiri atas. Tidak ada bayangan.
-- **Kicker:** huruf kapital kecil berjarak lebar, warna merah tua.
-- **Aksen serif:** satu kata miring Instrument Serif berwarna merah (`.accent-serif`), seperti "follow." di situs. Pakai hemat, paling banyak satu per layar.
+- **Label:** huruf kapital kecil berjarak lebar, warna merah tua, hanya untuk label yang membawa informasi (kategori krisis, nama kotak). Tidak ada label hiasan di atas judul.
+- **Kotak penjelas** (aturan tahun ini, pertanyaan tim, kartu pemandu): garis atas 2 px, bukan garis tebal di sisi kiri.
+- **Aksen serif:** satu kata miring Gelasio (Georgia) berwarna merah (`.accent-serif`), seperti "follow." di situs. Pakai hemat, paling banyak satu per layar.
 - **Garis coret tangan** (`.swoosh`): garis bawah merah untuk satu kata penting, seperti di sampul feed.
 
 ### Huruf
@@ -51,14 +52,14 @@ Semua font di-host sendiri lewat npm, sehingga tidak ada permintaan ke layanan l
 | Token | Font | Dipakai untuk |
 | --- | --- | --- |
 | `--font-sans` | Geist (variable) | Judul, teks isi, dan UI |
-| `--font-serif` | Instrument Serif | Nama koran, kutipan warga, satu kata aksen miring |
+| `--font-serif` | Gelasio (variable), dengan cadangan Georgia | Nama koran, kutipan warga, satu kata aksen miring. Serif editorial situs TEI adalah Georgia; Gelasio digambar dengan ukuran yang sama dan di-host sendiri, karena HP Android tidak punya Georgia. |
 | `--font-mono` | Geist Mono (variable) | Angka: timer, papan, skor, kode ruangan |
 
 Skala hurufnya tertutup. Ukuran baru harus masuk ke token lebih dulu, dengan nama yang menjelaskan kegunaannya.
 
 | Token | Ukuran | Dipakai untuk |
 | --- | --- | --- |
-| `--text-2xs` | 12 px | Kicker, label, tag |
+| `--text-2xs` | 12 px | Label, tag |
 | `--text-xs` | 14 px | Keterangan dan teks pendamping |
 | `--text-sm` | 16 px | Teks isi |
 | `--text-md` | 20 px | Teks pembuka, daftar di layar utama |
@@ -72,9 +73,10 @@ Skala hurufnya tertutup. Ukuran baru harus masuk ke token lebih dulu, dengan nam
 
 Ukuran display mengikuti lebar layar (`clamp`), supaya tetap terbaca dari bangku belakang. Pilihan lainnya juga sedikit:
 
-- **Bobot:** `--weight-regular` 400, `--weight-semibold` 600, `--weight-bold` 700, `--weight-black` 800 (judul).
-- **Jarak huruf:** `--tracking-display` −0,035 em (judul), `--tracking-tight` −0,02 em, `--tracking-caps` 0,1 em (huruf kapital kecil), `--tracking-code` 0,3 em (isian kode ruangan).
-- **Tinggi baris:** `--leading-display` 1,05, `--leading-snug` 1,25, `--leading-body` 1,45.
+- **Bobot:** `--weight-regular` 400, `--weight-semibold` 650, `--weight-bold` 700, `--weight-black` 760 (judul), sama dengan situs TEI.
+- **Jarak huruf:** `--tracking-display` −0,055 em (judul, seperti situs TEI), `--tracking-tight` −0,02 em, `--tracking-caps` 0,12 em (huruf kapital kecil), `--tracking-code` 0,3 em (isian kode ruangan).
+- **Tinggi baris:** `--leading-display` 1,04, `--leading-snug` 1,25, `--leading-body` 1,6.
+- **Sudut dan sentuhan:** kartu dan koran bersudut tegas; tombol, isian, dan pilihan memakai sudut 2 px (`--radius-control`). Target sentuh minimal 44 px (`--tap-target`).
 
 Hanya subset latin yang diunduh browser. Muatan awal HP (JS, CSS, dan font) sekitar 170 KB, masih di dalam anggaran 300 KB.
 
