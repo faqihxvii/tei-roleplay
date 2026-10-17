@@ -82,6 +82,7 @@ function crisisCard(card: CrisisCard): string {
       <div class="now">Saat dibuka</div><ul class="fx">${fx}</ul>
       <div class="esc">Tahun ${RULES.eskalasiKrisisMulaiTahun}–${MAX_YEARS}: angka di atas × 2</div>
       <div class="rule"><b>Aturan tahun ini</b>${e(card.ruleText)}</div>
+      <div class="question"><b>Bahas di tim</b>${e(card.question)}</div>
       ${card.category === 'global' ? '<div class="note">Kartu Global: selalu dipakai di tahun 3.</div>' : ''}
     </div>
   </div>`;
@@ -291,14 +292,14 @@ function facilitatorPages(): string {
     <p class="small">Batas sumber daya pribadi: Solidaritas dan Kredibilitas 0–5, Tabungan 0–10, Modal minimal 0. Sumber data: engine TEI ${VERSION}.</p>`;
 
   const cardRows = POLICY_CARDS.map(card => `<tr><td class="code">${cardCode.get(card.id)}</td><td>${e(card.name)}</td><td>${e(exactEffects(card.effects))}</td><td>${e((card.delayed ?? []).map(d => exactEffects(d.effects)).join('; ') || '—')}</td><td>${e(card.requires ? exactEffects(card.requires).replace(/\+/g, '≥ ') : '—')}</td><td>${e(card.tags.map(t => TAG_LABEL[t]).filter(Boolean).join(', ') || '—')}</td></tr>`).join('');
-  const crisisRows = CRISIS_CARDS.map(card => `<tr><td class="code">${cardCode.get(card.id)}</td><td>${e(card.title)}</td><td>${e(exactEffects(card.effects))}</td><td>${e(card.ruleText)}</td></tr>`).join('');
+  const crisisRows = CRISIS_CARDS.map(card => `<tr><td class="code">${cardCode.get(card.id)}</td><td><b>${e(card.title)}</b><br><span class="narrative">${e(card.narrative)}</span></td><td>${e(exactEffects(card.effects))}</td><td>${e(card.ruleText)}</td></tr>`).join('');
   const agendaRows = AGENDAS.map(a => `<tr><td>${e(a.role ? ROLE_LABEL[a.role] : 'Oknum')}</td><td>${e(a.name)}</td><td>${e(a.description)}</td></tr>`).join('');
   const logRows = Array.from({ length: MAX_YEARS + 1 }, (_, y) => `<tr><th>${y === 0 ? 'Awal' : `Tahun ${y}`}</th>${'<td></td>'.repeat(11)}</tr>`).join('');
   const s = INITIAL_STATS;
 
   return page(steps) +
     page(`<h1>Angka Pasti Kartu Kebijakan</h1><table class="ref"><tr><th>Kode</th><th>Kartu</th><th>Efek sekarang</th><th>Tahun depan</th><th>Syarat</th><th>Tag</th></tr>${cardRows}</table>`) +
-    page(`<h1>Kartu Krisis</h1><table class="ref"><tr><th>Kode</th><th>Krisis</th><th>Efek saat dibuka (×2 mulai tahun ${RULES.eskalasiKrisisMulaiTahun})</th><th>Aturan tahun ini</th></tr>${crisisRows}</table>
+    page(`<h1>Kartu Krisis</h1><table class="ref"><tr><th>Kode</th><th>Krisis dan narasi (bacakan saat kartu dibuka)</th><th>Efek saat dibuka (×2 mulai tahun ${RULES.eskalasiKrisisMulaiTahun})</th><th>Aturan tahun ini</th></tr>${crisisRows}</table>
       <h1>Agenda</h1><table class="ref"><tr><th>Peran</th><th>Agenda</th><th>Syarat tercapai</th></tr>${agendaRows}</table>`) +
     page(`<h1>Catatan Sesi</h1>
       <p class="small">Nilai awal: Harga ${s.harga}, Kerja ${s.kerja}, Kas ${s.kas}, Kepercayaan ${s.kepercayaan}, Keresahan ${s.keresahan}, Bunga ${INITIAL_BUNGA}, Modal ${s.modal}, Solidaritas ${s.solidaritas}, Kredibilitas ${s.kredibilitas}, Tabungan ${s.tabungan}.</p>
@@ -331,7 +332,7 @@ function coverPage(): string {
         <tr><td>Kartu Krisis</td><td>${CRISIS_CARDS.length} kartu, ${crisisPages} halaman</td><td>1 set, potong</td></tr>
         <tr><td>Kartu Agenda</td><td>${AGENDAS.length} kartu, ${agendaPages} halaman</td><td>1 set, potong</td></tr>
         <tr><td>Lembar Keputusan Tim</td><td>1 halaman</td><td>5 (satu per tim)</td></tr>
-        <tr><td>Buku Fasilitator</td><td>5 halaman</td><td>1, jangan dibagikan</td></tr>
+        <tr><td>Buku Fasilitator</td><td>6 halaman</td><td>1, jangan dibagikan</td></tr>
       </table>
       <h2>Bahan tambahan</h2>
       <p>1 dadu enam sisi · ±40 token kecil (koin, kancing, atau kertas) · 5 amplop untuk agenda · papan tulis atau kertas plano untuk mencatat pakta · timer.</p>
@@ -397,6 +398,9 @@ table { border-collapse: collapse; width: 100%; }
 .card.crisis h3 { font-size: 14pt; }
 .card .esc { font: 700 7pt Inter; color: #c91212; margin: 1mm 0; }
 .card .rule { font-size: 8pt; border-top: 0.6mm solid #111; padding-top: 1.5mm; margin-top: auto; }
+.card .question { font-size: 7.5pt; margin-top: 1.5mm; padding-top: 1.2mm; border-top: 0.3mm dashed #999; }
+.card .question b { display: block; font-size: 6.5pt; text-transform: uppercase; letter-spacing: .08em; color: #666; }
+.narrative { font-size: 8pt; color: #333; }
 .card .rule b { display: block; font-size: 6.5pt; text-transform: uppercase; letter-spacing: .08em; color: #666; }
 .card.agenda .body { align-items: center; text-align: center; justify-content: center; }
 .card.agenda .seal { width: 14mm; height: 14mm; border-radius: 50%; border: 0.6mm solid var(--c); color: var(--c); font: 700 18pt 'Bitstream Charter', serif; display: flex; align-items: center; justify-content: center; margin-bottom: 3mm; }

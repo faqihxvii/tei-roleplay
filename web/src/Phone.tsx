@@ -261,8 +261,14 @@ function CrisisCard({ view }: { view: PlayerView }) {
       {view.pemilu && view.stats && <p className="badge">Tahun pemilu. Survei Kepercayaan Publik: {view.stats.kepercayaan} dari 10.</p>}
       <p className="kicker">Krisis tahun {view.year}</p>
       <h2>{crisis.title}</h2>
-      <p>{crisis.ruleText}</p>
-      <p className="muted small">Lihat layar utama. Rapat Tim dimulai sebentar lagi.</p>
+      <p>{crisis.narrative}</p>
+      <p><strong>Aturan tahun ini:</strong> {crisis.ruleText}</p>
+      <p className="crisis-question"><span className="kicker">Bahas di timmu</span><br />{crisis.question}</p>
+      {crisis.didYouKnow && (
+        <p className="muted small">
+          Tahukah Anda? Krisis seperti ini pernah terjadi: {crisis.didYouKnow.title} ({crisis.didYouKnow.source}). Ceritanya dibahas di akhir permainan.
+        </p>
+      )}
     </article>
   );
 }
@@ -306,6 +312,7 @@ function DecideScreen({ view, send }: { view: PlayerView; send: Send }) {
         <PactPanel view={view} send={send} />
       ) : (
         <>
+          {view.step === 'rapat' && view.crisis && <p className="crisis-question"><span className="kicker">Bahas di timmu</span><br />{view.crisis.question}</p>}
           <p className="muted small">
             {ctx.proposers} dari {ctx.members} anggota sudah memilih. Angka di samping pilihan adalah jumlah suara.
             {view.step === 'pengesahan' ? ' Jika Juru Bicara tidak mengesahkan sampai waktu habis, pilihan terbanyak yang dipakai.' : ''}

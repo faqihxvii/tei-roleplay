@@ -53,8 +53,8 @@ TEI_BASE=http://<alamat-jaringan>:5173 npm run room:e2e -- <folder-tangkapan-lay
 
 | Fase | Durasi bawaan | Yang terjadi |
 | --- | --- | --- |
-| Krisis | 45 detik | Kartu krisis dan efeknya di layar utama. Tahun 5 dibuka dengan survei Kepercayaan. |
-| Rapat Tim | 75 detik | Setiap anggota memilih kartu dan tuas di HP. Jumlah suara tampil di semua HP tim. |
+| Krisis | 45 detik | Kartu krisis di layar utama: judul, narasi (≤ 60 kata), efek, aturan tahun ini, pertanyaan tim, dan tag konsep. HP menampilkan hal yang sama plus "Tahukah Anda" (peristiwa nyata serupa, hanya judul dan sumber). Tahun 5 dibuka dengan survei Kepercayaan. |
+| Rapat Tim | 75 detik | Pertanyaan tim kartu krisis tampil besar di layar utama dan di atas formulir HP. Setiap anggota memilih kartu dan tuas; jumlah suara tampil di semua HP tim. |
 | Lobi Terbuka | 120 detik | Juru Bicara mengajukan dan menjawab pakta. Pakta yang disepakati tampil di Meja Lobi. Tawaran yang belum dijawab kedaluwarsa. |
 | Pengesahan | 45 detik | Juru Bicara menahan SAH 1 detik. Jika waktu habis, pilihan terbanyak per bagian yang dipakai (seri: pilihan yang masuk lebih dulu). Fase berakhir begitu kelima tim sah. |
 | Pengungkapan | 60 detik | Keputusan dibuka satu per satu (dampak terbesar terakhir), lalu setiap perubahan indikator dengan penyebabnya, lalu pakta ditepati atau robek. |
@@ -97,6 +97,5 @@ Ekspor di konsol (K): tiga CSV (garis waktu, keputusan per tim, log pakta; pemis
 
 ## Belum dibuat
 
-- Narasi, pertanyaan tim, dan "Tahukah Anda" di kartu krisis (belum ada di data engine).
 - Teks Harian TEI (8 varian per tag, 20 kombinasi) perlu ditinjau editor ekonomi dan pembaca sensitivitas sebelum pilot.
 - Audio, animasi Rive, dan art direction final.

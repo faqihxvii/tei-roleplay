@@ -68,6 +68,7 @@ function CrisisStage({ view }: { view: HostView }) {
       )}
       <p className="kicker">Krisis tahun {view.year} · {crisis.category}</p>
       <h1 className="crisis-title">{crisis.title}</h1>
+      <p className="crisis-narrative">{crisis.narrative}</p>
       <div className="crisis-effects">
         {crisis.opening.map(o => (
           <span key={o.stat} className={`chip-effect ${(o.stat === 'harga' || o.stat === 'keresahan') === o.amount > 0 ? 'bad' : 'good'}`}>
@@ -76,7 +77,9 @@ function CrisisStage({ view }: { view: HostView }) {
         ))}
       </div>
       <p className="crisis-rule"><span className="kicker">Aturan tahun ini</span><br />{crisis.ruleText}</p>
+      <p className="crisis-question"><span className="kicker">Pertanyaan untuk Rapat Tim</span><br />{crisis.question}</p>
       {view.year >= 3 && <p className="muted">Mulai tahun 3, krisis menghantam dua kali lebih keras.</p>}
+      <p className="muted small">Konsep: {crisis.concepts.join(' · ')}</p>
     </article>
   );
 }
@@ -84,6 +87,10 @@ function CrisisStage({ view }: { view: HostView }) {
 function TeamsStage({ view }: { view: HostView }) {
   const pengesahan = view.step === 'pengesahan';
   return (
+    <>
+    {!pengesahan && view.crisis && (
+      <p className="crisis-question big"><span className="kicker">{view.crisis.title}</span><br />{view.crisis.question}</p>
+    )}
     <section className="team-status">
       {view.teams.map(team => (
         <div key={team.role} className={`status-card${team.locked ? ' locked' : ''}`}>
@@ -98,6 +105,7 @@ function TeamsStage({ view }: { view: HostView }) {
         </div>
       ))}
     </section>
+    </>
   );
 }
 

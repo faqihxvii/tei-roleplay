@@ -218,3 +218,14 @@ test('the practice crisis can open a game but is never dealt into a real deck', 
     assert.ok(![state.crisisId, ...state.crisisDeck].includes('c_latihan'));
   }
 });
+
+test('every crisis card follows the GDD card anatomy', async () => {
+  const { CRISIS_CARDS, TUTORIAL_CRISIS } = await import('../src/content/crises');
+  const words = (s: string) => s.trim().split(/\s+/).length;
+  for (const card of [...CRISIS_CARDS, TUTORIAL_CRISIS]) {
+    assert.ok(words(card.title) <= 8, `${card.id}: title ≤ 8 words`);
+    assert.ok(words(card.narrative) <= 60, `${card.id}: narrative is ${words(card.narrative)} words, the limit is 60`);
+    assert.ok(card.question.endsWith('?'), `${card.id}: one question`);
+    assert.ok(card.concepts.length >= 1 && card.concepts.length <= 3, `${card.id}: 1–3 concept tags`);
+  }
+});

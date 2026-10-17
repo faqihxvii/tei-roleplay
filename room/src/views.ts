@@ -10,6 +10,7 @@ import { debriefView, history, type DebriefView, type YearHistory } from './debr
 import type { FrontPage } from './koran';
 import { causeRole, describeDecision, groupDeltas, isIndicator, OWN_RESOURCE, STAT_NAME, type CauseGroup } from './labels';
 import { QUIZ, quizScore } from './content/quiz';
+import { REAL_WORLD } from './content/realWorld';
 import { DECIDING_STEPS, MAX_PACTS_PER_TEAM, type QuizStage, type FinalVote, type LockSource, type PactRecord, type Room, type RoomOptions, type RoomPhase, type Tempo, type YearStep } from './room';
 
 // What each screen may see. The projected host screen never receives agendas, hands or private
@@ -123,7 +124,18 @@ interface Common extends Clock {
   options: RoomOptions;
   tempo: Tempo;
   stats: PublicStats | null;
-  crisis: { title: string; ruleText: string; category: string; opening: { stat: Stat; amount: number }[]; statsBefore: PublicStats } | null;
+  crisis: {
+    title: string;
+    ruleText: string;
+    category: string;
+    narrative: string;
+    question: string;
+    concepts: string[];
+    /** "Tahukah Anda": the real event behind the card, by title and source only; the debrief tells it in full. */
+    didYouKnow: { title: string; source: string; url: string } | null;
+    opening: { stat: Stat; amount: number }[];
+    statsBefore: PublicStats;
+  } | null;
   /** Year 0: a guided practice whose results are thrown away. */
   practice: boolean;
   /** Year 5 opens with Kepercayaan read out as an election poll (GDD, "Busur cerita lima tahun"). */
@@ -330,6 +342,10 @@ function common(room: Room): Common {
       title: card.title,
       ruleText: card.ruleText,
       category: card.category,
+      narrative: card.narrative,
+      question: card.question,
+      concepts: card.concepts,
+      didYouKnow: REAL_WORLD[card.id] ? { title: REAL_WORLD[card.id]!.title, source: REAL_WORLD[card.id]!.source, url: REAL_WORLD[card.id]!.url } : null,
       opening: game.openingDeltas.filter(d => isIndicator(d.stat)).map(d => ({ stat: d.stat, amount: d.amount })),
       statsBefore: publicStats(last?.statsAfter ?? INITIAL_STATS, last?.bungaAfter ?? 3),
     };

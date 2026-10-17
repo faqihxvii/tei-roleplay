@@ -51,6 +51,12 @@ export interface CrisisCard {
   effects: Effects;
   modifier: CrisisModifier;
   ruleText: string;
+  /** The situation the country faces, read out when the card opens (GDD, "Anatomi kartu krisis": ≤ 60 words). */
+  narrative: string;
+  /** One question that starts the Rapat Tim discussion. */
+  question: string;
+  /** Economic concepts the card exercises, 1–3. */
+  concepts: string[];
 }
 
 export type Step = -1 | 0 | 1;
