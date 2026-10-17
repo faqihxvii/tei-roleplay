@@ -49,6 +49,8 @@ export interface CreateGameOptions {
   oknum?: boolean;
   /** Fix agendas instead of drawing them (tests, simulator). */
   agendas?: Partial<Record<Role, AgendaId>>;
+  /** Open with this crisis instead of the deck's first card (the Year 0 practice). */
+  firstCrisis?: string;
 }
 
 export interface ResolveOptions {
@@ -78,7 +80,7 @@ export function createGame(options: CreateGameOptions): GameState {
     maxYears: MAX_YEARS,
     stats: { ...INITIAL_STATS },
     bunga: INITIAL_BUNGA,
-    crisisId: deck[0]!,
+    crisisId: options.firstCrisis ?? deck[0]!,
     crisisDeck: deck.slice(1),
     openingDeltas: [],
     hands: { pemerintah: [], bankSentral: [], pengusaha: [], buruh: [], masyarakat: [] },

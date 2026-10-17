@@ -17,7 +17,17 @@ export const CRISIS_CARDS: CrisisCard[] = [
   { id: 'c_resesi', category: 'global', title: 'Resesi di Negara Mitra Dagang', effects: { kerja: -1, kas: -1 }, modifier: { kind: 'freezeLever', lever: 'harga' }, ruleText: 'Permintaan lesu: Pengusaha tidak bisa menaikkan harga.' },
 ];
 
-export const CRISES_BY_ID: ReadonlyMap<string, CrisisCard> = new Map(CRISIS_CARDS.map(card => [card.id, card]));
+/** Year 0 practice only: mild, no special rule, never dealt into a real game's deck. */
+export const TUTORIAL_CRISIS: CrisisCard = {
+  id: 'c_latihan',
+  category: 'digital',
+  title: 'Gosip Harga Naik Beredar di Grup Keluarga',
+  effects: { keresahan: 1 },
+  modifier: { kind: 'endOfYear', effects: {} },
+  ruleText: 'Tahun latihan: tidak ada aturan khusus, dan hasilnya tidak dihitung.',
+};
+
+export const CRISES_BY_ID: ReadonlyMap<string, CrisisCard> = new Map([...CRISIS_CARDS, TUTORIAL_CRISIS].map(card => [card.id, card]));
 
 export function getCrisis(id: string): CrisisCard {
   const card = CRISES_BY_ID.get(id);

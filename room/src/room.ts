@@ -1,5 +1,6 @@
 import { agendasForRole } from '../../engine/src/content/agendas';
 import { createGame, resolveYear, validateDecisions } from '../../engine/src/game';
+import { TUTORIAL_CRISIS } from '../../engine/src/content/crises';
 import { checkPacts, emptyTally, PACT_TERMS, type PactTally, type PactTermId } from '../../engine/src/pacts';
 import { Rng } from '../../engine/src/rng';
 import { isOknumIdentified, scoreGame, type TeamResult } from '../../engine/src/scoring';
@@ -28,6 +29,8 @@ export const STEP_ORDER: YearStep[] = ['krisis', 'rapat', 'lobi', 'pengesahan', 
 export const STEP_MS: Record<YearStep, number> = { krisis: 45_000, rapat: 75_000, lobi: 120_000, pengesahan: 45_000, pengungkapan: 60_000, koran: 45_000 };
 /** Santai gives classes that read slowly 50% more time (GDD, "Waktu dan gerak"). */
 export const TEMPO_FACTOR: Record<Tempo, number> = { normal: 1, santai: 1.5 };
+/** Year 0 practice: the same six steps squeezed into three minutes (GDD, "Onboarding"). */
+export const PRACTICE_MS: Record<YearStep, number> = { krisis: 20_000, rapat: 45_000, lobi: 40_000, pengesahan: 25_000, pengungkapan: 35_000, koran: 15_000 };
 /** Steps in which members may still change their proposal. */
 export const DECIDING_STEPS: YearStep[] = ['rapat', 'lobi', 'pengesahan'];
 
@@ -44,6 +47,16 @@ export interface Player {
 export interface RoomOptions {
   /** Mode Oknum: one team secretly plays to collapse the country. */
   oknum: boolean;
+  /** Play the guided Year 0 practice between the briefing and year 1. */
+  latihan?: boolean;
+}
+
+/** The real game, set aside while the class practises on a throwaway country. */
+export interface PracticeStash {
+  game: GameState;
+  pacts: PactRecord[];
+  years: YearRecord[];
+  usedVariants: string[];
 }
 
 export interface Proposal {
@@ -116,6 +129,8 @@ export interface RoomSnapshot {
   finals: Partial<Record<Role, FinalVote>>;
   results: FinalResults | null;
   debrief: DebriefState | null;
+  /** Set while Year 0 runs; holds the real game until the practice ends. */
+  practice: PracticeStash | null;
   /** Headline variants already printed this session, so none repeats (GDD, "Cara headline disusun"). */
   usedVariants: string[];
 }
@@ -200,6 +215,7 @@ export class Room {
       finals: {},
       results: null,
       debrief: null,
+      practice: null,
       usedVariants: [],
     });
   }
@@ -209,7 +225,7 @@ export class Room {
     // Snapshots from the join-flow release predate the year loop: fill in what they lack.
     const legacyPhase: string = snapshot.phase;
     const s: RoomSnapshot = {
-      step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, pacts: [], years: [], finals: {}, results: null, debrief: null, usedVariants: [],
+      step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, pacts: [], years: [], finals: {}, results: null, debrief: null, practice: null, usedVariants: [],
       ...structuredClone(snapshot),
       phase: legacyPhase === 'lobi' ? 'gabung' : snapshot.phase,
     };
@@ -228,6 +244,7 @@ export class Room {
   get phase() { return this.s.phase; }
   get step() { return this.s.step; }
   get updatedAt() { return this.s.updatedAt; }
+  get inPractice() { return this.s.practice !== null; }
   get playerCount() { return this.s.players.length; }
 
   isHost(token: string): boolean {
@@ -371,8 +388,8 @@ export class Room {
   next(now: number): void {
     const s = this.s;
     if (s.phase === 'briefing') {
-      s.phase = 'tahun';
-      this.enterStep('krisis', now);
+      this.begin(!!s.options.latihan, now);
+      return;
     } else if (s.phase === 'tahun') {
       switch (s.step) {
         case 'krisis': this.enterStep('rapat', now); break;
@@ -387,7 +404,9 @@ export class Room {
           break;
         case 'pengungkapan': this.enterStep('koran', now); break;
         case 'koran':
-          if (s.game!.ended) {
+          if (s.practice) {
+            this.endPractice(now);
+          } else if (s.game!.ended) {
             s.phase = 'tebak';
             s.step = null;
             this.setTimer(GUESS_MS, now);
@@ -408,13 +427,43 @@ export class Room {
     this.touch(now);
   }
 
+  /** Leaves the briefing: into the Year 0 practice, or straight into year 1. */
+  begin(practice: boolean, now: number): void {
+    const s = this.s;
+    this.requirePhase('briefing');
+    s.phase = 'tahun';
+    if (practice) {
+      s.practice = { game: s.game!, pacts: s.pacts, years: s.years, usedVariants: s.usedVariants };
+      // A throwaway country with the same starting board and a mild, rule-free crisis.
+      s.game = createGame({ seed: (s.seed ^ 0x5eed) >>> 0, firstCrisis: TUTORIAL_CRISIS.id });
+      s.pacts = [];
+      s.years = [];
+      s.usedVariants = [...s.usedVariants];
+    }
+    this.enterStep('krisis', now);
+    this.touch(now);
+  }
+
+  /** Throws the practice country away and starts year 1 of the real game. */
+  endPractice(now: number): void {
+    const s = this.s;
+    if (!s.practice) throw new RoomError('fase-salah');
+    s.game = s.practice.game;
+    s.pacts = s.practice.pacts;
+    s.years = s.practice.years;
+    s.usedVariants = s.practice.usedVariants;
+    s.practice = null;
+    this.enterStep('krisis', now);
+    this.touch(now);
+  }
+
   private enterStep(step: YearStep, now: number): void {
     this.s.step = step;
     if (step === 'krisis') {
       this.s.proposals = {};
       this.s.locked = {};
     }
-    this.setTimer(STEP_MS[step], now);
+    this.setTimer((this.s.practice ? PRACTICE_MS : STEP_MS)[step], now);
   }
 
   private setTimer(ms: number, now: number): void {

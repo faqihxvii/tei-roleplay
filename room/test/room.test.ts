@@ -355,3 +355,73 @@ test('every crisis card has a sourced Di Dunia Nyata note', async () => {
     assert.ok(note!.text.split(/\s+/).length <= 50, `${card.id} is short enough to read aloud`);
   }
 });
+
+test('Year 0 practice lasts three minutes', async () => {
+  const { PRACTICE_MS } = await import('../src/room');
+  assert.equal(Object.values(PRACTICE_MS).reduce((a, b) => a + b), 180_000);
+});
+
+/** Ten players briefed, with the practice option on. */
+function briefedWithPractice(): Room {
+  const room = roomWith(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'], { oknum: false, latihan: true } as never);
+  room.assign('seimbang', 1, T0);
+  room.startBriefing(T0);
+  return room;
+}
+
+test('Year 0 runs on a throwaway country and leaves the real game untouched', () => {
+  const room = briefedWithPractice();
+  const real = structuredClone(room.state.game!);
+  room.next(T0); // briefing timer or button: practice is on
+  assert.equal(room.inPractice, true);
+  assert.equal(hostView(room).year, 0);
+  assert.equal(hostView(room).practice, true);
+  assert.equal(hostView(room).crisis!.title, 'Gosip Harga Naik Beredar di Grup Keluarga');
+  assert.equal(room.state.phaseEndsAt, T0 + 20_000);
+
+  room.next(T0); // rapat
+  room.propose(spokesperson(room, 'pemerintah'), { role: 'pemerintah', cardId: null, pajak: 1 }, T0);
+  room.next(T0); // lobi
+  room.proposePact(spokesperson(room, 'pengusaha'), 'buruh', 'usahaTidakPhk', 'buruhTidakMogok', 'latihan1', T0);
+  room.respondPact(spokesperson(room, 'buruh'), 'latihan1', true, T0);
+  room.next(T0); // pengesahan
+  room.next(T0); // pengungkapan
+  assert.equal(hostView(room).reveal!.year, 0);
+  room.next(T0); // koran
+  assert.equal(hostView(room).frontPage!.year, 0);
+  room.next(T0); // practice over: year 1 of the real game
+
+  assert.equal(room.inPractice, false);
+  assert.equal(room.step, 'krisis');
+  assert.equal(hostView(room).year, 1);
+  assert.deepEqual(room.state.game, real);
+  assert.deepEqual(room.state.pacts, []);
+  assert.deepEqual(room.state.years, []);
+  assert.deepEqual(room.pactTally().pengusaha, { kept: 0, broken: 0 });
+  assert.equal(room.state.phaseEndsAt, T0 + 45_000);
+});
+
+test('the facilitator can skip the practice or end it early', () => {
+  const skip = briefedWithPractice();
+  skip.begin(false, T0);
+  assert.equal(skip.inPractice, false);
+  assert.equal(hostView(skip).year, 1);
+
+  const early = briefedWithPractice();
+  const real = structuredClone(early.state.game!);
+  early.next(T0);
+  early.next(T0);
+  early.endPractice(T0);
+  assert.equal(early.step, 'krisis');
+  assert.deepEqual(early.state.game, real);
+  assert.throws(() => early.endPractice(T0), (e: RoomError) => e.code === 'fase-salah');
+});
+
+test('a refresh during the practice restores it, and the practice still ends cleanly', () => {
+  const room = briefedWithPractice();
+  room.next(T0);
+  const restored = Room.restore(JSON.parse(JSON.stringify(room.snapshot())));
+  assert.equal(restored.inPractice, true);
+  restored.endPractice(T0);
+  assert.deepEqual(restored.state.game, room.state.practice!.game);
+});

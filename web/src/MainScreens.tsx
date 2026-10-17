@@ -1,18 +1,20 @@
 import type { HostView, PublicStats, RevealView } from '../../room/src/views';
 import { Board, RoleMark, RoleName, Timer, useSequence } from './shared';
-import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL, INDICATOR_ORDER, signed, STEP_HINT, STEP_LABEL } from './text';
+import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL, INDICATOR_ORDER, PRACTICE_COACH, signed, STEP_HINT, STEP_LABEL } from './text';
 
 // The projected main screen during the year loop and the end of the game. Text sized to be read
 // from the back row; one focus per phase (GDD, "UX/UI").
 
 export function TopBar({ view, now }: { view: HostView; now: () => number }) {
   const title = view.phase === 'tahun' && view.step
-    ? <>Tahun {view.year}<span className="muted">/{view.maxYears}</span> · {STEP_LABEL[view.step]}</>
+    ? view.practice
+      ? <>Tahun 0 <span className="practice-tag">Latihan</span> · {STEP_LABEL[view.step]}</>
+      : <>Tahun {view.year}<span className="muted">/{view.maxYears}</span> · {STEP_LABEL[view.step]}</>
     : view.phase === 'tebak' ? 'Tebak agenda' : 'Hasil akhir';
-  const hint = view.phase === 'tahun' && view.step ? STEP_HINT[view.step]
+  const hint = view.phase === 'tahun' && view.step ? (view.practice ? PRACTICE_COACH[view.step].main : STEP_HINT[view.step])
     : view.phase === 'tebak' ? `Juru Bicara menebak agenda tim lain${view.options.oknum ? ' dan menunjuk Oknum' : ''} di HP.` : '';
   return (
-    <header className="topbar">
+    <header className={`topbar${view.practice ? ' practice' : ''}`}>
       <div>
         <p className="topbar-title">{title}</p>
         {hint && <p className="topbar-hint">{hint}</p>}

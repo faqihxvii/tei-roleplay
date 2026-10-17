@@ -64,6 +64,12 @@ Total 6,5 menit per tahun. Tempo Santai menambah 50%. Fasilitator bisa menjeda, 
 
 Konsol fasilitator juga mengisi keputusan dan tebakan tim tanpa HP, atau mengambil alih tim yang macet.
 
+## Tahun 0 latihan
+
+Opsi saat membuka ruangan (bawaan: aktif). Setelah briefing, kelas memainkan satu tahun penuh dengan enam fase yang sama dalam 3 menit (20/45/40/25/35/15 detik), di negara simulasi dengan krisis ringan tanpa aturan khusus. Layar utama memakai pita LATIHAN dan mengganti petunjuk fase dengan satu-dua kalimat pemandu; HP menampilkan kartu pemandu, dengan versi khusus untuk Juru Bicara di fase Lobi dan Pengesahan.
+
+Negara asli disimpan selama latihan dan dikembalikan utuh sesudahnya: keputusan, pakta, skor, dan koran latihan dibuang. Fasilitator bisa melewati latihan dari layar briefing atau mengakhirinya kapan saja dari konsol.
+
 ## Debrief terpandu
 
 Setelah skor keluar, fasilitator memandu enam bagian dari layar utama (tombol di bawah atau panah kiri-kanan). Semua HP ikut berpindah.
@@ -81,7 +87,7 @@ Ekspor di konsol (K): tiga CSV (garis waktu, keputusan per tim, log pakta; pemis
 
 ## Belum dibuat
 
-- Tahun 0 latihan dan kuis pra/pasca.
+- Kuis pra/pasca.
 - Narasi, pertanyaan tim, dan "Tahukah Anda" di kartu krisis (belum ada di data engine).
 - Templat headline baru 2–3 varian per tag; GDD meminta minimal 8. Perlu ruang penulis.
 - Audio, animasi Rive, dan art direction final.

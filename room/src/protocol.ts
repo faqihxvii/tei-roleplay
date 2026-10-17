@@ -18,6 +18,8 @@ export type ClientMessage =
   | { t: 'kick'; playerId: string }
   | { t: 'startBriefing' }
   | { t: 'next' }
+  | { t: 'begin'; practice: boolean }
+  | { t: 'endPractice' }
   | { t: 'pause' }
   | { t: 'resume-clock' }
   | { t: 'addTime' }
@@ -41,7 +43,7 @@ export type ServerMessage =
   | { t: 'kicked' };
 
 export const HOST_ONLY = new Set<ClientMessage['t']>([
-  'assign', 'move', 'kick', 'startBriefing', 'next', 'pause', 'resume-clock', 'addTime', 'tempo', 'hostDecide', 'hostFinal', 'debrief',
+  'assign', 'move', 'kick', 'startBriefing', 'next', 'begin', 'endPractice', 'pause', 'resume-clock', 'addTime', 'tempo', 'hostDecide', 'hostFinal', 'debrief',
 ]);
 export const PLAYER_ONLY = new Set<ClientMessage['t']>(['propose', 'lock', 'pactPropose', 'pactRespond', 'final']);
 
@@ -136,7 +138,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       return isString(m.playerId, ID_RE) && (m.role === null || isRole(m.role)) ? { t: 'move', playerId: m.playerId, role: m.role as Role | null } : null;
     case 'kick':
       return isString(m.playerId, ID_RE) ? { t: 'kick', playerId: m.playerId } : null;
+    case 'begin':
+      return typeof m.practice === 'boolean' ? { t: 'begin', practice: m.practice } : null;
     case 'startBriefing':
+    case 'endPractice':
     case 'next':
     case 'pause':
     case 'resume-clock':

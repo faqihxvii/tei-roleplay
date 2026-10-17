@@ -353,3 +353,9 @@ fieldset:disabled .seg { opacity: 0.5; cursor: not-allowed; }
   .edisi-page { break-before: page; box-shadow: none; }
   .ending, .titles li, .score-table { break-inside: avoid; }
 }
+
+/* ---------- Year 0 practice ---------- */
+.topbar.practice { border-bottom-style: dashed; }
+.practice-tag { display: inline-block; vertical-align: middle; padding: 2px 12px; border-radius: 6px; background: #fde7c7; color: #5a3108; font-family: Inter, system-ui, sans-serif; font-size: 0.5em; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.coach { padding: 12px 14px; border-radius: var(--radius); background: #fde7c7; color: #3d2206; border-left: 6px solid #b4690e; }
+.coach .kicker { color: #6b3f0d; }

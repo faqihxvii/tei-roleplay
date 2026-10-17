@@ -208,3 +208,13 @@ test('a strict majority of votes unmasks the Oknum, who then loses', () => {
   assert.equal(scoreGame(state, { oknumIdentified: true }).find(r => r.role === 'buruh')!.score, 0);
   assert.equal(scoreGame(state, { oknumIdentified: false }).find(r => r.role === 'buruh')!.score, SCORE.agenda);
 });
+
+test('the practice crisis can open a game but is never dealt into a real deck', () => {
+  const practice = createGame({ seed: 5, firstCrisis: 'c_latihan' });
+  assert.equal(practice.crisisId, 'c_latihan');
+  assert.equal(practice.stats.keresahan, INITIAL_STATS.keresahan + 1);
+  for (let seed = 1; seed <= 50; seed++) {
+    const state = createGame({ seed });
+    assert.ok(![state.crisisId, ...state.crisisDeck].includes('c_latihan'));
+  }
+});

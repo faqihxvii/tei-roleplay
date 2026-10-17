@@ -123,6 +123,8 @@ interface Common extends Clock {
   tempo: Tempo;
   stats: PublicStats | null;
   crisis: { title: string; ruleText: string; category: string; opening: { stat: Stat; amount: number }[]; statsBefore: PublicStats } | null;
+  /** Year 0: a guided practice whose results are thrown away. */
+  practice: boolean;
   /** Year 5 opens with Kepercayaan read out as an election poll (GDD, "Busur cerita lima tahun"). */
   pemilu: boolean;
   teams: { role: Role; label: string; offline: boolean; locked: boolean; proposers: number; members: number; finalDone: boolean }[];
@@ -300,20 +302,22 @@ function common(room: Room): Common {
     };
   }
 
-  const year = room.year;
+  // The practice country is shown as year 0; internally it is its own year 1.
+  const year = room.inPractice ? 0 : room.year;
   return {
     code: s.code,
     phase: s.phase,
     step: s.step,
     year,
     maxYears: game?.maxYears ?? 5,
+    practice: room.inPractice,
     options: { ...s.options },
     tempo: s.tempo,
     phaseEndsAt: s.phaseEndsAt,
     pausedMs: s.pausedMs,
     stats,
     crisis,
-    pemilu: !!game && s.phase === 'tahun' && year === game.maxYears && !resolvedView,
+    pemilu: !!game && s.phase === 'tahun' && !room.inPractice && year === game.maxYears && !resolvedView,
     teams: ROLES.map(role => ({
       role,
       label: ROLE_LABEL[role],
@@ -325,12 +329,15 @@ function common(room: Room): Common {
     })),
     // The Meja Lobi is public: everyone sees agreed pacts, and broken ones are torn up at the reveal.
     pacts: s.phase === 'tahun' ? room.pactsThisYear().filter(p => p.status === 'disepakati').map(p => pactView(room, p)) : [],
-    reveal: resolvedView && s.phase === 'tahun' ? revealView(room) : null,
-    frontPage: s.step === 'koran' ? s.years.at(-1)?.frontPage ?? null : null,
+    reveal: resolvedView && s.phase === 'tahun' ? asYear(revealView(room), year) : null,
+    frontPage: s.step === 'koran' ? asYear(s.years.at(-1)?.frontPage ?? null, year) : null,
     results: resultsView(room),
     debrief: s.phase === 'selesai' ? debriefView(s, room.pactTally()) : null,
   };
 }
+
+/** Stamps the displayed year on a record, so the practice reads as year 0. */
+const asYear = <T extends { year: number }>(record: T | null, year: number): T | null => (record ? { ...record, year } : null);
 
 const deciding = (room: Room) => room.phase === 'tahun' && !!room.step && DECIDING_STEPS.includes(room.step);
 

@@ -32,6 +32,7 @@ export function Host() {
 function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string) => void }) {
   const [oknum, setOknum] = useState(false);
   const [santai, setSantai] = useState(false);
+  const [latihan, setLatihan] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +40,7 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/rooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ oknum, tempo: santai ? 'santai' : 'normal' }) });
+      const res = await fetch('/api/rooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ oknum, latihan, tempo: santai ? 'santai' : 'normal' }) });
       const body = (await res.json()) as { code?: string; hostToken?: string; message?: string };
       if (!res.ok || !body.code || !body.hostToken) throw new Error(body.message ?? 'Ruangan gagal dibuat.');
       onCreated(body.code, body.hostToken);
@@ -58,6 +59,10 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
       <label className="check">
         <input type="checkbox" checked={oknum} onChange={e => setOknum(e.target.checked)} />
         <span><strong>Mode Oknum.</strong> Satu tim diam-diam bermain untuk membuat negara kolaps.</span>
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={latihan} onChange={e => setLatihan(e.target.checked)} />
+        <span><strong>Tahun 0 latihan.</strong> Satu putaran terpandu 3 menit setelah briefing, di negara simulasi yang hasilnya dibuang.</span>
       </label>
       <label className="check">
         <input type="checkbox" checked={santai} onChange={e => setSantai(e.target.checked)} />
@@ -174,7 +179,14 @@ function Briefing({ view, send, now }: { view: HostView; send: (m: ClientMessage
         <p className="lead">Baca kartu peran dan agenda rahasia timmu di HP. Jangan perlihatkan ke tim lain.</p>
         <div className="row">
           <ClockControls view={view} send={send} />
-          <button className="btn primary" onClick={() => send({ t: 'next' })}>Mulai Tahun 1</button>
+          {view.options.latihan ? (
+            <>
+              <button className="btn primary" onClick={() => send({ t: 'begin', practice: true })}>Mulai Tahun 0 (latihan)</button>
+              <button className="btn" onClick={() => send({ t: 'begin', practice: false })}>Lewati latihan</button>
+            </>
+          ) : (
+            <button className="btn primary" onClick={() => send({ t: 'begin', practice: false })}>Mulai Tahun 1</button>
+          )}
         </div>
       </section>
       <Teams view={view} />

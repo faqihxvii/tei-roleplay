@@ -76,7 +76,7 @@ export async function createRoomServer(options: RoomServerOptions) {
     let code = roomCode();
     while (rooms.has(code)) code = roomCode();
     const hostToken = newToken();
-    const room = Room.create({ code, hostToken, seed: newSeed(), options: { oknum: req.body?.oknum === true }, tempo: req.body?.tempo === 'santai' ? 'santai' : 'normal', now: now() });
+    const room = Room.create({ code, hostToken, seed: newSeed(), options: { oknum: req.body?.oknum === true, latihan: req.body?.latihan === true }, tempo: req.body?.tempo === 'santai' ? 'santai' : 'normal', now: now() });
     rooms.set(code, { room, conns: new Set() });
     void persist(code);
     res.status(201).json({ code, hostToken });
@@ -206,6 +206,8 @@ export async function createRoomServer(options: RoomServerOptions) {
           break;
         case 'startBriefing': room.startBriefing(t); break;
         case 'next': room.next(t); break;
+        case 'begin': room.begin(message.practice, t); break;
+        case 'endPractice': room.endPractice(t); break;
         case 'pause': room.pause(t); break;
         case 'resume-clock': room.resume(t); break;
         case 'addTime': room.addTime(t); break;

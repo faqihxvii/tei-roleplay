@@ -68,3 +68,36 @@ export const COLLAPSE_LABEL = {
 } as const;
 
 export const signed = (n: number) => (n > 0 ? `+${n}` : `−${Math.abs(n)}`);
+
+/**
+ * Year 0 coaching: what each step is for, in a sentence or two, on the main screen and on phones.
+ * The GDD wants no walls of tutorial text, so each line explains only the step on screen.
+ */
+export const PRACTICE_COACH: Record<YearStep, { main: string; phone: string; spokesperson?: string }> = {
+  krisis: {
+    main: 'Setiap tahun dibuka dengan krisis. Angkanya langsung mengubah Papan Negara, dan aturan tahun ini berlaku untuk semua tim.',
+    phone: 'Baca krisis di layar utama. Di bawah ini ada sumber daya dan agenda rahasia timmu.',
+  },
+  rapat: {
+    main: 'Rapat Tim: setiap orang memilih satu kartu dan tuas untuk timnya. Panah menunjukkan arah dampak, bukan angka pasti.',
+    phone: 'Coba pilih satu kartu dan satu tuas. Angka kuning di samping pilihan adalah jumlah anggota timmu yang memilihnya.',
+  },
+  lobi: {
+    main: 'Lobi Terbuka: berdiri, datangi tim lain, tawar-menawar. Janji yang disepakati muncul di Meja Lobi.',
+    phone: 'Bantu Juru Bicaramu menawar ke tim lain. Pakta dibuat lewat HP Juru Bicara.',
+    spokesperson: 'Buka tab Pakta dan coba ajukan satu janji ke tim lain.',
+  },
+  pengesahan: {
+    main: 'Pengesahan: Juru Bicara menahan tombol SAH. Kalau tidak sempat, pilihan suara terbanyak yang dipakai.',
+    phone: 'Tunggu Juru Bicaramu mengesahkan. Pilihanmu masih dihitung kalau waktu habis.',
+    spokesperson: 'Tahan tombol SAH sampai penuh. Kalau dilepas di tengah, tidak terjadi apa-apa.',
+  },
+  pengungkapan: {
+    main: 'Semua keputusan dibuka. Setiap perubahan angka punya penyebab dan nama timnya. Pakta yang dilanggar robek.',
+    phone: 'Lihat layar utama. Perubahan sumber daya timmu ada di bawah.',
+  },
+  koran: {
+    main: 'Setiap tahun ditutup Harian TEI. Setelah ini permainan sungguhan dimulai dari awal, dan hasil latihan dibuang.',
+    phone: 'Latihan hampir selesai. Tahun 1 dimulai dari papan awal; hasil latihan tidak dihitung.',
+  },
+};

@@ -17,6 +17,7 @@ host.on('pageerror', e => errors.push('host: ' + e.message));
 host.on('console', m => { if (m.type() === 'error') errors.push('host console: ' + m.text()); });
 await host.goto(BASE + '/host');
 await host.getByLabel(/Mode Oknum/).check();
+await host.getByLabel(/Tahun 0 latihan/).check();
 await host.getByRole('button', { name: 'Buka ruangan' }).click();
 await host.waitForSelector('.room-code');
 const code = (await host.textContent('.room-code')).trim();
@@ -35,9 +36,8 @@ for (const name of names) {
 }
 await host.getByRole('button', { name: 'Bagi seimbang' }).click();
 await host.getByRole('button', { name: 'Mulai briefing peran' }).click();
-await host.getByRole('button', { name: 'Mulai Tahun 1' }).click();
-await host.locator('.crisis-title').waitFor();
-await shot(host, 'y1-krisis.png');
+await host.getByRole('button', { name: 'Mulai Tahun 0 (latihan)' }).click();
+await host.locator('.practice-tag').waitFor();
 
 // who plays what
 const roleOf = {};
@@ -48,6 +48,23 @@ const next = async () => {
   await host.getByRole('button', { name: 'Lewati fase →' }).click();
   await host.keyboard.press('k');
 };
+
+// Year 0: a guided practice on a throwaway country.
+await shot(host, 'y0-krisis.png');
+await next(); // rapat
+await roleOf['Pemerintah'].locator('.coach').waitFor();
+await roleOf['Pemerintah'].locator('.policy:not(.off)').first().click();
+await shot(roleOf['Pemerintah'], 'y0-phone-rapat.png', true);
+await shot(host, 'y0-rapat.png');
+for (let i = 0; i < 4; i++) await next(); // lobi, pengesahan, pengungkapan, koran
+await host.locator('.frontpage').waitFor();
+await shot(host, 'y0-koran.png', true);
+await next(); // practice over
+await host.locator('.crisis-title').waitFor();
+if (await host.locator('.practice-tag').count()) errors.push('practice did not end');
+if (!(await host.locator('.topbar-title').textContent()).includes('Tahun 1')) errors.push('year 1 did not start');
+await shot(host, 'y1-krisis.png');
+
 await next(); // rapat
 await host.getByText('Rapat Tim', { exact: false }).first().waitFor();
 for (const [label, p] of Object.entries(roleOf)) {

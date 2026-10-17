@@ -56,6 +56,7 @@ export function Console({ view, send, onClose }: { view: HostView; send: Send; o
         <section className="stack">
           <h3 className="label">Waktu</h3>
           <ClockControls view={view} send={send} />
+          {view.practice && <button className="btn primary" onClick={() => send({ t: 'endPractice' })}>Akhiri latihan, mulai Tahun 1</button>}
           <div className="row">
             <span>Tempo:</span>
             <button className={`btn${view.tempo === 'normal' ? ' primary' : ''}`} onClick={() => send({ t: 'tempo', tempo: 'normal' })}>Normal</button>

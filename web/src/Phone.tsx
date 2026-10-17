@@ -6,7 +6,7 @@ import type { PlayerView } from '../../room/src/views';
 import { DecisionForm } from './DecisionForm';
 import { Board, HoldButton, RoleMark, RoleName, Timer } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
-import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, STEP_LABEL, signed } from './text';
+import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, PRACTICE_COACH, STEP_LABEL, signed } from './text';
 
 type Session = { code: string; nickname?: string; token?: string };
 type Send = (message: ClientMessage) => void;
@@ -150,7 +150,7 @@ function JoinForm({ busy, error, onJoin }: { busy: boolean; error: string | null
 
 function PhoneHeader({ view, now }: { view: PlayerView; now: () => number }) {
   if (!view.team) return null;
-  const title = view.phase === 'tahun' && view.step ? `Tahun ${view.year} · ${STEP_LABEL[view.step]}` : view.phase === 'briefing' ? 'Briefing peran' : view.phase === 'tebak' ? 'Tebak agenda' : view.phase === 'selesai' ? 'Debrief' : `Ruangan ${view.code}`;
+  const title = view.phase === 'tahun' && view.step ? `Tahun ${view.year}${view.practice ? ' (latihan)' : ''} · ${STEP_LABEL[view.step]}` : view.phase === 'briefing' ? 'Briefing peran' : view.phase === 'tebak' ? 'Tebak agenda' : view.phase === 'selesai' ? 'Debrief' : `Ruangan ${view.code}`;
   return (
     <header className="phone-head">
       <RoleMark role={view.team.role} />
@@ -226,9 +226,16 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
   if (view.phase === 'selesai') return <ResultsScreen view={view} />;
 
   // A year in progress.
+  const coach = view.practice && view.step ? PRACTICE_COACH[view.step] : null;
   return (
     <section className="stack">
-      {view.me.isSpokesperson && view.step !== 'pengungkapan' && view.step !== 'koran' && <p className="badge">Kamu Juru Bicara tahun {view.year}.</p>}
+      {coach && (
+        <aside className="coach" role="note">
+          <p className="kicker">Latihan · tidak dihitung</p>
+          <p>{view.me.isSpokesperson && coach.spokesperson ? coach.spokesperson : coach.phone}</p>
+        </aside>
+      )}
+      {view.me.isSpokesperson && view.step !== 'pengungkapan' && view.step !== 'koran' && <p className="badge">Kamu Juru Bicara {view.practice ? 'saat latihan dan Tahun 1' : `tahun ${view.year}`}.</p>}
       {view.crisis && view.step === 'krisis' && <CrisisCard view={view} />}
       {view.decision && <DecideScreen key={`${view.year}`} view={view} send={send} />}
       {view.step === 'krisis' && view.decision === null && <HandPreview view={view} />}
