@@ -4,7 +4,9 @@ import { ROLES, type Role } from '../../engine/src/types';
 import type { ClientMessage, ServerMessage } from '../../room/src/protocol';
 import type { HostView, PlayerSummary } from '../../room/src/views';
 import { ClockControls, Console, useConsoleToggle } from './Console';
-import { GuessScreen, ResultsScreen, YearScreen } from './MainScreens';
+import { DebriefScreen } from './Debrief';
+import { EdisiKhusus } from './EdisiKhusus';
+import { GuessScreen, YearScreen } from './MainScreens';
 import { formatSeconds, storage, useClockOffset, useRoomSocket, useSecondsLeft } from './socket';
 
 // The projected main screen. Before the game it doubles as the team console (room code, QR,
@@ -91,6 +93,7 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
   }, [notice]);
 
   if (!view) return <main className="host center">Menghubungkan ke ruangan {code}…</main>;
+  if (new URLSearchParams(location.search).get('cetak') === 'edisi') return <EdisiKhusus view={view} />;
 
   return (
     <main className="host">
@@ -100,7 +103,7 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
       {view.phase === 'briefing' && <Briefing view={view} send={send} now={clock.now} />}
       {view.phase === 'tahun' && <YearScreen view={view} now={clock.now} />}
       {view.phase === 'tebak' && <GuessScreen view={view} now={clock.now} />}
-      {view.phase === 'selesai' && view.results && <ResultsScreen view={view} now={clock.now} />}
+      {view.phase === 'selesai' && view.debrief && <DebriefScreen view={view} send={send} consoleOpen={consoleOpen} />}
       {view.phase !== 'gabung' && (
         <button className="console-toggle" onClick={() => setConsoleOpen(!consoleOpen)} aria-expanded={consoleOpen}>
           Konsol <kbd>K</kbd>

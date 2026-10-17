@@ -278,3 +278,78 @@ fieldset:disabled .seg { opacity: 0.5; cursor: not-allowed; }
 .big-score { font-size: 3.4rem; font-weight: 800; line-height: 1; }
 .big-score small { font-size: 1rem; color: var(--muted); }
 .breakdown { margin: 0; padding-left: 18px; }
+
+/* ---------- debrief ---------- */
+.debrief-body { flex: 1; padding-bottom: 72px; }
+.debrief-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 10px 80px 10px 16px; background: rgba(244,241,234,0.96); border-top: 1px solid var(--rule); }
+.step-pill { min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--rule); background: var(--card); font-weight: 600; cursor: pointer; }
+.step-pill.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.titles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.titles li { padding: 16px; border-radius: var(--radius); background: var(--card); border: 2px solid var(--ink); display: flex; flex-direction: column; gap: 6px; }
+.title-team { font-size: 1.3rem; }
+
+.multiples { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.panel { margin: 0; padding: 12px 12px 6px; background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); }
+.panel figcaption { font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
+.panel-plot { position: relative; }
+.panel svg { display: block; width: 100%; height: auto; overflow: visible; }
+.panel .grid { stroke: #e4dfd3; stroke-width: 1; }
+.panel .tick { fill: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.panel .series { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.panel .dot { fill: var(--ink); stroke: var(--card); stroke-width: 2; }
+.panel .dot.focused { fill: var(--accent); }
+.panel .end-label { fill: var(--ink); font-size: 12px; font-weight: 700; }
+.panel .hatch-line { stroke: rgba(201,18,18,0.35); stroke-width: 2; }
+.panel .crosshair { stroke: var(--muted); stroke-width: 1; }
+.panel .hit { fill: transparent; cursor: pointer; }
+.panel .hit:focus-visible { outline: none; stroke: #2563eb; stroke-width: 2; }
+.tip { position: absolute; transform: translate(-50%, calc(-100% - 12px)); padding: 6px 10px; border-radius: 6px; background: var(--ink); color: var(--paper); font-size: 0.85rem; white-space: nowrap; pointer-events: none; z-index: 2; display: flex; flex-direction: column; }
+.tip-hint { font-size: 0.75rem; opacity: 0.75; }
+.markers { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 1.05rem; }
+.markers strong { margin-right: 8px; }
+
+.chain-grid { display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 900px) { .chain-grid { grid-template-columns: 1fr; } }
+.turning { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.turn { width: 100%; text-align: left; padding: 12px 14px; border-radius: var(--radius); border: 1.5px solid var(--rule); background: var(--card); font-weight: 600; cursor: pointer; }
+.turn.on { border-color: var(--ink); box-shadow: inset 4px 0 0 var(--accent); }
+.chain-title { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: clamp(1.8rem, 3.4vw, 3rem); margin-bottom: 16px; }
+.links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.link { display: flex; gap: 16px; align-items: flex-start; padding: 14px 16px; background: var(--card); border-radius: var(--radius); }
+.link-label { font-size: 1.3rem; }
+
+.agenda-reveal { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.agenda-card { padding: 16px; border-radius: var(--radius); background: #e7e2d6; min-height: 180px; display: flex; flex-direction: column; gap: 8px; }
+.agenda-card.open { background: var(--card); border: 2px solid var(--ink); animation: flip 400ms ease-out; }
+.agenda-card h3 { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: 1.4rem; }
+.guesses { margin: 0; padding-left: 18px; }
+
+.discussion { display: flex; flex-direction: column; gap: 20px; }
+.rounds { display: flex; gap: 8px; flex-wrap: wrap; }
+.question { font-size: clamp(2.6rem, 6vw, 5rem); }
+.prompts { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 14px; font-size: clamp(1.3rem, 2.4vw, 2rem); }
+.real-world { max-width: 1000px; padding: clamp(20px, 3vw, 40px); background: var(--card); border: 2px solid var(--ink); border-radius: var(--radius); display: flex; flex-direction: column; gap: 16px; }
+.real-world h1 { font-size: clamp(2.2rem, 5vw, 4rem); }
+.real-text { font-size: clamp(1.3rem, 2.4vw, 2rem); }
+.source { color: var(--muted); }
+.url { word-break: break-all; font-size: 0.9rem; }
+.chain-mini { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.chain-mini li { padding: 8px 10px; background: var(--card); border-radius: 8px; }
+.chain-mini li.mine { border-left: 4px solid var(--role, var(--ink)); font-weight: 600; }
+.question-mini { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: 1.6rem; }
+
+/* Edisi Khusus */
+.edisi { max-width: 1100px; margin: 0 auto; padding: 24px 16px; display: flex; flex-direction: column; gap: 28px; }
+.edisi-mast h1 { font-size: clamp(3rem, 8vw, 5.5rem); }
+.edisi-page h2 { font-family: Charter, 'Bitstream Charter', Georgia, serif; }
+.edisi-decisions { margin: 0 0 12px; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-family: Inter, system-ui, sans-serif; font-size: 0.95rem; }
+.edisi-stats { width: 100%; border-collapse: collapse; font-family: Inter, system-ui, sans-serif; margin-bottom: 12px; }
+.edisi-stats th { text-align: left; font-weight: 400; padding: 2px 0; }
+.edisi-stats td { text-align: right; font-variant-numeric: tabular-nums; }
+@media print {
+  .no-print, .console-toggle, .debrief-nav { display: none !important; }
+  body, .edisi { background: #fff; }
+  .edisi { padding: 0; max-width: none; }
+  .edisi-page { break-before: page; box-shadow: none; }
+  .ending, .titles li, .score-table { break-inside: avoid; }
+}

@@ -12,7 +12,7 @@ if (OUT) mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--no-proxy-server'] });
 const errors = [];
 const shot = (page, name, fullPage = false) => (OUT ? page.screenshot({ path: `${OUT}/${name}`, fullPage }) : null);
-const host = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
+const host = await (await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true })).newPage();
 host.on('pageerror', e => errors.push('host: ' + e.message));
 host.on('console', m => { if (m.type() === 'error') errors.push('host console: ' + m.text()); });
 await host.goto(BASE + '/host');
@@ -109,8 +109,46 @@ for (const [label, p] of Object.entries(roleOf)) {
   }
 }
 await host.locator('.results').waitFor({ timeout: 10000 });
-await shot(host, 'hasil.png', true);
+await shot(host, 'debrief-1-hasil.png', true);
 await shot(roleOf['Pemerintah'], 'phone-hasil.png', true);
+
+// Guided debrief: every section, driven from the main screen.
+await host.getByRole('button', { name: 'Garis waktu' }).click();
+await host.locator('.multiples').waitFor();
+await host.locator('.panel').first().locator('.hit').first().hover();
+await host.locator('.tip').waitFor();
+await shot(host, 'debrief-2-garis-waktu.png', true);
+await host.locator('.panel').nth(3).locator('.hit').last().click(); // Kepercayaan, last year
+await host.locator('.chain-title').waitFor();
+await shot(host, 'debrief-3-sebab.png', true);
+await shot(roleOf['Serikat Buruh'], 'phone-sebab.png', true);
+await host.keyboard.press('ArrowRight');
+await host.getByRole('button', { name: 'Buka agenda berikutnya' }).click();
+await host.getByRole('button', { name: 'Buka agenda berikutnya' }).click();
+await host.locator('.agenda-card.open').nth(1).waitFor();
+await shot(host, 'debrief-4-agenda.png', true);
+await host.keyboard.press('ArrowRight');
+await host.getByRole('tab', { name: /2\. Mengapa/ }).click();
+await host.locator('.question').getByText('Mengapa terjadi?').waitFor();
+await shot(host, 'debrief-5-diskusi.png', true);
+await roleOf['Pengusaha'].locator('.question-mini').waitFor();
+await shot(roleOf['Pengusaha'], 'phone-diskusi.png', true);
+await host.keyboard.press('ArrowRight');
+await host.locator('.debrief-body').waitFor();
+await shot(host, 'debrief-6-dunia-nyata.png', true);
+
+// Export: three CSV files and the printable Edisi Khusus.
+await host.keyboard.press('k');
+for (const name of ['Garis waktu (CSV)', 'Keputusan per tim (CSV)', 'Log pakta (CSV)']) {
+  const [download] = await Promise.all([host.waitForEvent('download'), host.getByRole('button', { name }).click()]);
+  const path = await download.path();
+  const { readFileSync } = await import('node:fs');
+  const text = readFileSync(path, 'utf8');
+  if (!text.startsWith('\uFEFF') || text.split('\r\n').length < 2) errors.push(`CSV ${name} kosong`);
+}
+const [edisi] = await Promise.all([host.context().waitForEvent('page'), host.getByRole('link', { name: /Edisi Khusus/ }).click()]);
+await edisi.locator('.edisi .frontpage').first().waitFor();
+await shot(edisi, 'edisi-khusus.png', true);
 await browser.close();
 // The only expected console error is the missing favicon.
 const real = errors.filter(e => !e.includes('404'));

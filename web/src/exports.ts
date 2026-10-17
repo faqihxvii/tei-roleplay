@@ -1,0 +1,46 @@
+import { ROLE_LABEL } from '../../engine/src/content/roles';
+import type { HostView } from '../../room/src/views';
+import { INDICATOR_LABEL, INDICATOR_ORDER } from './text';
+
+// Session export for the teacher's report (GDD, "Alat fasilitator": ekspor sesi PDF + CSV).
+// Semicolons, because spreadsheet apps in an Indonesian locale expect them; a BOM so Excel reads UTF-8.
+
+const cell = (v: string | number) => {
+  const s = String(v);
+  return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+const csv = (rows: (string | number)[][]) => '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n');
+
+function download(name: string, content: string): void {
+  const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export function exportTimeline(view: HostView): void {
+  const timeline = view.results!.timeline;
+  const rows: (string | number)[][] = [['Indikator', ...timeline.map(t => (t.year === 0 ? 'Awal' : `Tahun ${t.year}`))]];
+  for (const stat of INDICATOR_ORDER) rows.push([INDICATOR_LABEL[stat], ...timeline.map(t => t.stats[stat])]);
+  rows.push(['Suku bunga', ...timeline.map(t => t.stats.bunga)]);
+  download(`TEI-${view.code}-garis-waktu.csv`, csv(rows));
+}
+
+export function exportDecisions(view: HostView): void {
+  const rows: (string | number)[][] = [['Tahun', 'Krisis', 'Tim', 'Keputusan', 'Kartu dibatalkan', 'Headline Harian TEI']];
+  for (const year of view.history ?? []) {
+    for (const d of year.decisions) rows.push([year.year, year.crisis, ROLE_LABEL[d.role], d.lines.join(' · '), d.cancelled ? 'ya' : 'tidak', year.headline]);
+  }
+  download(`TEI-${view.code}-keputusan.csv`, csv(rows));
+}
+
+export function exportPacts(view: HostView): void {
+  const rows: (string | number)[][] = [['Tahun', 'Tim A', 'Janji A', 'A menepati', 'Tim B', 'Janji B', 'B menepati']];
+  for (const year of view.history ?? []) {
+    for (const p of year.pacts) rows.push([year.year, ROLE_LABEL[p.from], p.fromText, p.keptFrom ? 'ya' : 'tidak', ROLE_LABEL[p.to], p.toText, p.keptTo ? 'ya' : 'tidak']);
+  }
+  download(`TEI-${view.code}-pakta.csv`, csv(rows));
+}

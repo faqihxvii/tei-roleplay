@@ -291,3 +291,67 @@ test('a snapshot from the join-flow release still restores', () => {
   restored.next(T0);
   assert.equal(restored.step, 'krisis');
 });
+
+/** A finished game where every team voted, ready for the debrief. */
+function finished(): Room {
+  const room = inRapat();
+  const usaha = spokesperson(room, 'pengusaha');
+  // Year 1: invest if possible, so year 2 has a delayed effect to trace.
+  const game = room.state.game!;
+  const invest = game.hands.pengusaha.find(id => id === 'ent_investasi' && canPlay(game, 'pengusaha', id));
+  if (invest) room.propose(usaha, { role: 'pengusaha', cardId: invest, hargaNaik: false }, T0);
+  room.propose(spokesperson(room, 'bankSentral'), { role: 'bankSentral', cardId: null, bunga: 1, tolakCetakUang: false }, T0);
+  playOut(room);
+  for (const role of ROLES) room.submitFinal(spokesperson(room, role), { agendas: {}, oknum: null }, T0);
+  return room;
+}
+
+test('the debrief opens on the results and every chain adds up to the change it explains', () => {
+  const room = finished();
+  const view = hostView(room);
+  assert.equal(view.debrief!.section, 'hasil');
+  assert.equal(view.history!.length, room.state.game!.log.length);
+  const game = room.state.game!;
+  for (const log of game.log) {
+    for (const stat of ['harga', 'kerja', 'kas', 'kepercayaan', 'keresahan'] as const) {
+      room.setDebrief({ focus: { stat, year: log.year } }, T0);
+      const chain = hostView(room).debrief!.chain!;
+      const sum = chain.links.reduce((a, l) => a + l.amount, 0);
+      if (!chain.clamped) assert.equal(sum, chain.to - chain.from, `${stat} tahun ${log.year}`);
+    }
+  }
+});
+
+test('a rate rise is traced back to the year Bank Sentral made it', () => {
+  const room = finished();
+  if (room.state.game!.log.length < 2) return; // collapsed in year 1: nothing delayed to trace
+  room.setDebrief({ focus: { stat: 'kerja', year: 2 } }, T0);
+  const link = hostView(room).debrief!.chain!.links.find(l => l.label.includes('menaikkan bunga'));
+  assert.ok(link, 'delayed effect of the rate rise appears in year 2');
+  assert.deepEqual(link!.origin, { year: 1, label: 'Bank Sentral menaikkan bunga', role: 'bankSentral' });
+});
+
+test('the debrief is driven by the facilitator and followed by the phones', () => {
+  const room = finished();
+  assert.throws(() => inRapat().setDebrief({ section: 'agenda' }, T0), (e: RoomError) => e.code === 'fase-salah');
+  room.setDebrief({ section: 'agenda', agendaShown: 9, round: -3 }, T0);
+  const d = playerView(room, spokesperson(room, 'buruh')).debrief!;
+  assert.equal(d.section, 'agenda');
+  assert.equal(d.agendaShown, 5);
+  assert.equal(d.round, 0);
+  assert.equal(d.agendas.length, 5);
+  assert.ok(d.titles.some(t => t.title === 'Paling Berpengaruh'));
+  assert.equal(d.rounds.length, 3);
+  assert.ok(!('history' in playerView(room, spokesperson(room, 'buruh'))));
+});
+
+test('every crisis card has a sourced Di Dunia Nyata note', async () => {
+  const { CRISIS_CARDS } = await import('../../engine/src/content/crises');
+  const { REAL_WORLD } = await import('../src/content/realWorld');
+  for (const card of CRISIS_CARDS) {
+    const note = REAL_WORLD[card.id];
+    assert.ok(note, card.id);
+    assert.match(note!.url, /^https:\/\//);
+    assert.ok(note!.text.split(/\s+/).length <= 50, `${card.id} is short enough to read aloud`);
+  }
+});

@@ -4,6 +4,7 @@ import { checkPacts, emptyTally, PACT_TERMS, type PactTally, type PactTermId } f
 import { Rng } from '../../engine/src/rng';
 import { isOknumIdentified, scoreGame, type TeamResult } from '../../engine/src/scoring';
 import { ROLES, type AgendaId, type Decision, type DecisionFor, type GameState, type Role, type YearDecisions } from '../../engine/src/types';
+import { initialDebrief, type DebriefState } from './debrief';
 import { buildFrontPage, type FrontPage } from './koran';
 
 // The authoritative room: who is in it, which team they play, and the game they share.
@@ -114,6 +115,7 @@ export interface RoomSnapshot {
   years: YearRecord[];
   finals: Partial<Record<Role, FinalVote>>;
   results: FinalResults | null;
+  debrief: DebriefState | null;
   /** Headline variants already printed this session, so none repeats (GDD, "Cara headline disusun"). */
   usedVariants: string[];
 }
@@ -197,6 +199,7 @@ export class Room {
       years: [],
       finals: {},
       results: null,
+      debrief: null,
       usedVariants: [],
     });
   }
@@ -206,7 +209,7 @@ export class Room {
     // Snapshots from the join-flow release predate the year loop: fill in what they lack.
     const legacyPhase: string = snapshot.phase;
     const s: RoomSnapshot = {
-      step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, pacts: [], years: [], finals: {}, results: null, usedVariants: [],
+      step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, pacts: [], years: [], finals: {}, results: null, debrief: null, usedVariants: [],
       ...structuredClone(snapshot),
       phase: legacyPhase === 'lobi' ? 'gabung' : snapshot.phase,
     };
@@ -395,6 +398,7 @@ export class Room {
       }
     } else if (s.phase === 'tebak') {
       this.finish();
+      s.debrief = initialDebrief();
       s.phase = 'selesai';
       s.phaseEndsAt = null;
       s.pausedMs = null;
@@ -651,6 +655,22 @@ export class Room {
       teams: results.map(r => ({ ...r, correctGuesses: correct[r.role] ?? 0, pactsKept: tally[r.role].kept, pactsBroken: tally[r.role].broken })),
       oknum: oknumRole ? { role: oknumRole, identified, votes: Object.values(votes).filter(v => v === oknumRole).length } : null,
     };
+  }
+
+  // ---------- debrief ----------
+
+  /** The facilitator walks the class through the debrief; every screen follows. */
+  setDebrief(patch: Partial<DebriefState>, now: number): void {
+    if (this.s.phase !== 'selesai' || !this.s.debrief || !this.s.game) throw new RoomError('fase-salah');
+    const d = this.s.debrief;
+    if (patch.section !== undefined) d.section = patch.section;
+    if (patch.focus !== undefined) {
+      if (patch.focus && !this.s.game.log[patch.focus.year - 1]) throw new RoomError('keputusan-salah');
+      d.focus = patch.focus;
+    }
+    if (patch.agendaShown !== undefined) d.agendaShown = Math.max(0, Math.min(ROLES.length, patch.agendaShown));
+    if (patch.round !== undefined) d.round = Math.max(0, Math.min(2, patch.round));
+    this.touch(now);
   }
 
   // ---------- helpers ----------

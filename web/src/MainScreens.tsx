@@ -259,55 +259,58 @@ export function GuessScreen({ view, now }: { view: HostView; now: () => number }
   );
 }
 
-export function ResultsScreen({ view, now }: { view: HostView; now: () => number }) {
+/** Ending, Oknum, scores and titles: the first section of the debrief. */
+export function ResultsBody({ view }: { view: HostView }) {
   const results = view.results!;
   const ranked = [...results.teams].sort((a, b) => b.score - a.score);
   return (
-    <>
-      <TopBar view={view} now={now} />
-      <section className="results">
-        <div className={`ending ${results.ending}`}>
-          <p className="kicker">Akhir permainan</p>
-          <h1>{ENDING_LABEL[results.ending]}</h1>
-          {results.collapses.length ? results.collapses.map(c => <p key={c} className="lead">{COLLAPSE_LABEL[c]}</p>)
-            : <p className="lead">Indeks Negara {results.index} dari 10</p>}
-          {results.oknum && (
-            <p className="oknum-line">
-              Oknum: <RoleName role={results.oknum.role} /> · ditunjuk {results.oknum.votes} tim · {results.oknum.identified ? 'TERBONGKAR' : 'lolos tanpa ketahuan'}
-            </p>
-          )}
-        </div>
-        <table className="score-table">
-          <thead>
-            <tr><th scope="col">Tim</th><th scope="col">Agenda rahasia</th><th scope="col">Tebakan</th><th scope="col">Pakta</th><th scope="col">Skor</th></tr>
-          </thead>
-          <tbody>
-            {ranked.map(t => (
-              <tr key={t.role}>
-                <th scope="row"><RoleName role={t.role} /></th>
-                <td><strong>{t.agendaName}</strong> {t.achieved ? '✓' : '✗'}<br /><span className="muted small">{t.agendaDescription}</span></td>
-                <td>{t.correctGuesses} benar</td>
-                <td>{t.pactsKept} ditepati, {t.pactsBroken} dilanggar</td>
-                <td className="score">{t.score}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <Timeline timeline={results.timeline} />
-        <section className="headlines">
-          <h2>Harian TEI, tahun demi tahun</h2>
-          <ol>{results.headlines.map(h => <li key={h.year}><span className="muted">Tahun {h.year}.</span> {h.headline}</li>)}</ol>
-        </section>
-      </section>
-    </>
+    <section className="results">
+      <div className={`ending ${results.ending}`}>
+        <p className="kicker">Akhir permainan</p>
+        <h1>{ENDING_LABEL[results.ending]}</h1>
+        {results.collapses.length ? results.collapses.map(c => <p key={c} className="lead">{COLLAPSE_LABEL[c]}</p>)
+          : <p className="lead">Indeks Negara {results.index} dari 10</p>}
+        {results.oknum && (
+          <p className="oknum-line">
+            Oknum: <RoleName role={results.oknum.role} /> · ditunjuk {results.oknum.votes} tim · {results.oknum.identified ? 'TERBONGKAR' : 'lolos tanpa ketahuan'}
+          </p>
+        )}
+      </div>
+      {view.debrief && view.debrief.titles.length > 0 && (
+        <ul className="titles">
+          {view.debrief.titles.map(t => (
+            <li key={t.title}>
+              <p className="kicker">{t.title}</p>
+              <p className="title-team"><RoleName role={t.role} /></p>
+              <p className="muted small">{t.reason}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+      <table className="score-table">
+        <thead>
+          <tr><th scope="col">Tim</th><th scope="col">Agenda rahasia</th><th scope="col">Tebakan</th><th scope="col">Pakta</th><th scope="col">Skor</th></tr>
+        </thead>
+        <tbody>
+          {ranked.map(t => (
+            <tr key={t.role}>
+              <th scope="row"><RoleName role={t.role} /></th>
+              <td><strong>{t.agendaName}</strong> {t.achieved ? '✓' : '✗'}<br /><span className="muted small">{t.agendaDescription}</span></td>
+              <td>{t.correctGuesses} benar</td>
+              <td>{t.pactsKept} ditepati, {t.pactsBroken} dilanggar</td>
+              <td className="score">{t.score}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   );
 }
 
 /** Indicators year by year: the starting point for the debrief's "what happened?" round. */
-function Timeline({ timeline }: { timeline: { year: number; stats: PublicStats }[] }) {
+export function TimelineTable({ timeline }: { timeline: { year: number; stats: PublicStats }[] }) {
   return (
     <section className="timeline">
-      <h2>Garis waktu negara</h2>
       <table>
         <thead>
           <tr><th scope="col">Indikator</th>{timeline.map(t => <th key={t.year} scope="col">{t.year === 0 ? 'Awal' : `Th ${t.year}`}</th>)}</tr>

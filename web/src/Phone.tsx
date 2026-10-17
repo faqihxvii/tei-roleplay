@@ -6,7 +6,7 @@ import type { PlayerView } from '../../room/src/views';
 import { DecisionForm } from './DecisionForm';
 import { Board, HoldButton, RoleMark, RoleName, Timer } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
-import { COLLAPSE_LABEL, ENDING_LABEL, STEP_LABEL, signed } from './text';
+import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, STEP_LABEL, signed } from './text';
 
 type Session = { code: string; nickname?: string; token?: string };
 type Send = (message: ClientMessage) => void;
@@ -150,7 +150,7 @@ function JoinForm({ busy, error, onJoin }: { busy: boolean; error: string | null
 
 function PhoneHeader({ view, now }: { view: PlayerView; now: () => number }) {
   if (!view.team) return null;
-  const title = view.phase === 'tahun' && view.step ? `Tahun ${view.year} · ${STEP_LABEL[view.step]}` : view.phase === 'briefing' ? 'Briefing peran' : view.phase === 'tebak' ? 'Tebak agenda' : view.phase === 'selesai' ? 'Hasil akhir' : `Ruangan ${view.code}`;
+  const title = view.phase === 'tahun' && view.step ? `Tahun ${view.year} · ${STEP_LABEL[view.step]}` : view.phase === 'briefing' ? 'Briefing peran' : view.phase === 'tebak' ? 'Tebak agenda' : view.phase === 'selesai' ? 'Debrief' : `Ruangan ${view.code}`;
   return (
     <header className="phone-head">
       <RoleMark role={view.team.role} />
@@ -461,21 +461,94 @@ function FinalScreen({ view, send }: { view: PlayerView; send: Send }) {
 
 function ResultsScreen({ view }: { view: PlayerView }) {
   const results = view.results;
+  const d = view.debrief;
   if (!results) return null;
-  const mine = results.teams.find(t => t.role === view.team!.role)!;
+  const role = view.team!.role;
+  const mine = results.teams.find(t => t.role === role)!;
   const rank = [...results.teams].sort((a, b) => b.score - a.score).findIndex(t => t.role === mine.role) + 1;
+
+  if (d?.section === 'garisWaktu' || d?.section === 'sebab') {
+    return (
+      <section className="stack">
+        <p className="lead">Lihat layar utama.</p>
+        {d.chain && (
+          <div className="stack">
+            <h3 className="label">{STAT_NAME[d.chain.stat]} tahun {d.chain.year}: {d.chain.from} → {d.chain.to}</h3>
+            <ul className="chain-mini">
+              {d.chain.links.map((l, i) => (
+                <li key={i} className={l.role === role ? 'mine' : ''}>
+                  <strong>{signed(l.amount)}</strong> {l.label}
+                  {l.origin && <span className="muted small"> · dari tahun {l.origin.year}</span>}
+                </li>
+              ))}
+            </ul>
+            <p className="muted small">Baris tebal adalah keputusan timmu.</p>
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  if (d?.section === 'agenda') {
+    const shown = d.agendas.slice(0, d.agendaShown);
+    return (
+      <section className="stack">
+        <p className="lead">Agenda dibuka satu per satu di layar utama.</p>
+        <ul className="breakdown">
+          {shown.map(a => {
+            const guess = a.guesses.find(g => g.by === role);
+            return (
+              <li key={a.role}>
+                <strong>{ROLE_LABEL[a.role]}</strong>: {a.agendaName}
+                {a.role !== role && <span className={guess?.correct ? 'ok' : 'muted'}> · tebakan timmu {guess?.guess ? (guess.correct ? 'benar' : 'salah') : 'kosong'}</span>}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    );
+  }
+
+  if (d?.section === 'diskusi') {
+    const round = d.rounds[d.round]!;
+    return (
+      <section className="stack">
+        <p className="kicker">Putaran {d.round + 1} dari 3</p>
+        <h2 className="question-mini">{round.title}</h2>
+        <ol className="breakdown">{round.prompts.map(p => <li key={p}>{p}</li>)}</ol>
+        <div className="agenda">
+          <p className="kicker">Pertanyaan untuk timmu</p>
+          <p>{d.teamPrompts[role]}</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (d?.section === 'duniaNyata' && d.realWorld) {
+    return (
+      <section className="stack">
+        <p className="kicker">Di Dunia Nyata</p>
+        <h2 className="question-mini">{d.realWorld.title}</h2>
+        <p>{d.realWorld.text}</p>
+        <p className="muted small">Sumber: {d.realWorld.source}{d.realWorld.url && <> · <a href={d.realWorld.url} target="_blank" rel="noopener noreferrer">buka sumber</a></>}</p>
+      </section>
+    );
+  }
+
+  const myTitles = d?.titles.filter(t => t.role === role) ?? [];
   return (
     <section className="stack">
       <p className="kicker">{ENDING_LABEL[results.ending]}</p>
       {results.collapses.map(c => <p key={c} className="warn">{COLLAPSE_LABEL[c]}</p>)}
       <p className="big-score">{mine.score} <small>poin</small></p>
       <p className="muted">Peringkat {rank} dari 5</p>
+      {myTitles.map(t => <p key={t.title} className="badge">{t.title}: {t.reason}</p>)}
       <ul className="breakdown">
         <li>Agenda {mine.agendaName}: {mine.achieved ? 'tercapai' : 'tidak tercapai'}</li>
         <li>Tebakan benar: {mine.correctGuesses}</li>
         <li>Pakta ditepati {mine.pactsKept}, dilanggar {mine.pactsBroken}</li>
       </ul>
-      <p className="muted small">Diskusi lanjut dipandu fasilitator di layar utama.</p>
+      <p className="muted small">Debrief dipandu fasilitator di layar utama.</p>
     </section>
   );
 }

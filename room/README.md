@@ -32,6 +32,8 @@ TEI_BASE=http://<alamat-jaringan>:5173 npm run room:e2e -- <folder-tangkapan-lay
 - `src/views.ts`: apa yang boleh dilihat tiap layar. Layar utama tidak pernah menerima agenda, kartu di tangan, atau sumber daya pribadi. HP hanya menerima milik timnya.
 - `src/labels.ts`: bahasa sebab-akibat untuk pengungkapan ("Upah naik, Pengusaha menaikkan harga").
 - `src/koran.ts` dan `src/content/koran.ts`: halaman depan Harian TEI dari tag peristiwa tahun itu, templat headline, Suara Warga, dan iklan satir.
+- `src/debrief.ts`: titik balik, rantai sebab-akibat (efek tertunda dilacak ke keputusan asalnya), gelar akhir, pembukaan agenda, pertanyaan diskusi, dan riwayat lengkap untuk ekspor.
+- `src/content/realWorld.ts`: kartu Di Dunia Nyata, satu peristiwa nyata bersumber untuk setiap kartu krisis.
 - `src/protocol.ts`: format pesan dan validasi ketat untuk semua input klien.
 - `src/server.ts`: Express + `ws`. Membuat ruangan, menyiarkan tampilan, batas laju, cek Origin, heartbeat, timer fase, dan pembersihan ruangan yang ditinggal.
 - `src/store.ts`: snapshot ke file (tulis lalu rename). Antarmukanya kecil agar bisa diganti KV atau database.
@@ -62,10 +64,24 @@ Total 6,5 menit per tahun. Tempo Santai menambah 50%. Fasilitator bisa menjeda, 
 
 Konsol fasilitator juga mengisi keputusan dan tebakan tim tanpa HP, atau mengambil alih tim yang macet.
 
+## Debrief terpandu
+
+Setelah skor keluar, fasilitator memandu enam bagian dari layar utama (tombol di bawah atau panah kiri-kanan). Semua HP ikut berpindah.
+
+| Bagian | Layar utama | HP |
+| --- | --- | --- |
+| Hasil | Ending, Oknum, gelar (Paling Menepati Janji, Paling Licin, Penyelamat Tahun Krisis, Paling Berpengaruh), skor | Skor dan gelar tim sendiri |
+| Garis waktu | Lima grafik kecil 0–10 dengan zona bahaya, penanda peristiwa per tahun, tabel. Titik bisa diketuk. | Lihat layar utama |
+| Sebab-akibat | Titik balik terbesar, lalu setiap penyebab perubahan dengan nama tim. Efek tertunda menunjukkan tahun dan keputusan asalnya. | Rantai yang sama, baris tim sendiri ditebalkan |
+| Buka agenda | Agenda dibuka satu per satu, dibandingkan dengan tebakan tim lain | Apakah tebakan timnya benar |
+| Diskusi | Tiga putaran: Apa yang terjadi? Mengapa? Di dunia nyata? Pertanyaan diisi data sesi. | Pertanyaan yang sama plus satu pertanyaan refleksi per peran |
+| Di Dunia Nyata | Peristiwa nyata yang mirip krisis terberat sesi itu, dengan sumber | Teks dan tautan sumber |
+
+Ekspor di konsol (K): tiga CSV (garis waktu, keputusan per tim, log pakta; pemisah titik koma untuk Excel berbahasa Indonesia) dan Edisi Khusus, halaman semua headline dan hasil yang siap dicetak atau disimpan sebagai PDF.
+
 ## Belum dibuat
 
-- Debrief terpandu: rantai sebab-akibat yang bisa diketuk, Di Dunia Nyata, dan ekspor PDF/CSV.
-- Tahun 0 latihan, kuis pra/pasca, gelar akhir ("Paling Menepati Janji").
+- Tahun 0 latihan dan kuis pra/pasca.
 - Narasi, pertanyaan tim, dan "Tahukah Anda" di kartu krisis (belum ada di data engine).
 - Templat headline baru 2–3 varian per tag; GDD meminta minimal 8. Perlu ruang penulis.
 - Audio, animasi Rive, dan art direction final.

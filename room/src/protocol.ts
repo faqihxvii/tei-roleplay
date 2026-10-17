@@ -1,6 +1,7 @@
 import type { PactTermId } from '../../engine/src/pacts';
 import { PACT_TERMS } from '../../engine/src/pacts';
-import { ROLES, type AgendaId, type Decision, type Role } from '../../engine/src/types';
+import { INDICATORS, ROLES, type AgendaId, type Decision, type Indicator, type Role } from '../../engine/src/types';
+import { DEBRIEF_SECTIONS, type DebriefSection, type DebriefState } from './debrief';
 import type { AssignMode, FinalVote, RoomErrorCode, Tempo } from './room';
 import type { HostView, PlayerView } from './views';
 
@@ -23,6 +24,7 @@ export type ClientMessage =
   | { t: 'tempo'; tempo: Tempo }
   | { t: 'hostDecide'; role: Role; decision: Decision }
   | { t: 'hostFinal'; role: Role; vote: FinalVote }
+  | { t: 'debrief'; patch: Partial<DebriefState> }
   // players
   | { t: 'propose'; decision: Decision }
   | { t: 'lock'; decision: Decision }
@@ -39,7 +41,7 @@ export type ServerMessage =
   | { t: 'kicked' };
 
 export const HOST_ONLY = new Set<ClientMessage['t']>([
-  'assign', 'move', 'kick', 'startBriefing', 'next', 'pause', 'resume-clock', 'addTime', 'tempo', 'hostDecide', 'hostFinal',
+  'assign', 'move', 'kick', 'startBriefing', 'next', 'pause', 'resume-clock', 'addTime', 'tempo', 'hostDecide', 'hostFinal', 'debrief',
 ]);
 export const PLAYER_ONLY = new Set<ClientMessage['t']>(['propose', 'lock', 'pactPropose', 'pactRespond', 'final']);
 
@@ -79,6 +81,27 @@ export function parseDecision(v: unknown): Decision | null {
     default:
       return null;
   }
+}
+
+function parseDebrief(v: unknown): Partial<DebriefState> | null {
+  if (!isObj(v)) return null;
+  const patch: Partial<DebriefState> = {};
+  if (v.section !== undefined) {
+    if (!DEBRIEF_SECTIONS.includes(v.section as DebriefSection)) return null;
+    patch.section = v.section as DebriefSection;
+  }
+  if (v.focus !== undefined) {
+    if (v.focus === null) patch.focus = null;
+    else if (isObj(v.focus) && INDICATORS.includes(v.focus.stat as Indicator) && Number.isInteger(v.focus.year) && (v.focus.year as number) >= 1 && (v.focus.year as number) <= 5) {
+      patch.focus = { stat: v.focus.stat as Indicator, year: v.focus.year as number };
+    } else return null;
+  }
+  for (const key of ['agendaShown', 'round'] as const) {
+    if (v[key] === undefined) continue;
+    if (!Number.isInteger(v[key]) || (v[key] as number) < 0 || (v[key] as number) > 5) return null;
+    patch[key] = v[key] as number;
+  }
+  return patch;
 }
 
 function parseFinal(v: unknown): FinalVote | null {
@@ -128,6 +151,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     case 'hostFinal': {
       const vote = parseFinal(m.vote);
       return isRole(m.role) && vote ? { t: 'hostFinal', role: m.role, vote } : null;
+    }
+    case 'debrief': {
+      const patch = parseDebrief(m.patch);
+      return patch ? { t: 'debrief', patch } : null;
     }
     case 'propose':
     case 'lock': {

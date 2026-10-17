@@ -6,6 +6,7 @@ import { canBelanja, canMogok, canPlay, INITIAL_STATS, isLeverFrozen } from '../
 import { PACT_TERMS, termsForRole } from '../../engine/src/pacts';
 import { getEnding, indexNegara, type Ending } from '../../engine/src/scoring';
 import { INDICATORS, ROLES, type Collapse, type Decision, type Effects, type GameState, type Indicator, type Lever, type Role, type Stat, type Stats } from '../../engine/src/types';
+import { debriefView, history, type DebriefView, type YearHistory } from './debrief';
 import type { FrontPage } from './koran';
 import { causeRole, describeDecision, groupDeltas, isIndicator, OWN_RESOURCE, STAT_NAME, type CauseGroup } from './labels';
 import { DECIDING_STEPS, MAX_PACTS_PER_TEAM, type FinalVote, type LockSource, type PactRecord, type Room, type RoomOptions, type RoomPhase, type Tempo, type YearStep } from './room';
@@ -129,12 +130,15 @@ interface Common extends Clock {
   reveal: RevealView | null;
   frontPage: FrontPage | null;
   results: ResultsView | null;
+  debrief: DebriefView | null;
 }
 
 export interface HostView extends Common {
   players: PlayerSummary[];
   offlineRoles: Role[];
   spokespeople: Partial<Record<Role, string>>;
+  /** After the game: the full record for the export and the Edisi Khusus. */
+  history: YearHistory[] | null;
   /** Console only: every team's decision form during the deciding steps. */
   console: { decisions: Partial<Record<Role, DecisionContext>>; agendaOptions: Record<Role, { id: string; name: string }[]> } | null;
 }
@@ -324,6 +328,7 @@ function common(room: Room): Common {
     reveal: resolvedView && s.phase === 'tahun' ? revealView(room) : null,
     frontPage: s.step === 'koran' ? s.years.at(-1)?.frontPage ?? null : null,
     results: resultsView(room),
+    debrief: s.phase === 'selesai' ? debriefView(s, room.pactTally()) : null,
   };
 }
 
@@ -349,6 +354,7 @@ export function hostView(room: Room): HostView {
     players: s.players.map(p => ({ id: p.id, nickname: p.nickname, role: p.role, connected: p.connections > 0 })),
     offlineRoles: [...s.offlineRoles],
     spokespeople,
+    history: s.phase === 'selesai' ? history(s) : null,
     console,
   };
 }

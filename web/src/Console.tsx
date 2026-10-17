@@ -3,6 +3,7 @@ import { ROLE_LABEL } from '../../engine/src/content/roles';
 import { ROLES, type AgendaId, type Decision, type Role } from '../../engine/src/types';
 import type { ClientMessage } from '../../room/src/protocol';
 import type { HostView } from '../../room/src/views';
+import { ExportPanel } from './Debrief';
 import { DecisionForm } from './DecisionForm';
 import { RoleName } from './shared';
 
@@ -84,6 +85,8 @@ export function Console({ view, send, onClose }: { view: HostView; send: Send; o
             )}
           </section>
         )}
+
+        {view.phase === 'selesai' && view.history && <ExportPanel view={view} />}
 
         {view.phase === 'tebak' && view.console && (
           <section className="stack">
