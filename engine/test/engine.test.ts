@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getCrisis } from '../src/content/crises';
-import { cloneState, createGame, INITIAL_STATS, resolveYear } from '../src/game';
+import { cloneState, createGame, INITIAL_STATS, resolveYear, RULES } from '../src/game';
 import { scoreGame } from '../src/scoring';
 import { ROLES, type GameState, type Role, type YearDecisions } from '../src/types';
 
@@ -55,7 +55,19 @@ test('resolving a year never mutates the previous state', () => {
 test('indicators are clamped to 0–10', () => {
   const state = setup({ stats: { kas: 10 }, hands: { pemerintah: ['gov_amnesti'] } });
   const after = resolveYear(state, { ...neutral(), pemerintah: { role: 'pemerintah', cardId: 'gov_amnesti', pajak: 1 } });
-  assert.equal(after.stats.kas, 10);
+  // 10 + 4 is clamped to 10 before the year-end routine cost of 1, not after.
+  assert.equal(after.stats.kas, 10 - RULES.bebanRutinKas);
+});
+
+test('an unnoticed lobby can still be exposed by a citizen investigation the next year', () => {
+  const state = setup({ hands: { pengusaha: ['ent_lobi'] } });
+  state.lobiTersembunyi = 0; // pretend a lobby slipped through in year 0
+  state.hands.masyarakat = ['cit_investigasi'];
+  state.counters.lobiAman = 1;
+  const after = resolveYear(state, { ...neutral(), masyarakat: { role: 'masyarakat', cardId: 'cit_investigasi', konsumsi: 'biasa', viral: null } });
+  assert.equal(after.counters.lobiDibongkarWarga, 1);
+  assert.equal(after.counters.lobiAman, 0);
+  assert.equal(after.lobiTersembunyi, null);
 });
 
 test('infrastructure pays out a year later through the policy pipeline', () => {

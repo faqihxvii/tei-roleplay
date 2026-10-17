@@ -115,7 +115,7 @@ function applyRulePickedToggles(state: GameState, decision: Decision, kind: BotK
   switch (decision.role) {
     case 'bankSentral': {
       const tolak =
-        agenda === 'tanpaCetakUang' ? true
+        agenda === 'kredibel' || agenda === 'jangkarHarga' ? true
         : kind === 'kooperatif' ? state.stats.harga >= 5
         : kind === 'egois' ? state.stats.harga >= 6
         : kind === 'acak' ? rng.next() < 0.5
@@ -127,7 +127,7 @@ function applyRulePickedToggles(state: GameState, decision: Decision, kind: BotK
       const mogok =
         kind === 'oknum' ? true
         : kind === 'acak' ? rng.next() < 0.2
-        : kind === 'egois' && (agenda === 'nolPhk' || agenda === 'upahLayak') && state.stats.solidaritas >= 3 ? rng.next() < 0.5
+        : kind === 'egois' && (agenda === 'kerjaAman' || agenda === 'upahLayak') && state.stats.solidaritas >= 3 ? rng.next() < 0.5
         : false;
       return { ...decision, mogok };
     }

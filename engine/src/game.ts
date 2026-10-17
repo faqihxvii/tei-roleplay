@@ -11,10 +11,29 @@ import {
 export const HAND_SIZE = 3;
 export const MAX_YEARS = 5;
 export const GLOBAL_SHOCK_YEAR = 3;
-export const LOBI_MEDIA_EXPOSURE_CHANCE = 0.25;
+
+/** Balancing knobs for the year-end system rules (GDD, "Aturan sistem akhir tahun"). */
+export const RULES = {
+  /** Routine spending (salaries, debt interest) taken from Kas every year. */
+  bebanRutinKas: 1,
+  /** Chance a successful lobby is exposed by the press in the same year. */
+  lobiMediaChance: 0.2,
+  /** Rakyat stays restless: Keresahan only falls through cards, never on its own. */
+  keresahanTurunSaatAman: false,
+  /** Prices creep up by 1 every year while the policy rate sits below this level. */
+  inflasiBawaanDiBawahBunga: 3,
+  /** Pengusaha earns floor(Lapangan Kerja / this) Modal a year: business needs a working economy. */
+  labaUsahaPembagi: 3,
+  /** Households save 1 Tabungan a year while Lapangan Kerja is at least this. */
+  gajiMinKerja: 5,
+  /** From this year on, a crisis hits twice as hard when it is revealed. */
+  eskalasiKrisisMulaiTahun: 3,
+  /** Each of these conditions adds 1 Keresahan at year end. */
+  zonaResah: { harga: 6, kerja: 4, kepercayaan: 4 },
+} as const;
 
 export const INITIAL_STATS: Stats = {
-  harga: 4, kerja: 6, kas: 6, kepercayaan: 6, keresahan: 2,
+  harga: 4, kerja: 6, kas: 5, kepercayaan: 5, keresahan: 3,
   modal: 5, solidaritas: 2, kredibilitas: 3, tabungan: 3,
 };
 export const INITIAL_BUNGA = 3;
@@ -65,9 +84,10 @@ export function createGame(options: CreateGameOptions): GameState {
     hands: { pemerintah: [], bankSentral: [], pengusaha: [], buruh: [], masyarakat: [] },
     pipeline: [],
     austerity: false,
+    lobiTersembunyi: null,
     counters: {
       infrastruktur: 0, investasi: 0, phk: 0, cetakUangLolos: 0, lobiDimainkan: 0,
-      lobiAman: 0, lobiDibongkarWarga: 0, investigasi: 0, upahNaikTahun: 0, hargaPernahBahaya: false,
+      lobiAman: 0, lobiDibongkarWarga: 0, investigasi: 0, upahNaikTahun: 0, hargaPernahBahaya: false, kerjaPernahRendah: false,
     },
     agendas,
     log: [],
@@ -81,7 +101,8 @@ export function createGame(options: CreateGameOptions): GameState {
 /** Reveals the current crisis and deals each team a fresh hand. */
 function openYear(state: GameState, rng: Rng): void {
   const crisis = getCrisis(state.crisisId);
-  state.openingDeltas = toDeltas(crisis.effects, `krisis:${crisis.id}`);
+  const factor = state.year >= RULES.eskalasiKrisisMulaiTahun ? 2 : 1;
+  state.openingDeltas = toDeltas(crisis.effects, `krisis:${crisis.id}`, factor);
   applyDeltas(state.stats, state.openingDeltas);
   for (const role of ROLES) {
     state.hands[role] = rng.shuffle(cardsForRole(role)).slice(0, HAND_SIZE).map(card => card.id);
@@ -158,6 +179,13 @@ export function resolveYear(state: GameState, decisions: YearDecisions, options:
 
   // 2. Card effects, all at once.
   const investigated = masyarakatCard?.tags.includes('investigasi') ?? false;
+  if (investigated && s.lobiTersembunyi === s.year - 1) {
+    add({ modal: -3, kepercayaan: -2, keresahan: 1 }, 'lobi:terbongkarSusulan');
+    s.counters.lobiAman--;
+    s.counters.lobiDibongkarWarga++;
+    events.push('Investigasi warga membongkar Lobi tahun lalu');
+  }
+  s.lobiTersembunyi = null;
   for (const role of ROLES) {
     const card = cardOrNull(decisions[role].cardId);
     if (!card || cancelledCards.has(card.id)) continue;
@@ -181,14 +209,15 @@ export function resolveYear(state: GameState, decisions: YearDecisions, options:
     if (card.tags.includes('investigasi')) s.counters.investigasi++;
     if (card.tags.includes('lobi')) {
       s.counters.lobiDimainkan++;
-      const exposedByMedia = !preview && rng.next() < LOBI_MEDIA_EXPOSURE_CHANCE;
+      const exposedByMedia = !preview && rng.next() < RULES.lobiMediaChance;
       if (investigated || exposedByMedia) {
         add({ modal: -2, kepercayaan: -2, keresahan: 1 }, 'lobi:terbongkar');
         if (investigated) s.counters.lobiDibongkarWarga++;
         events.push(investigated ? 'Lobi dibongkar warga' : 'Lobi dibongkar media');
       } else {
-        add({ modal: 3, kas: -1 }, 'lobi:berhasil');
+        add({ modal: 3, kas: -2 }, 'lobi:berhasil');
         s.counters.lobiAman++;
+        s.lobiTersembunyi = s.year;
       }
     }
   }
@@ -212,7 +241,7 @@ export function resolveYear(state: GameState, decisions: YearDecisions, options:
   }
 
   const hargaNaik = decisions.pengusaha.hargaNaik && !isLeverFrozen(s, 'harga');
-  if (hargaNaik) add({ modal: 2, harga: 1 }, 'tuas:hargaNaik');
+  if (hargaNaik) add({ modal: 2, harga: 1, kepercayaan: -1 }, 'tuas:hargaNaik');
 
   const upah = isLeverFrozen(s, 'upah') ? 0 : decisions.buruh.upah;
   if (upah === 0) {
@@ -236,11 +265,17 @@ export function resolveYear(state: GameState, decisions: YearDecisions, options:
   // 5. System rules, read from the state after steps 1-4.
   const systemDeltas: Delta[] = [];
   if (modifier.kind === 'endOfYear') systemDeltas.push(...toDeltas(modifier.effects, `krisis:${crisis.id}`));
+  if (RULES.bebanRutinKas) systemDeltas.push({ stat: 'kas', amount: -RULES.bebanRutinKas, cause: 'sistem:bebanRutin' });
   const st = s.stats;
-  if (st.harga >= 7) systemDeltas.push({ stat: 'keresahan', amount: 1, cause: 'sistem:hargaTinggi' });
-  if (st.kerja <= 3) systemDeltas.push({ stat: 'keresahan', amount: 1, cause: 'sistem:pengangguran' });
-  if (st.kepercayaan <= 3) systemDeltas.push({ stat: 'keresahan', amount: 1, cause: 'sistem:tidakPercaya' });
-  if (st.harga < 7 && st.kerja > 3 && st.kepercayaan > 3) systemDeltas.push({ stat: 'keresahan', amount: -1, cause: 'sistem:aman' });
+  if (s.bunga < RULES.inflasiBawaanDiBawahBunga) systemDeltas.push({ stat: 'harga', amount: 1, cause: 'sistem:inflasiBawaan' });
+  const laba = Math.floor(st.kerja / RULES.labaUsahaPembagi);
+  if (laba) systemDeltas.push({ stat: 'modal', amount: laba, cause: 'sistem:labaUsaha' });
+  if (st.kerja >= RULES.gajiMinKerja) systemDeltas.push({ stat: 'tabungan', amount: 1, cause: 'sistem:gaji' });
+  const z = RULES.zonaResah;
+  if (st.harga >= z.harga) systemDeltas.push({ stat: 'keresahan', amount: 1, cause: 'sistem:hargaTinggi' });
+  if (st.kerja <= z.kerja) systemDeltas.push({ stat: 'keresahan', amount: 1, cause: 'sistem:pengangguran' });
+  if (st.kepercayaan <= z.kepercayaan) systemDeltas.push({ stat: 'keresahan', amount: 1, cause: 'sistem:tidakPercaya' });
+  if (RULES.keresahanTurunSaatAman && st.harga < z.harga && st.kerja > z.kerja && st.kepercayaan > z.kepercayaan) systemDeltas.push({ stat: 'keresahan', amount: -1, cause: 'sistem:aman' });
   if (st.harga >= 8) systemDeltas.push({ stat: 'tabungan', amount: -1, cause: 'sistem:inflasiTabungan' });
   applyDeltas(s.stats, systemDeltas);
   deltas.push(...systemDeltas);
@@ -248,6 +283,7 @@ export function resolveYear(state: GameState, decisions: YearDecisions, options:
   // 6. Year-end bookkeeping and the single collapse check.
   s.austerity = s.stats.kas <= 2;
   if (s.stats.harga >= 7) s.counters.hargaPernahBahaya = true;
+  if (s.stats.kerja <= 5) s.counters.kerjaPernahRendah = true;
   s.collapses = checkCollapses(s.stats);
   s.rng = rng.state;
 

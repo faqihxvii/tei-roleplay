@@ -69,9 +69,9 @@ export type YearDecisions = { [R in Role]: DecisionFor<R> };
 
 export type AgendaId =
   | 'pemilu' | 'mercusuar' | 'apbnSehat'
-  | 'jangkarHarga' | 'tanpaCetakUang' | 'kredibel'
+  | 'jangkarHarga' | 'inflasiSasaran' | 'kredibel'
   | 'konglomerat' | 'ekspansi' | 'rajaLobi'
-  | 'upahLayak' | 'barisanSolid' | 'nolPhk'
+  | 'upahLayak' | 'barisanSolid' | 'kerjaAman'
   | 'dapurNgebul' | 'kerjaSemua' | 'pengawas'
   | 'oknum';
 
@@ -86,6 +86,7 @@ export interface Counters {
   investigasi: number;
   upahNaikTahun: number;
   hargaPernahBahaya: boolean;
+  kerjaPernahRendah: boolean;
 }
 
 export interface PipelineEntry {
@@ -131,6 +132,8 @@ export interface GameState {
   pipeline: PipelineEntry[];
   /** Set when Kas ended a year at 2 or below: Pemerintah spending cards are halved this year. */
   austerity: boolean;
+  /** Year of the last lobby that went unnoticed; Masyarakat can still expose it the following year. */
+  lobiTersembunyi: number | null;
   counters: Counters;
   agendas: Record<Role, AgendaId>;
   log: YearLog[];
