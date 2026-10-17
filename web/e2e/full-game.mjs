@@ -163,7 +163,7 @@ await shot(host, 'debrief-5-diskusi.png', true);
 await roleOf['Pengusaha'].locator('.question-mini').waitFor();
 await shot(roleOf['Pengusaha'], 'phone-diskusi.png', true);
 await host.keyboard.press('ArrowRight');
-await host.locator('.debrief-body').waitFor();
+await host.locator('.topbar-title').getByText('Di Dunia Nyata').waitFor();
 await shot(host, 'debrief-6-dunia-nyata.png', true);
 
 // Post quiz: the same five questions, answered by every phone.
@@ -181,8 +181,13 @@ await shot(host, 'debrief-7-kuis.png', true);
 await roleOf['Pemerintah'].locator('.review').waitFor();
 await shot(roleOf['Pemerintah'], 'phone-kuis-hasil.png', true);
 
+// Two quick arrow presses move two sections, even before the server has answered the first.
+await host.keyboard.press('ArrowLeft');
+await host.keyboard.press('ArrowLeft');
+await host.locator('.topbar-title').getByText('Diskusi').waitFor();
+
 // Penutup: the closing survey on every phone; the main screen shows only the count.
-await host.keyboard.press('ArrowRight');
+await host.getByRole('button', { name: 'Penutup', exact: true }).click();
 await host.locator('.closing').waitFor();
 let score = 3;
 let commented = false;

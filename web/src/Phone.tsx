@@ -5,7 +5,7 @@ import type { ClientMessage, ServerMessage } from '../../room/src/protocol';
 import type { PlayerView } from '../../room/src/views';
 import { DecisionForm } from './DecisionForm';
 import { QuizForm, QuizMine } from './Quiz';
-import { Portrait } from './art';
+import { CrisisArt, Portrait } from './art';
 import { SurveyForm, SurveyThanks } from './Survey';
 import { useHaptics } from './haptics';
 import { Board, HoldButton, RoleMark, RoleName, Timer, roleProps } from './shared';
@@ -259,6 +259,7 @@ function CrisisCard({ view }: { view: PlayerView }) {
   return (
     <article className="crisis-mini">
       {view.pemilu && view.stats && <p className="badge">Tahun pemilu. Survei Kepercayaan Publik: {view.stats.kepercayaan} dari 10.</p>}
+      <CrisisArt id={crisis.id} />
       <p className="kicker">Krisis tahun {view.year}</p>
       <h2>{crisis.title}</h2>
       <p>{crisis.narrative}</p>

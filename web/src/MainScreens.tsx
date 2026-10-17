@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { HostView, PublicStats, RevealView } from '../../room/src/views';
 import { CrisisArt, endExpression, Portrait } from './art';
+import { Diorama } from './Diorama';
 import { cueBus } from './audio/bus';
 import { revealCue } from './audio/derive';
 import { Board, RoleMark, RoleName, Timer, roleProps, useSequence } from './shared';
@@ -49,6 +50,7 @@ export function YearScreen({ view, now }: { view: HostView; now: () => number })
           {step === 'krisis' && <CrisisStage view={view} />}
           {(step === 'rapat' || step === 'pengesahan') && <TeamsStage view={view} />}
           {step === 'lobi' && <LobbyTable view={view} />}
+          {(step === 'rapat' || step === 'lobi' || step === 'pengesahan') && view.stats && <Diorama stats={view.stats} />}
 
           {step === 'koran' && <FrontPageStage view={view} />}
         </div>
@@ -70,10 +72,14 @@ function CrisisStage({ view }: { view: HostView }) {
       {view.pemilu && view.stats && (
         <p className="survey">Tahun pemilu. Hasil survei Kepercayaan Publik: <strong>{view.stats.kepercayaan}</strong> dari 10.</p>
       )}
-      <CrisisArt id={crisis.id} />
-      <p className="kicker">Krisis tahun {view.year} · {crisis.category}</p>
-      <h1 className="crisis-title">{crisis.title}</h1>
-      <p className="crisis-narrative">{crisis.narrative}</p>
+      <div className="crisis-top">
+        <div className="stack">
+          <p className="kicker">Krisis tahun {view.year} · {crisis.category}</p>
+          <h1 className="crisis-title">{crisis.title}</h1>
+          <p className="crisis-narrative">{crisis.narrative}</p>
+        </div>
+        <CrisisArt id={crisis.id} className="crisis-art" />
+      </div>
       <div className="crisis-effects">
         {crisis.opening.map(o => (
           <span key={o.stat} className={`chip-effect ${(o.stat === 'harga' || o.stat === 'keresahan') === o.amount > 0 ? 'bad' : 'good'}`}>
@@ -99,12 +105,15 @@ function TeamsStage({ view }: { view: HostView }) {
     <section className="team-status">
       {view.teams.map(team => (
         <div key={team.role} className={`status-card${team.locked ? ' locked' : ''}`} {...roleProps(team.role)}>
-          <RoleMark role={team.role} />
+          <Portrait role={team.role} expression={team.locked ? 'senang' : pengesahan && !team.offline ? 'panik' : 'tenang'} className="card" fallback={<RoleMark role={team.role} />} />
           <div>
             <p className="status-name">{team.label}</p>
-            <p className="muted">
-              {team.offline ? 'Diputuskan fasilitator' : pengesahan ? (team.locked ? 'Sudah sah' : 'Menunggu Juru Bicara') : `${team.proposers} dari ${team.members} sudah memilih`}
-            </p>
+            {/* Once signed, the stamp says it (and carries the label for screen readers). */}
+            {!team.locked && (
+              <p className="muted">
+                {team.offline ? 'Diputuskan fasilitator' : pengesahan ? 'Menunggu Juru Bicara' : `${team.proposers} dari ${team.members} sudah memilih`}
+              </p>
+            )}
           </div>
           {team.locked && <span className="stamp small" aria-label="Sah">SAH</span>}
         </div>
@@ -224,8 +233,13 @@ function FrontPageStage({ view }: { view: HostView }) {
         <h1>Harian TEI</h1>
         <span>Satu-satunya koran yang membaca keputusan Anda</span>
       </header>
-      <h2 className="fp-headline">{page.headline}</h2>
-      <p className="fp-sub">{page.subheadline}</p>
+      <div className={`fp-lead${page.crisisId ? ' with-photo' : ''}`}>
+        <div>
+          <h2 className="fp-headline">{page.headline}</h2>
+          <p className="fp-sub">{page.subheadline}</p>
+        </div>
+        {page.crisisId && <CrisisArt id={page.crisisId} className="fp-photo" caption={`Ilustrasi: krisis tahun ${page.year}`} />}
+      </div>
       <div className="fp-body">
         <section className="fp-chart" aria-label="Indikator tahun ini">
           <h3>Angka tahun ini</h3>

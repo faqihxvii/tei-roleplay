@@ -136,11 +136,11 @@ Audio hanya keluar dari layar utama:
 
 HP hanya bergetar.
 
-Ilustrasi, file Rive, dan rekaman suara dipasang lewat `web/public/art/manifest.json` dan `web/public/audio/manifest.json` tanpa mengubah kode. Selama manifest kosong, permainan berjalan utuh tanpa gambar dan tanpa suara. Brief untuk ilustrator dan sound designer ada di `docs/art-audio.md`.
+Ilustrasi dibuat dari kode di `web/art/` (`npm run art:build`): lima karikatur peran × empat ekspresi dan 13 ilustrasi kartu krisis. Diorama kota enam distrik bereaksi pada papan di layar utama. Suara dipasang lewat `web/public/audio/manifest.json` tanpa mengubah kode. Rinciannya ada di `docs/art-audio.md`.
 
 Ekspor di konsol (K): tiga CSV (garis waktu, keputusan per tim, log pakta; pemisah titik koma untuk Excel berbahasa Indonesia) dan Edisi Khusus, halaman semua headline dan hasil yang siap dicetak atau disimpan sebagai PDF.
 
 ## Belum dibuat
 
 - Teks Harian TEI (8 varian per tag, 20 kombinasi) perlu ditinjau editor ekonomi dan pembaca sensitivitas sebelum pilot.
-- File ilustrasi, diorama Rive, dan rekaman suara dari ilustrator, animator, dan sound designer (brief: `docs/art-audio.md`).
+- Rekaman suara final dari sound designer (brief: `docs/art-audio.md`).

@@ -512,7 +512,6 @@ h1, h2, h3, .topbar-title, .crisis-title, .fp-headline, .question, .chain-title 
 .toggle input { width: 22px; height: 22px; accent-color: var(--ink); }
 
 /* ---------- illustration slots (empty until the illustrator delivers) ---------- */
-.crisis-art { float: right; width: min(40%, 420px); height: auto; margin: 0 0 12px 20px; mix-blend-mode: multiply; }
 .portrait { display: block; width: 120px; height: 120px; object-fit: contain; mix-blend-mode: multiply; }
 .portrait.small { display: inline-block; width: 44px; height: 44px; vertical-align: middle; margin-right: 6px; }
 /* Caslon's long descenders need room under big headlines. */
@@ -533,3 +532,31 @@ h1, h2, h3, .topbar-title, .crisis-title, .fp-headline, .question, .chain-title 
 .survey-table th, .survey-table td { padding: 6px 8px; border-bottom: 1px solid var(--rule); text-align: left; }
 .survey-table td { font-family: var(--font-num); text-align: center; }
 .comments { margin: 8px 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+
+/* ---------- illustrations in the layout ---------- */
+.crisis-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 34%); gap: 8px 24px; align-items: start; }
+@media (max-width: 900px) { .crisis-top { grid-template-columns: 1fr; } }
+.crisis-art { display: block; margin: -12px -12px 0 0; }
+.crisis-art img, .fp-photo img { display: block; width: 100%; height: auto; mix-blend-mode: multiply; }
+.portrait.card { width: 76px; height: 76px; flex: none; margin: -6px -4px -6px -8px; }
+.status-card { padding-top: 22px; }
+.fp-lead.with-photo { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr); gap: 24px; align-items: center; }
+@media (max-width: 900px) { .fp-lead.with-photo { grid-template-columns: 1fr; } }
+.fp-photo { margin: 18px 0 0; border: 2px solid var(--ink); background: var(--card); padding: 6px; transform: rotate(1.2deg); box-shadow: 4px 4px 0 rgba(26, 26, 26, 0.14); }
+.fp-photo figcaption { font-family: var(--font-body); font-size: 0.8rem; color: var(--muted); padding-top: 4px; }
+
+/* ---------- city diorama ---------- */
+.diorama { margin: 0; padding: 10px 12px 2px; background: var(--card); border: 2px solid var(--ink); border-radius: var(--radius); box-shadow: 4px 4px 0 rgba(26, 26, 26, 0.12); }
+.diorama svg { display: block; width: 100%; height: auto; }
+.dio-name { font-family: var(--font-body); font-weight: 700; font-size: 17px; fill: var(--ink); }
+.dio-zone { font-family: var(--font-body); font-weight: 800; font-size: 13px; letter-spacing: 0.08em; fill: var(--red); }
+.dio-sign { font-family: var(--font-body); font-weight: 900; font-size: 20px; letter-spacing: 0.06em; fill: var(--red); stroke: var(--card); stroke-width: 4px; paint-order: stroke; }
+.dio-smoke { animation: dio-drift 4s ease-in-out infinite alternate; transform-box: fill-box; }
+.dio-wave { animation: dio-wave 1.2s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes dio-drift { from { transform: translate(0, 0); } to { transform: translate(6px, -6px); } }
+@keyframes dio-wave { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .dio-smoke, .dio-wave { animation: none !important; } }
+:root[data-motion='reduced'] :is(.dio-smoke, .dio-wave) { animation: none !important; }
+.team-portrait { display: block; width: 64px; height: 64px; margin: -4px auto 4px; }
+.phone .crisis-art { display: block; width: 100%; margin: 0 0 4px; }
+.fp-lead.with-photo .fp-headline { font-size: clamp(2rem, 3.6vw, 3.4rem); }

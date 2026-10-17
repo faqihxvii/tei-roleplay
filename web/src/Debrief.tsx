@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { ROLE_LABEL } from '../../engine/src/content/roles';
 import { ROLES } from '../../engine/src/types';
 import type { DebriefSection } from '../../room/src/debrief';
@@ -33,15 +33,23 @@ const bad = (stat: string, amount: number) => ((stat === 'harga' || stat === 'ke
 
 export function DebriefScreen({ view, send, consoleOpen }: { view: HostView; send: Send; consoleOpen: boolean }) {
   const d = view.debrief!;
-  const go = (section: DebriefSection) => send({ t: 'debrief', patch: { section } });
+  // Arrow keys step from the section last asked for, not the one on screen: two quick presses
+  // before the server answers must move two sections, not one.
+  const requested = useRef<DebriefSection | null>(null);
+  useEffect(() => { requested.current = null; }, [d.section]);
+  const go = (section: DebriefSection) => {
+    requested.current = section;
+    send({ t: 'debrief', patch: { section } });
+  };
   const ORDER = view.quiz ? ALL : ALL.filter(s => s !== 'kuis');
   const index = ORDER.indexOf(d.section);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (consoleOpen || e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
-      if (e.key === 'ArrowRight' && index < ORDER.length - 1) go(ORDER[index + 1]!);
-      if (e.key === 'ArrowLeft' && index > 0) go(ORDER[index - 1]!);
+      if (consoleOpen || e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) return;
+      const from = ORDER.indexOf(requested.current ?? d.section);
+      if (e.key === 'ArrowRight' && from < ORDER.length - 1) go(ORDER[from + 1]!);
+      if (e.key === 'ArrowLeft' && from > 0) go(ORDER[from - 1]!);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

@@ -7,6 +7,8 @@ import { useHostAudio } from './audio/useHostAudio';
 import { AvControls, ClockControls, Console, useConsoleToggle } from './Console';
 import { DebriefScreen } from './Debrief';
 import { QuizCount } from './Quiz';
+import { Portrait } from './art';
+import { Diorama } from './Diorama';
 import { RoleMark, roleProps } from './shared';
 import { EdisiKhusus } from './EdisiKhusus';
 import { GuessScreen, YearScreen } from './MainScreens';
@@ -191,6 +193,7 @@ function Briefing({ view, send, now }: { view: HostView; send: (m: ClientMessage
         <p className="big-timer" aria-live="off">{seconds !== null ? formatSeconds(seconds) : '–'}</p>
         <p className="lead">Baca kartu peran dan agenda rahasia timmu di HP. Jangan perlihatkan ke tim lain.</p>
         <QuizCount view={view} stage="pra" />
+        {view.stats && <Diorama stats={view.stats} />}
         <div className="row">
           <ClockControls view={view} send={send} />
           {view.options.latihan ? (
@@ -236,6 +239,7 @@ function Teams({ view, editable = false, send }: { view: HostView; editable?: bo
             onDragLeave={editable ? () => setDragOver(null) : undefined}
             onDrop={editable ? drop(role) : undefined}
           >
+            {role && <Portrait role={role} className="team-portrait" />}
             <h2>
               {role && <RoleMark role={role} small />}
               {role ? ROLE_LABEL[role] : 'Belum dapat tim'}

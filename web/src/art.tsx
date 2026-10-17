@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ROLE_LABEL } from '../../engine/src/content/roles';
 import type { Role } from '../../engine/src/types';
 
-// Illustration slots (GDD, "Daftar aset vertical slice"). The illustrator delivers files plus
-// public/art/manifest.json; until a file is listed its slot renders nothing and the typographic
-// layout stands on its own. No stock or generated images (GDD, "Dilarang").
-//   { "crisis":  { "c_beras": "crisis/c_beras.webp" },
-//     "peran":   { "buruh": { "tenang": "peran/buruh-tenang.webp", "marah": "peran/buruh-marah.webp" } },
-//     "diorama": "diorama/kota.riv" }
+// Illustration slots (GDD, "Daftar aset vertical slice"). Files and public/art/manifest.json are
+// generated from web/art (npm run art:build); a slot whose file is not listed renders its fallback,
+// so the typographic layout always stands on its own.
+//   { "crisis":  { "c_beras": "crisis/c_beras.svg" },
+//     "peran":   { "buruh": { "tenang": "peran/buruh-tenang.svg", "marah": "peran/buruh-marah.svg" } },
+//     "diorama": null }   (the city is drawn in the page: Diorama.tsx)
 
 export type Expression = 'tenang' | 'senang' | 'panik' | 'marah';
 
@@ -39,20 +39,21 @@ export function useArt(): ArtManifest {
 }
 
 /** The caricature beside a role, in the mood the game puts them in. Falls back to calm, then to nothing. */
-export function Portrait({ role, expression = 'tenang', className = '' }: { role: Role; expression?: Expression; className?: string }) {
+export function Portrait({ role, expression = 'tenang', className = '', fallback = null }: { role: Role; expression?: Expression; className?: string; fallback?: ReactNode }) {
   const art = useArt();
   const set = art.peran[role];
   const file = set?.[expression] ?? set?.tenang;
-  if (!file) return null;
+  if (!file) return <>{fallback}</>;
   return <img className={`portrait ${className}`} src={`/art/${file}`} alt={`Karikatur ${ROLE_LABEL[role]}, ${expression}`} width={160} height={160} loading="lazy" decoding="async" />;
 }
 
 /** The crisis card's illustration; decorative, because the title and narrative carry the meaning. */
-export function CrisisArt({ id }: { id: string }) {
+export function CrisisArt({ id, className = 'crisis-art', caption }: { id: string; className?: string; caption?: string }) {
   const art = useArt();
   const file = art.crisis[id];
   if (!file) return null;
-  return <img className="crisis-art" src={`/art/${file}`} alt="" width={480} height={320} decoding="async" />;
+  const img = <img src={`/art/${file}`} alt="" width={480} height={320} decoding="async" />;
+  return caption ? <figure className={className}>{img}<figcaption>{caption}</figcaption></figure> : <span className={className}>{img}</span>;
 }
 
 /**

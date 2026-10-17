@@ -18,7 +18,8 @@
     "room:web": "vite --config web/vite.config.ts",
     "room:build": "vite build --config web/vite.config.ts && esbuild room/src/main.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/room.mjs",
     "room:start": "NODE_ENV=production node dist/room.mjs",
-    "room:e2e": "node web/e2e/full-game.mjs"
+    "room:e2e": "node web/e2e/full-game.mjs",
+    "art:build": "tsx web/art/build.ts"
   },
   "dependencies": {
     "@fontsource-variable/source-sans-3": "^5.3.1",

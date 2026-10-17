@@ -11,6 +11,8 @@ import type { PactRecord, PactResult } from './room';
 
 export interface FrontPage {
   year: number;
+  /** The year's crisis card, for the front-page illustration (absent in older snapshots). */
+  crisisId?: string;
   headline: string;
   subheadline: string;
   voices: { who: string; text: string }[];
@@ -136,6 +138,7 @@ export function buildFrontPage(input: FrontPageInput): FrontPage {
 
   return {
     year: log.year,
+    crisisId: log.crisisId,
     headline,
     subheadline,
     voices,
