@@ -14,6 +14,8 @@ import { Board, HoldButton, RoleMark, RoleName, TeiLogo, Timer, roleProps } from
 import { storage, useClockOffset, useRoomSocket } from './socket';
 import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, PRACTICE_COACH, STEP_LABEL, signed } from './text';
 
+const YEAR_STEPS = ['krisis', 'rapat', 'lobi', 'pengesahan', 'pengungkapan', 'koran'] as const;
+
 type Session = { code: string; nickname?: string; token?: string };
 type Send = (message: ClientMessage) => void;
 
@@ -101,8 +103,7 @@ export function Phone() {
     <main className="phone" {...(view.team ? roleProps(view.team.role) : {})}>
       {status !== 'terhubung' && <p className="banner" role="status">{status === 'terputus' ? 'Sinyal putus. Menyambung ulang…' : 'Menghubungkan…'}</p>}
       {notice && <p className="banner warn" role="alert">{notice}</p>}
-      <PhoneHeader view={view} now={clock.now} />
-      <PhoneBody view={view} send={send} />
+      <PhoneShell view={view} send={send} now={clock.now} />
     </main>
   );
 }
@@ -151,18 +152,168 @@ function JoinForm({ busy, error, onJoin }: { busy: boolean; error: string | null
   );
 }
 
+type PhoneTab = 'sekarang' | 'tim' | 'negara';
+const PHONE_TABS: { id: PhoneTab; label: string }[] = [
+  { id: 'sekarang', label: 'Sekarang' },
+  { id: 'tim', label: 'Timku' },
+  { id: 'negara', label: 'Negara' },
+];
+
+/**
+ * The phone in three places: what to do now, the team's own cards (role, secret agenda, private
+ * number) and the country's state. The task always comes first; reference material waits one tap
+ * away instead of piling up under the form. A new phase brings the player back to "Sekarang".
+ */
+function PhoneShell({ view, send, now }: { view: PlayerView; send: Send; now: () => number }) {
+  const [tab, setTabState] = useState<PhoneTab>('sekarang');
+  // A tab opens at its top, not where the last one was scrolled to.
+  const setTab = (next: PhoneTab) => { setTabState(next); window.scrollTo({ top: 0 }); };
+  const phaseKey = `${view.phase}:${view.year}:${view.step}`;
+  useEffect(() => { setTabState('sekarang'); }, [phaseKey]);
+  const withTabs = !!view.team && view.phase !== 'gabung';
+  return (
+    <>
+      <PhoneHeader view={view} now={now} />
+      <div className={withTabs ? 'phone-page with-nav' : 'phone-page'}>
+        {(!withTabs || tab === 'sekarang') && <PhoneBody view={view} send={send} />}
+        {withTabs && tab === 'tim' && <TeamTab view={view} />}
+        {withTabs && tab === 'negara' && <CountryTab view={view} />}
+      </div>
+      {withTabs && (
+        <nav className="phone-nav" aria-label="Bagian layar">
+          {PHONE_TABS.map(t => (
+            <button key={t.id} type="button" className={tab === t.id ? 'on' : ''} aria-current={tab === t.id ? 'page' : undefined} onClick={() => setTab(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </nav>
+      )}
+    </>
+  );
+}
+
+/** Where the year stands: six steps, the current one marked, so a phone always says "you are here". */
+function StepRail({ view }: { view: PlayerView }) {
+  if (view.phase !== 'tahun' || !view.step) return null;
+  const at = YEAR_STEPS.indexOf(view.step);
+  return (
+    <ol className="step-rail" aria-label={`Langkah ${at + 1} dari ${YEAR_STEPS.length}: ${STEP_LABEL[view.step]}`}>
+      {YEAR_STEPS.map((step, i) => <li key={step} className={i < at ? 'done' : i === at ? 'now' : ''} aria-hidden="true" />)}
+    </ol>
+  );
+}
+
 function PhoneHeader({ view, now }: { view: PlayerView; now: () => number }) {
   if (!view.team) return null;
-  const title = view.phase === 'tahun' && view.step ? `Tahun ${view.year}${view.practice ? ' (latihan)' : ''} · ${STEP_LABEL[view.step]}` : view.phase === 'briefing' ? 'Briefing peran' : view.phase === 'tebak' ? 'Tebak agenda' : view.phase === 'selesai' ? 'Debrief' : `Ruangan ${view.code}`;
+  const title = view.phase === 'tahun' && view.step ? `${view.practice ? 'Latihan' : `Tahun ${view.year}`} · ${STEP_LABEL[view.step]}` : view.phase === 'briefing' ? 'Briefing peran' : view.phase === 'tebak' ? 'Tebak agenda' : view.phase === 'selesai' ? 'Debrief' : `Ruangan ${view.code}`;
   return (
     <header className="phone-head">
-      <RoleMark role={view.team.role} />
-      <div className="phone-head-text">
-        <strong>{view.team.label}</strong>
-        <span className="muted small">{title}</span>
+      <div className="phone-head-row">
+        <RoleMark role={view.team.role} />
+        <div className="phone-head-text">
+          <strong>{view.team.label}</strong>
+          <span className="small">{title}{view.me.isSpokesperson && <span className="jubir-chip">Jubir</span>}</span>
+        </div>
+        <Timer endsAt={view.phaseEndsAt} pausedMs={view.pausedMs} now={now} />
       </div>
-      <Timer endsAt={view.phaseEndsAt} pausedMs={view.pausedMs} now={now} />
+      <StepRail view={view} />
     </header>
+  );
+}
+
+/** The team's own cards: private number, secret agenda, what the role controls, who is in it. */
+function TeamTab({ view }: { view: PlayerView }) {
+  const team = view.team!;
+  return (
+    <section className="stack">
+      {team.resource && <Resource resource={team.resource} />}
+      {team.agenda && (
+        <div className="agenda">
+          <p className="label">Agenda rahasia</p>
+          <h3>{team.agenda.name}</h3>
+          <p>{team.agenda.description}</p>
+          <p className="muted small">Jangan tunjukkan layar ini ke tim lain.</p>
+        </div>
+      )}
+      <RoleBriefCard role={team.role} open />
+      <Members view={view} />
+    </section>
+  );
+}
+
+/** The country as the main screen shows it, for a player who cannot see the projector well. */
+function CountryTab({ view }: { view: PlayerView }) {
+  const agreed = view.pacts.filter(p => p.status === 'disepakati');
+  return (
+    <section className="stack">
+      {view.stats ? <Board stats={view.stats} /> : <p className="muted">Negara belum berjalan.</p>}
+      {view.crisis && (
+        <div className="country-crisis">
+          <p className="label">Krisis tahun {view.year}</p>
+          <h3>{view.crisis.title}</h3>
+          <p className="small">{view.crisis.ruleText}</p>
+        </div>
+      )}
+      {agreed.length > 0 && (
+        <div>
+          <p className="label">Pakta yang disepakati</p>
+          <ul className="pacts">
+            {agreed.map(p => (
+              <li key={p.id} className="pact disepakati">
+                <p><RoleName role={p.from} />: {p.fromText}</p>
+                <p><RoleName role={p.to} />: {p.toText}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Resource({ resource }: { resource: NonNullable<NonNullable<PlayerView['team']>['resource']> }) {
+  return (
+    <p className="resource">
+      <span>{resource.label} timmu</span>
+      <strong>{resource.value}</strong>
+      {resource.change ? <span className={`delta ${resource.change > 0 ? 'up' : 'down'}`}>{signed(resource.change)}</span> : null}
+      <span className="muted small">Hanya terlihat di HP timmu</span>
+    </p>
+  );
+}
+
+function Members({ view }: { view: PlayerView }) {
+  const team = view.team!;
+  return (
+    <section>
+      <h3 className="label">Anggota tim</h3>
+      <ul className="members">
+        {team.members.map(name => (
+          <li key={name} aria-current={name === view.me.nickname ? 'true' : undefined}>{name}{name === team.spokesperson ? ' · Jubir' : ''}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** One line on the task at hand, under the step's name (GDD, "Onboarding"). */
+function TaskHead({ view }: { view: PlayerView }) {
+  if (view.phase !== 'tahun' || !view.step) return null;
+  const jubir = view.me.isSpokesperson;
+  const locked = !!view.decision?.locked;
+  const task: Record<string, string> = {
+    krisis: 'Baca krisisnya. Apa dampaknya bagi timmu?',
+    rapat: 'Pilih satu kartu dan atur tuas timmu. Suara terbanyak yang dipakai.',
+    lobi: jubir ? 'Kamu Juru Bicara: buat dan jawab pakta dengan tim lain.' : 'Bantu Juru Bicara bernegosiasi. Kamu masih bisa mengubah pilihan.',
+    pengesahan: locked ? 'Keputusan timmu sudah sah.' : jubir ? 'Kamu Juru Bicara: tahan tombol SAH untuk mengesahkan keputusan tim.' : `Tunggu Juru Bicara (${view.team?.spokesperson ?? '-'}) mengesahkan.`,
+    pengungkapan: 'Lihat layar utama: keputusan semua tim dibuka.',
+    koran: 'Harian TEI terbit. Lihat layar utama.',
+  };
+  return (
+    <div className="task-head">
+      <h2>{STEP_LABEL[view.step]}</h2>
+      <p>{task[view.step]}</p>
+    </div>
   );
 }
 
@@ -185,55 +336,30 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
     );
   }
 
-  const members = (
-    <section>
-      <h3 className="label">Anggota tim</h3>
-      <ul className="members">
-        {team.members.map(name => (
-          <li key={name} aria-current={name === view.me.nickname ? 'true' : undefined}>{name}{name === team.spokesperson ? ' · Jubir' : ''}</li>
-        ))}
-      </ul>
-    </section>
-  );
-
-  const agenda = team.agenda && (
-    <details className="agenda" open={view.phase === 'briefing'}>
-      <summary>Agenda rahasia: {team.agenda.name}</summary>
-      <p>{team.agenda.description}</p>
-      <p className="muted small">Jangan tunjukkan layar ini ke tim lain.</p>
-    </details>
-  );
-
-  const resource = team.resource && (
-    <p className="resource">
-      {team.resource.label} timmu: <strong>{team.resource.value}</strong>
-      {team.resource.change ? <span className={`delta ${team.resource.change > 0 ? 'up' : 'down'}`}> {signed(team.resource.change)}</span> : null}
-      <span className="muted small"> · hanya terlihat di HP timmu</span>
-    </p>
-  );
-
   if (view.phase === 'gabung') {
     return (
       <section className="stack">
-        {members}
+        <Members view={view} />
         <p className="muted">Tim masih bisa berubah. Tunggu fasilitator memulai briefing.</p>
         {preQuiz}
       </section>
     );
   }
 
-  const roleCard = <RoleBriefCard role={team.role} open={view.phase === 'briefing'} />;
-
   if (view.phase === 'briefing') {
+    // The task here is reading: who you are, what you secretly want, what you control.
     return (
       <section className="stack">
-        <Portrait role={team.role} />
+        <div className="briefing-hero">
+          <Portrait role={team.role} />
+          <div>
+            <h2>Kamu {team.label}</h2>
+            <p className="small">Baca kartumu sebelum Tahun 1 dimulai.</p>
+          </div>
+        </div>
         {view.me.isSpokesperson && <p className="badge">Kamu Juru Bicara tahun 1: kamu yang mengesahkan keputusan tim dan membuat pakta.</p>}
-        {agenda}
-        {roleCard}
-        {resource}
-        {members}
         {preQuiz}
+        <TeamTab view={view} />
       </section>
     );
   }
@@ -245,20 +371,16 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
   const coach = view.practice && view.step ? PRACTICE_COACH[view.step] : null;
   return (
     <section className="stack">
+      <TaskHead view={view} />
       {coach && (
         <aside className="coach" role="note">
-          <p className="kicker">Latihan · tidak dihitung</p>
+          <p className="label">Latihan · tidak dihitung</p>
           <p>{view.me.isSpokesperson && coach.spokesperson ? coach.spokesperson : coach.phone}</p>
         </aside>
       )}
-      {view.me.isSpokesperson && view.step !== 'pengungkapan' && view.step !== 'koran' && <p className="badge">Kamu Juru Bicara {view.practice ? 'saat latihan dan Tahun 1' : `tahun ${view.year}`}.</p>}
       {view.crisis && view.step === 'krisis' && <CrisisCard view={view} />}
       {view.decision && <DecideScreen key={`${view.year}`} view={view} send={send} />}
-      {view.step === 'krisis' && view.decision === null && <HandPreview view={view} />}
       {(view.step === 'pengungkapan' || view.step === 'koran') && <RevealMine view={view} />}
-      {resource}
-      {agenda}
-      {roleCard}
     </section>
   );
 }
@@ -313,11 +435,10 @@ function CrisisCard({ view }: { view: PlayerView }) {
     <article className="crisis-mini">
       {view.pemilu && view.stats && <p className="badge">Tahun pemilu. Survei Kepercayaan Publik: {view.stats.kepercayaan} dari 10.</p>}
       <CrisisArt id={crisis.id} />
-      <p className="kicker">Krisis tahun {view.year}</p>
       <h2>{crisis.title}</h2>
       <p><Glossed text={crisis.narrative} /></p>
-      <p><strong>Aturan tahun ini:</strong> {crisis.ruleText}</p>
-      <p className="crisis-question"><span className="kicker">Bahas di timmu</span><br /><Glossed text={crisis.question} /></p>
+      <p className="crisis-rule small"><strong>Aturan tahun ini.</strong> {crisis.ruleText}</p>
+      <p className="crisis-question"><span className="label">Bahas di timmu</span><br /><Glossed text={crisis.question} /></p>
       <Concepts list={crisis.concepts} label="Ketuk istilahnya" />
       {crisis.didYouKnow && (
         <p className="muted small">
@@ -326,10 +447,6 @@ function CrisisCard({ view }: { view: PlayerView }) {
       )}
     </article>
   );
-}
-
-function HandPreview({ view }: { view: PlayerView }) {
-  return view.stats ? <Board stats={view.stats} compact /> : null;
 }
 
 function DecideScreen({ view, send }: { view: PlayerView; send: Send }) {
@@ -348,8 +465,7 @@ function DecideScreen({ view, send }: { view: PlayerView; send: Send }) {
     return (
       <section className="stack">
         <div className="stamp" role="status">SAH</div>
-        <p className="lead">Keputusan tim sudah {ctx.locked.source === 'fasilitator' ? 'diputuskan fasilitator' : 'disahkan'}.</p>
-        <p className="muted">Tunggu pengungkapan di layar utama.</p>
+        <p className="muted">{ctx.locked.source === 'fasilitator' ? 'Diputuskan fasilitator. ' : ''}Tunggu pengungkapan di layar utama.</p>
         {view.step === 'lobi' && <PactPanel view={view} send={send} />}
       </section>
     );
@@ -367,11 +483,8 @@ function DecideScreen({ view, send }: { view: PlayerView; send: Send }) {
         <PactPanel view={view} send={send} />
       ) : (
         <>
-          {view.step === 'rapat' && view.crisis && <p className="crisis-question"><span className="kicker">Bahas di timmu</span><br /><Glossed text={view.crisis.question} /></p>}
-          <p className="muted small">
-            {ctx.proposers} dari {ctx.members} anggota sudah memilih. Angka di samping pilihan adalah jumlah suara.
-            {view.step === 'pengesahan' ? ' Jika Juru Bicara tidak mengesahkan sampai waktu habis, pilihan terbanyak yang dipakai.' : ''}
-          </p>
+          {view.step === 'rapat' && view.crisis && <p className="crisis-question"><span className="label">Bahas di timmu</span><br /><Glossed text={view.crisis.question} /></p>}
+          <p className="vote-count small"><strong>{ctx.proposers} dari {ctx.members}</strong> anggota sudah memilih. Angka di samping pilihan adalah jumlah suara.</p>
           <DecisionForm ctx={ctx} value={draft} onChange={change} />
           {!submitted && <button className="btn" onClick={() => change(draft)}>Pilih ini</button>}
           {submitted && <p className="muted small">Pilihanmu terkirim. Kamu masih bisa mengubahnya.</p>}
@@ -381,7 +494,7 @@ function DecideScreen({ view, send }: { view: PlayerView; send: Send }) {
               <HoldButton label="Tahan untuk SAH" onConfirm={() => send({ t: 'lock', decision: draft })} />
             </div>
           )}
-          {view.step === 'pengesahan' && !isSpokesperson && <p className="muted">Menunggu Juru Bicara ({view.team!.spokesperson}) mengesahkan.</p>}
+          {view.step === 'pengesahan' && <p className="muted small">Jika waktu habis sebelum SAH, pilihan terbanyak yang dipakai.</p>}
         </>
       )}
     </section>
@@ -466,7 +579,6 @@ function RevealMine({ view }: { view: PlayerView }) {
   const pacts = (view.reveal?.pacts ?? []).filter(p => p.from === view.team!.role || p.to === view.team!.role);
   return (
     <section className="stack">
-      <p className="lead">{view.step === 'koran' ? 'Harian TEI sudah terbit. Lihat layar utama.' : 'Semua keputusan dibuka. Lihat layar utama.'}</p>
       {view.step === 'koran' && view.frontPage && <h2 className="headline-mini">{view.frontPage.headline}</h2>}
       {mine && (
         <div className="reveal-mine">

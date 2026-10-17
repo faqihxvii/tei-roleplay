@@ -63,6 +63,10 @@ TEI_BASE=http://<alamat-jaringan>:5173 npm run room:e2e -- <folder-tangkapan-lay
 | Pengungkapan | 60 detik | Keputusan dibuka satu per satu (dampak terbesar terakhir), lalu setiap perubahan indikator dengan penyebabnya, lalu pakta ditepati atau robek. |
 | Halaman Depan | 45 detik | Harian TEI tahun itu. |
 
+**Layar utama** menceritakan tahun sebagai enam babak. Rel di bawah judul menandai babak yang sedang berjalan, dan setiap babak punya satu fokus: kartu krisis, pertanyaan rapat, Meja Lobi, hitungan tim yang sudah sah, pengungkapan di samping papan, lalu Harian TEI. Angka negara tampil sebagai strip tipis di kaki layar, dan semuanya muat dalam satu layar proyektor tanpa digulir.
+
+**HP pemain** punya tiga tab di bawah: *Sekarang* (tugas fase ini, dengan satu kalimat tentang apa yang harus dilakukan), *Timku* (sumber daya pribadi, agenda rahasia, kartu peran, anggota), dan *Negara* (papan, krisis tahun ini, pakta yang disepakati). Setiap fase baru membawa pemain kembali ke *Sekarang*. Header menunjukkan peran, fase, penanda Jubir, dan enam garis kemajuan tahun. Tombol SAH menempel di atas tab agar selalu terjangkau.
+
 Total 6,5 menit per tahun. Tempo Santai menambah 50%. Fasilitator bisa menjeda, menambah 30 detik, atau melewati fase dari konsol (tombol K di layar utama). Setelah tahun 5 atau kolaps: tebak agenda dan tunjuk Oknum (120 detik), lalu hasil akhir dengan skor dari engine, garis waktu, dan daftar headline.
 
 Konsol fasilitator juga mengisi keputusan dan tebakan tim tanpa HP, atau mengambil alih tim yang macet.

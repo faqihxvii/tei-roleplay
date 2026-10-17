@@ -88,6 +88,18 @@ for (const p of Object.values(roleOf)) {
   if (await open.count()) await open.last().click();
 }
 await shot(roleOf['Pemerintah'], 'y1-phone-rapat.png', true);
+// The bottom tabs: the team's own cards and the country, then back to the task.
+{
+  const p = roleOf['Pemerintah'];
+  await p.getByRole('navigation', { name: 'Bagian layar' }).getByRole('button', { name: 'Timku' }).click();
+  await p.locator('.agenda').waitFor();
+  await shot(p, 'y1-phone-timku.png', true);
+  await p.getByRole('navigation', { name: 'Bagian layar' }).getByRole('button', { name: 'Negara' }).click();
+  await p.locator('.board').waitFor();
+  await shot(p, 'y1-phone-negara.png', true);
+  await p.getByRole('navigation', { name: 'Bagian layar' }).getByRole('button', { name: 'Sekarang' }).click();
+  await p.locator('.policy').first().waitFor();
+}
 await shot(host, 'y1-rapat.png');
 await next(); // lobi
 const usaha = roleOf['Pengusaha'], buruh = roleOf['Serikat Buruh'];
