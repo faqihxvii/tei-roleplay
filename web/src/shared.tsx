@@ -11,6 +11,16 @@ export const roleProps = (role: Role) => ({
   style: { ['--role' as string]: ROLE_COLOR[role], ['--role-ink' as string]: ROLE_INK[role] },
 });
 
+/** The TEI lockup from economic.co.id: the red TEI square and the name in three lines. */
+export function TeiLogo({ inverse = false }: { inverse?: boolean }) {
+  return (
+    <span className={`tei-logo${inverse ? ' inverse' : ''}`} role="img" aria-label="The Economic Influence">
+      <span className="tei-mark" aria-hidden="true">TEI</span>
+      <span className="tei-word" aria-hidden="true"><span>The</span><span>Economic</span><span>Influence</span></span>
+    </span>
+  );
+}
+
 export function RoleMark({ role, small = false }: { role: Role; small?: boolean }) {
   return (
     <span className={`role-mark${small ? ' small' : ''}`} {...roleProps(role)} aria-hidden="true">

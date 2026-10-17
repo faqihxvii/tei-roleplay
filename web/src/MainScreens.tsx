@@ -5,7 +5,7 @@ import { Diorama } from './Diorama';
 import { Concepts, Glossed } from './Glossary';
 import { cueBus } from './audio/bus';
 import { revealCue } from './audio/derive';
-import { Board, RoleMark, RoleName, Timer, roleProps, useSequence } from './shared';
+import { Board, RoleMark, RoleName, TeiLogo, Timer, roleProps, useSequence } from './shared';
 import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL, INDICATOR_ORDER, PRACTICE_COACH, signed, STEP_HINT, STEP_LABEL } from './text';
 
 // The projected main screen during the year loop and the end of the game. Text sized to be read
@@ -21,9 +21,12 @@ export function TopBar({ view, now }: { view: HostView; now: () => number }) {
     : view.phase === 'tebak' ? `Juru Bicara menebak agenda tim lain${view.options.oknum ? ' dan menunjuk Oknum' : ''} di HP.` : '';
   return (
     <header className={`topbar${view.practice ? ' practice' : ''}`}>
-      <div>
-        <p className="topbar-title">{title}</p>
-        {hint && <p className="topbar-hint">{hint}</p>}
+      <div className="topbar-lead">
+        <TeiLogo />
+        <div>
+          <p className="topbar-title">{title}</p>
+          {hint && <p className="topbar-hint">{hint}</p>}
+        </div>
       </div>
       <div className="topbar-right">
         <span className="room-tag">Ruangan {view.code}</span>
@@ -231,9 +234,9 @@ function FrontPageStage({ view }: { view: HostView }) {
   return (
     <article className="frontpage">
       <header className="fp-mast">
-        <span>Edisi Tahun {page.year}</span>
+        <TeiLogo />
         <h1>Harian TEI</h1>
-        <span>Satu-satunya koran yang membaca keputusan Anda</span>
+        <span>Edisi Tahun {page.year}<br />Satu-satunya koran yang membaca keputusan Anda</span>
       </header>
       <div className={`fp-lead${page.crisisId ? ' with-photo' : ''}`}>
         <div>

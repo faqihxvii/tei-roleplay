@@ -1,12 +1,10 @@
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Phone } from './Phone';
-import '@fontsource/libre-caslon-condensed/latin-400.css';
-import '@fontsource/libre-caslon-condensed/latin-700.css';
-import '@fontsource/libre-caslon-condensed/latin-400-italic.css';
-import '@fontsource-variable/source-sans-3/wght.css';
-import '@fontsource/ibm-plex-mono/latin-500.css';
-import '@fontsource/ibm-plex-mono/latin-700.css';
+import '@fontsource-variable/geist/wght.css';
+import '@fontsource-variable/geist-mono/wght.css';
+import '@fontsource/instrument-serif/latin-400.css';
+import '@fontsource/instrument-serif/latin-400-italic.css';
 import './styles.css';
 
 // The host screen pulls in the QR encoder; phones never download it (GDD: phone payload ≤ 300 KB).

@@ -327,7 +327,7 @@ table { border-collapse: collapse; width: 100%; }
 .mark { display: inline-block; font: 700 6.5pt Inter, sans-serif; border: 1px solid currentColor; border-radius: 2px; padding: 0 1mm; margin-right: 1.5mm; letter-spacing: .04em; }
 
 /* cover */
-.cover .kicker { font: 700 9pt Inter; letter-spacing: .2em; color: #c91212; margin-top: 20mm; }
+.cover .kicker { font: 700 9pt Inter; letter-spacing: .2em; color: #c30700; margin-top: 20mm; }
 .cover .title { font-size: 40pt; line-height: 1; margin: 3mm 0; border-bottom: 3px solid #111; padding-bottom: 3mm; }
 .cover .sub { font-size: 13pt; margin-bottom: 8mm; }
 .contents th, .contents td { text-align: left; border-bottom: 1px solid #ccc; padding: 1.5mm 2mm; }
@@ -353,7 +353,7 @@ table { border-collapse: collapse; width: 100%; }
 .card .tag { font: 600 6.5pt Inter; border: 0.2mm solid #999; border-radius: 1mm; padding: 0.2mm 1mm; color: #444; }
 .card.crisis .band { background: #111; }
 .card.crisis h3 { font-size: 14pt; }
-.card .esc { font: 700 7pt Inter; color: #c91212; margin: 1mm 0; }
+.card .esc { font: 700 7pt Inter; color: #c30700; margin: 1mm 0; }
 .card .rule { font-size: 8pt; border-top: 0.6mm solid #111; padding-top: 1.5mm; margin-top: auto; }
 .card .question { font-size: 7.5pt; margin-top: 1.5mm; padding-top: 1.2mm; border-top: 0.3mm dashed #999; }
 .card .question b { display: block; font-size: 6.5pt; text-transform: uppercase; letter-spacing: .08em; color: #666; }
@@ -375,7 +375,7 @@ table { border-collapse: collapse; width: 100%; }
 .tracks td small { position: absolute; left: 0; right: 0; bottom: 0.6mm; font: 600 5.5pt Inter; letter-spacing: .05em; }
 .tracks td.danger { background: repeating-linear-gradient(45deg, #fff, #fff 1.4mm, #e6e6e6 1.4mm, #e6e6e6 2.8mm); }
 .tracks td.collapse { background: #111; color: #fff; }
-.tracks td.start { box-shadow: inset 0 0 0 0.8mm #c91212; }
+.tracks td.start { box-shadow: inset 0 0 0 0.8mm #c30700; }
 .tracks.small { width: auto; }
 .board-row { display: flex; align-items: center; gap: 6mm; margin-top: 3mm; }
 .legend { font-size: 8pt; display: flex; align-items: center; gap: 1.5mm; }
@@ -385,8 +385,8 @@ table { border-collapse: collapse; width: 100%; }
 .years { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3mm; margin-top: 4mm; }
 .year { border: 0.4mm solid #111; height: 22mm; padding: 1.5mm 2mm; display: flex; flex-direction: column; }
 .year span { font-size: 7.5pt; color: #555; }
-.year em { margin-top: auto; font: 700 7.5pt Inter; color: #c91212; font-style: normal; }
-.year.esc { border-color: #c91212; }
+.year em { margin-top: auto; font: 700 7.5pt Inter; color: #c30700; font-style: normal; }
+.year.esc { border-color: #c30700; }
 .pipe-title { margin-top: 4mm; }
 .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; }
 .slot { border: 0.4mm dashed #111; height: 24mm; padding: 1.5mm 2mm; }
@@ -400,7 +400,7 @@ table { border-collapse: collapse; width: 100%; }
 .lever th { width: 30mm; text-align: left; vertical-align: top; padding: 1.5mm 2mm; border-bottom: 0.3mm solid #ccc; }
 .lever td { padding: 1.5mm 2mm; border-bottom: 0.3mm solid #ccc; }
 .res td { border: 0.4mm solid #111; height: 10mm; text-align: center; font-weight: 700; }
-.res td.start { box-shadow: inset 0 0 0 0.8mm #c91212; }
+.res td.start { box-shadow: inset 0 0 0 0.8mm #c30700; }
 .ally { margin-top: 3mm; padding: 2mm 3mm; background: #f3f3f3; }
 .agenda-slot { margin-top: 5mm; border: 0.5mm dashed #999; height: 30mm; width: 63mm; display: flex; align-items: center; justify-content: center; text-align: center; color: #888; font-size: 8pt; padding: 3mm; }
 

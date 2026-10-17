@@ -6,30 +6,35 @@ Untuk ilustrator, animator, sound designer, dan engineer yang memasang aset mere
 
 ## Arah
 
-"Koran satir": kartun editorial yang dicetak risograph. Murah diproduksi, mudah dikenali dari bangku belakang, dan sengaja jauh dari kesan template.
+**Merek TEI**, dengan sumber economic.co.id dan feed Instagram @theeconomicinfluence: tata letak editorial yang lapang di atas putih gading, merah TEI untuk penekanan, judul Geist yang rapat, sudut tegas, dan garis tipis. Dari sampul feed kita ambil rumus judulnya: klaim ditulis tebal merah, lalu penjelasannya langsung menyusul dalam warna hitam. Koran satir *Harian TEI* tetap ada sebagai cerita di dalam permainan, ditata seperti sampul postingan TEI. Ilustrasi tetap bergaya cetak risograph dengan tinta merah dan pink TEI.
 
 Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon, ikon generik sebagai visual utama, dan gambar stok (GDD). Target audio rilis tetap foley rekaman asli. Suara sintesis hanya dipakai sementara untuk playtest; lihat bagian audio.
 
 ## Yang sudah ada di kode
 
-### Tinta dan kertas
+### Warna
 
-Token ada di `web/src/styles.css` (`:root`).
+Token ada di `web/src/styles.css` (`:root`). Lapisan merek ada di bagian akhir file yang sama ("identity: TEI brand").
 
 | Token | Nilai | Dipakai untuk |
 | --- | --- | --- |
-| `--paper` | `#f4efe3` | Latar krem, dengan serat kertas (`--grain`) sangat tipis |
-| `--ink` | `#1a1a1a` | Teks dan garis |
-| `--red` | `#c91212` | Merah TEI: krisis, cap SAH, bahaya |
-| `--blue` | `#0067a5` | Tinta riso kedua: pelat misregistrasi, fokus keyboard |
-| `--newsprint` | `#faf6ec` | Halaman Harian TEI |
-| `--highlight` | `#fbe3a6` | Pertanyaan tim, kartu pemandu |
+| `--paper` | `#f7f6f2` | Latar, putih gading seperti economic.co.id |
+| `--paper-2` | `#f2eee7` | Tombol sekunder, jalur papan indikator |
+| `--card` | `#ffffff` | Kartu, dengan garis `--rule` (`#e2ddd3`) |
+| `--ink` | `#171717` | Teks dan garis |
+| `--red` | `#c30700` | Merah TEI: logo, tombol utama, judul koran, krisis, bahaya |
+| `--red-deep` | `#8d1b16` | Kicker, hover tombol, cincin fokus keyboard |
+| `--pink` | `#f5a99d` | Aksen di atas latar gelap, busur di sudut kartu krisis |
+| `--dark` | `#1a1a18` | Panel gelap (agenda rahasia) |
+| `--highlight` | `#fde4df` | Pertanyaan tim, kartu pemandu |
 
-Tekstur dipakai hemat agar teks tetap tajam di proyektor:
+Komponen pokok:
 
-- **Halftone:** dipakai di sudut kartu krisis, spanduk kolaps, dan kotak iklan.
-- **Misregistrasi:** pelat biru bergeser 0,04 em di bawah headline besar.
-- **Serat kertas:** ada di latar. Kontrasnya cukup rendah sehingga teks tetap di atas 4,5:1.
+- **Logo** (`TeiLogo` di `web/src/shared.tsx`): kotak merah bertuliskan TEI, ditambah nama "The / Economic / Influence" dalam tiga baris. Ini rekonstruksi dari logo economic.co.id dengan huruf Geist. Kalau file SVG resmi tersedia, simpan di `web/public/brand/` dan ganti isi komponennya. Favicon ada di `web/public/favicon.svg`.
+- **Kartu:** putih, garis 1 px, dan garis merah pendek di pojok kiri atas. Tidak ada bayangan.
+- **Kicker:** huruf kapital kecil berjarak lebar, warna merah tua.
+- **Aksen serif:** satu kata miring Instrument Serif berwarna merah (`.accent-serif`), seperti "follow." di situs. Pakai hemat, paling banyak satu per layar.
+- **Garis coret tangan** (`.swoosh`): garis bawah merah untuk satu kata penting, seperti di sampul feed.
 
 ### Huruf
 
@@ -37,11 +42,11 @@ Semua font di-host sendiri lewat npm, sehingga tidak ada permintaan ke layanan l
 
 | Peran | Font | Bobot |
 | --- | --- | --- |
-| Headline, narasi, koran | Libre Caslon Condensed | 400, 400 italic, 700 |
-| Teks isi dan UI | Source Sans 3 (variable) | 200–900 |
-| Angka: timer, papan, skor, kode ruangan | IBM Plex Mono | 500, 700 |
+| Judul, teks isi, dan UI | Geist (variable) | 100–900; judul 800 dengan jarak huruf −0,035 em |
+| Nama koran, kutipan warga, aksen miring | Instrument Serif | 400, 400 italic |
+| Angka: timer, papan, skor, kode ruangan | Geist Mono (variable) | 100–900 |
 
-Hanya subset latin yang diunduh browser, sekitar 130 KB untuk semua font. Muatan awal HP (JS, CSS, dan font) sekitar 220 KB, masih di dalam anggaran 300 KB.
+Hanya subset latin yang diunduh browser. Muatan awal HP (JS, CSS, dan font) sekitar 170 KB, masih di dalam anggaran 300 KB.
 
 ### Warna peran
 
@@ -52,7 +57,7 @@ Setiap peran punya **warna, pola, dan kode huruf**, jadi peran tidak pernah dibe
 | Pemerintah | PEM | `#1b2a41` | putih | garis mendatar (kertas bergaris birokrasi) |
 | Bank Sentral | BS | `#0067a5` | putih | kisi (buku besar) |
 | Pengusaha | USH | `#e0a100` | hitam | garis miring |
-| Serikat Buruh | BRH | `#c91212` | putih | garis tegak |
+| Serikat Buruh | BRH | `#c30700` | putih | garis tegak |
 | Masyarakat | MSY | `#5fb49c` | hitam | titik halftone |
 
 Sumber warna ada di `engine/src/content/roles.ts` (`ROLE_COLOR`, `ROLE_INK`). Kit cetak memakai sumber yang sama. Tes memastikan kontras teks di atas setiap warna peran minimal 4,5:1.
@@ -99,7 +104,7 @@ HP senyap dan hanya bergetar (`web/src/haptics.ts`). Setiap getaran punya padana
 
 Sumbernya ada di `web/art/`:
 
-- `riso.ts`: tiga tinta, pola halftone, dan pelat warna yang digeser 4 × 3 unit di bawah garis tinta.
+- `riso.ts`: tiga tinta (hitam, merah TEI `#c30700`, pink `#e9806e`), pola halftone, dan pelat warna yang digeser 4 × 3 unit di bawah garis tinta.
 - `people.ts`: lima arketipe × empat ekspresi.
 - `crises.ts`: 13 kartun editorial kartu krisis, termasuk Tahun 0.
 - `build.ts`: menulis file ke `web/public/art/` beserta `manifest.json`.

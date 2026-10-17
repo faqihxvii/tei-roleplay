@@ -10,8 +10,8 @@ import { zoneOf } from './text';
 type Zone = 'aman' | 'bahaya' | 'kolaps';
 
 const INK = '#1a1a1a';
-const RED = '#c91212';
-const BLUE = '#0067a5';
+const RED = '#c30700';
+const PINK = '#e9806e';
 const PAPER = '#fffdf8';
 
 export function districtZones(stats: PublicStats): Record<'pasar' | 'pabrik' | 'bank' | 'kantor' | 'permukiman' | 'jalan', Zone> {
@@ -78,18 +78,18 @@ export function Diorama({ stats }: { stats: PublicStats }) {
         <defs>
           <pattern id="dio-ht-red" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(15)"><circle cx="3.5" cy="3.5" r="1.9" fill={RED} opacity="0.55" /></pattern>
           <pattern id="dio-ht-red-light" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(15)"><circle cx="3.5" cy="3.5" r="1.1" fill={RED} opacity="0.5" /></pattern>
-          <pattern id="dio-ht-blue" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><circle cx="3.5" cy="3.5" r="1.6" fill={BLUE} /></pattern>
+          <pattern id="dio-ht-pink" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><circle cx="3.5" cy="3.5" r="1.6" fill={PINK} /></pattern>
           <pattern id="dio-ht-ink" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(75)"><circle cx="3" cy="3" r="1.1" fill={INK} /></pattern>
         </defs>
         <path d="M0 210 L960 210" stroke={INK} strokeWidth={5} />
 
         {/* Pasar: price tags rise and a queue forms. */}
         <District x={0} name="Pasar" zone={z.pasar}>
-          <Riso d="M20 210 L20 130 L140 130 L140 210" color="url(#dio-ht-blue)" />
+          <Riso d="M20 210 L20 130 L140 130 L140 210" color="url(#dio-ht-pink)" />
           <Riso d="M12 132 L30 100 L130 100 L148 132 Z" color={RED} />
           <path d="M40 100 L34 132 M70 100 L66 132 M100 100 L100 132" stroke={INK} strokeWidth={3} />
           {z.pasar === 'kolaps' && <text x={80} y={176} textAnchor="middle" className="dio-sign">HABIS</text>}
-          {z.pasar !== 'kolaps' && <g><circle cx={56} cy={170} r={9} fill={RED} /><circle cx={80} cy={174} r={9} fill={BLUE} /><circle cx={104} cy={170} r={9} fill={RED} /><path d="M40 182 L120 182" stroke={INK} strokeWidth={4} /></g>}
+          {z.pasar !== 'kolaps' && <g><circle cx={56} cy={170} r={9} fill={RED} /><circle cx={80} cy={174} r={9} fill={PINK} /><circle cx={104} cy={170} r={9} fill={RED} /><path d="M40 182 L120 182" stroke={INK} strokeWidth={4} /></g>}
           {Array.from({ length: queue }, (_, i) => <Person key={i} x={150 - i * 13} y={210} />)}
         </District>
 
@@ -105,7 +105,7 @@ export function Diorama({ stats }: { stats: PublicStats }) {
 
         {/* Bank: the vault fills or empties with the treasury. */}
         <District x={320} name="Kas Negara" zone={z.bank}>
-          <Riso d="M18 210 L18 110 L142 110 L142 210" color="url(#dio-ht-blue)" />
+          <Riso d="M18 210 L18 110 L142 110 L142 210" color="url(#dio-ht-pink)" />
           <Riso d="M10 112 L80 70 L150 112 Z" color={PAPER} />
           <path d="M36 120 L36 200 M62 120 L62 200 M98 120 L98 200 M124 120 L124 200" stroke={INK} strokeWidth={5} />
           {Array.from({ length: z.bank === 'aman' ? 5 : z.bank === 'bahaya' ? 2 : 0 }, (_, i) => (
@@ -130,7 +130,7 @@ export function Diorama({ stats }: { stats: PublicStats }) {
         <District x={640} name="Permukiman" zone={z.permukiman}>
           {[0, 1, 2].map(i => (
             <g key={i} transform={`translate(${12 + i * 46} ${i === 1 ? -16 : 0})`}>
-              <Riso d="M0 210 L0 150 L42 150 L42 210" color={i === 1 ? 'url(#dio-ht-blue)' : PAPER} />
+              <Riso d="M0 210 L0 150 L42 150 L42 210" color={i === 1 ? 'url(#dio-ht-pink)' : PAPER} />
               <Riso d="M-4 152 L21 124 L46 152 Z" color={RED} w={3.5} />
               <rect x={13} y={164} width={16} height={16} fill={z.permukiman === 'aman' || (z.permukiman === 'bahaya' && i !== 1) ? PAPER : INK} stroke={INK} strokeWidth={3} />
             </g>
@@ -140,7 +140,7 @@ export function Diorama({ stats }: { stats: PublicStats }) {
         {/* Jalan raya: traffic, then protesters, then a burning tyre. */}
         <District x={800} name="Jalan Raya" zone={z.jalan}>
           <path d="M8 196 L152 196" stroke={INK} strokeWidth={3} strokeDasharray="14 10" />
-          {z.jalan === 'aman' && <g><Riso d="M30 196 L34 176 L60 172 L72 182 L96 184 L96 196 Z" color={BLUE} w={3.5} /><circle cx={44} cy={200} r={7} fill={INK} /><circle cx={84} cy={200} r={7} fill={INK} /></g>}
+          {z.jalan === 'aman' && <g><Riso d="M30 196 L34 176 L60 172 L72 182 L96 184 L96 196 Z" color={PINK} w={3.5} /><circle cx={44} cy={200} r={7} fill={INK} /><circle cx={84} cy={200} r={7} fill={INK} /></g>}
           {Array.from({ length: crowd }, (_, i) => <Person key={i} x={26 + i * 22} y={206} sign={i % 2 === 0} raised={i % 2 === 1} />)}
           {z.jalan === 'kolaps' && <g className="dio-smoke"><circle cx={120} cy={120} r={14} fill="url(#dio-ht-ink)" /><circle cx={132} cy={96} r={18} fill="url(#dio-ht-ink)" /><path d="M110 196 C104 170 122 168 118 150 C134 166 138 180 130 196 Z" fill={RED} /></g>}
         </District>

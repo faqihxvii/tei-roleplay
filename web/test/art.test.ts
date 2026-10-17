@@ -25,6 +25,6 @@ test('illustrations are small, titled, and use only the three riso inks', () => 
     assert.ok(content.length < 12_000, `${file} is ${content.length} bytes`);
     assert.match(content, /<title id="t">[^<]{8,}<\/title>/, `${file} has no title`);
     const colours = new Set(content.match(/#[0-9a-f]{6}/gi)!.map(c => c.toLowerCase()));
-    for (const c of colours) assert.ok(['#1a1a1a', '#c91212', '#0067a5', '#fffdf8'].includes(c), `${file} uses ${c}`);
+    for (const c of colours) assert.ok(['#1a1a1a', '#c30700', '#e9806e', '#fffdf8'].includes(c), `${file} uses ${c}`);
   }
 });
