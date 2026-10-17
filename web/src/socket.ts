@@ -40,6 +40,18 @@ export function useRoomSocket(hello: () => ClientMessage | null, onMessage: (mes
     };
 
     open();
+    // Script errors go to the room's anonymous telemetry: first line only, each message once per page.
+    const reported = new Set<string>();
+    const report = (raw: unknown) => {
+      const message = (raw instanceof Error ? `${raw.name}: ${raw.message}` : String(raw ?? 'unknown')).split('\n')[0]!.slice(0, 300);
+      if (reported.has(message) || reported.size >= 10 || wsRef.current?.readyState !== WebSocket.OPEN) return;
+      reported.add(message);
+      wsRef.current.send(JSON.stringify({ t: 'clientError', message } satisfies ClientMessage));
+    };
+    const onError = (e: ErrorEvent) => report(e.error ?? e.message);
+    const onRejection = (e: PromiseRejectionEvent) => report(e.reason);
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onRejection);
     // Phones lock their screens; reconnect at once when they wake instead of waiting out the backoff.
     const wake = () => {
       if (document.visibilityState === 'visible' && wsRef.current?.readyState === WebSocket.CLOSED) {
@@ -52,6 +64,8 @@ export function useRoomSocket(hello: () => ClientMessage | null, onMessage: (mes
       stopped = true;
       clearTimeout(retry);
       document.removeEventListener('visibilitychange', wake);
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onRejection);
       wsRef.current?.close();
     };
   }, [enabled]);

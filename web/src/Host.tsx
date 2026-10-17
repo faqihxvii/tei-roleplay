@@ -7,6 +7,8 @@ import { useHostAudio } from './audio/useHostAudio';
 import { AvControls, ClockControls, Console, useConsoleToggle } from './Console';
 import { DebriefScreen } from './Debrief';
 import { QuizCount } from './Quiz';
+import { Portrait } from './art';
+import { Diorama } from './Diorama';
 import { RoleMark, roleProps } from './shared';
 import { EdisiKhusus } from './EdisiKhusus';
 import { GuessScreen, YearScreen } from './MainScreens';
@@ -60,6 +62,10 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
         <p className="kicker">The Economic Influence · Halaman fasilitator</p>
         <h1>Buka ruangan baru</h1>
       </header>
+      <div className="create-cast" aria-hidden="true">
+        {ROLES.map(role => <Portrait key={role} role={role} className="cast-face" />)}
+      </div>
+      <p className="lead create-lead">Lima tim memerintah satu negara selama lima tahun. Siapkan proyektor, lalu pilih cara bermain kelas ini.</p>
       <label className="check">
         <input type="checkbox" checked={oknum} onChange={e => setOknum(e.target.checked)} />
         <span><strong>Mode Oknum.</strong> Satu tim diam-diam bermain untuk membuat negara kolaps.</span>
@@ -191,6 +197,7 @@ function Briefing({ view, send, now }: { view: HostView; send: (m: ClientMessage
         <p className="big-timer" aria-live="off">{seconds !== null ? formatSeconds(seconds) : '–'}</p>
         <p className="lead">Baca kartu peran dan agenda rahasia timmu di HP. Jangan perlihatkan ke tim lain.</p>
         <QuizCount view={view} stage="pra" />
+        {view.stats && <Diorama stats={view.stats} />}
         <div className="row">
           <ClockControls view={view} send={send} />
           {view.options.latihan ? (
@@ -236,6 +243,7 @@ function Teams({ view, editable = false, send }: { view: HostView; editable?: bo
             onDragLeave={editable ? () => setDragOver(null) : undefined}
             onDrop={editable ? drop(role) : undefined}
           >
+            {role && <Portrait role={role} className="team-portrait" />}
             <h2>
               {role && <RoleMark role={role} small />}
               {role ? ROLE_LABEL[role] : 'Belum dapat tim'}

@@ -5,7 +5,10 @@ import type { ClientMessage, ServerMessage } from '../../room/src/protocol';
 import type { PlayerView } from '../../room/src/views';
 import { DecisionForm } from './DecisionForm';
 import { QuizForm, QuizMine } from './Quiz';
-import { Portrait } from './art';
+import { ROLE_BRIEF } from '../../engine/src/content/briefs';
+import { CrisisArt, Portrait } from './art';
+import { Concepts, Glossed } from './Glossary';
+import { SurveyForm, SurveyThanks } from './Survey';
 import { useHaptics } from './haptics';
 import { Board, HoldButton, RoleMark, RoleName, Timer, roleProps } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
@@ -120,6 +123,7 @@ function JoinForm({ busy, error, onJoin }: { busy: boolean; error: string | null
         <p className="kicker">The Economic Influence</p>
         <h1>Masuk ruangan</h1>
       </header>
+      <Cast />
       <form className="stack" onSubmit={submit}>
         <label className="field">
           <span>Kode ruangan</span>
@@ -174,7 +178,9 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
           <p className="lead">Halo, {view.me.nickname}.</p>
           <p className="muted">Tunggu fasilitator membagi tim. Lihat layar utama.</p>
         </div>
+        <Cast />
         {preQuiz}
+        <HowToPlay />
       </section>
     );
   }
@@ -216,12 +222,15 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
     );
   }
 
+  const roleCard = <RoleBriefCard role={team.role} open={view.phase === 'briefing'} />;
+
   if (view.phase === 'briefing') {
     return (
       <section className="stack">
         <Portrait role={team.role} />
         {view.me.isSpokesperson && <p className="badge">Kamu Juru Bicara tahun 1: kamu yang mengesahkan keputusan tim dan membuat pakta.</p>}
         {agenda}
+        {roleCard}
         {resource}
         {members}
         {preQuiz}
@@ -249,7 +258,52 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
       {(view.step === 'pengungkapan' || view.step === 'koran') && <RevealMine view={view} />}
       {resource}
       {agenda}
+      {roleCard}
     </section>
+  );
+}
+
+/** The five roles as a row of caricatures: who is in this country. */
+function Cast() {
+  return (
+    <figure className="cast" aria-label="Lima peran: Pemerintah, Bank Sentral, Pengusaha, Serikat Buruh, Masyarakat">
+      {ROLES.map(role => <Portrait key={role} role={role} className="cast-face" />)}
+      <figcaption className="muted small">Lima peran, satu negara, lima tahun.</figcaption>
+    </figure>
+  );
+}
+
+function HowToPlay() {
+  return (
+    <section className="how">
+      <h2 className="label">Cara bermain</h2>
+      <ol>
+        <li><strong>Rapat dengan timmu.</strong> Pilih satu kartu kebijakan dan atur tuas peranmu di HP.</li>
+        <li><strong>Lobi tim lain.</strong> Juru Bicara membuat pakta: janji yang dicek setelah keputusan dibuka.</li>
+        <li><strong>Jaga negara tetap hidup</strong> sambil diam-diam mengejar agenda rahasia timmu.</li>
+      </ol>
+    </section>
+  );
+}
+
+/** What this role controls, its power and its friends (GDD, "Peran"), shared with the paper kit. */
+function RoleBriefCard({ role, open }: { role: Role; open: boolean }) {
+  const brief = ROLE_BRIEF[role];
+  return (
+    <details className="role-brief" open={open}>
+      <summary>Kartu peran: {ROLE_LABEL[role]}</summary>
+      <p className="role-focus"><Glossed text={brief.focus} /></p>
+      <h3 className="label">Tuas: {brief.lever.name}</h3>
+      <dl className="lever-list">
+        {brief.lever.options.map(([name, fx]) => (
+          <div key={name}><dt>{name}</dt><dd>{fx}</dd></div>
+        ))}
+      </dl>
+      <h3 className="label">Kekuatan: {brief.power.name}</h3>
+      <p><Glossed text={brief.power.text} /></p>
+      {brief.resource?.income && <p className="muted small">{brief.resource.income}</p>}
+      <p className="ally"><strong>Kawan dan lawan.</strong> {brief.allies}</p>
+    </details>
   );
 }
 
@@ -258,11 +312,13 @@ function CrisisCard({ view }: { view: PlayerView }) {
   return (
     <article className="crisis-mini">
       {view.pemilu && view.stats && <p className="badge">Tahun pemilu. Survei Kepercayaan Publik: {view.stats.kepercayaan} dari 10.</p>}
+      <CrisisArt id={crisis.id} />
       <p className="kicker">Krisis tahun {view.year}</p>
       <h2>{crisis.title}</h2>
-      <p>{crisis.narrative}</p>
+      <p><Glossed text={crisis.narrative} /></p>
       <p><strong>Aturan tahun ini:</strong> {crisis.ruleText}</p>
-      <p className="crisis-question"><span className="kicker">Bahas di timmu</span><br />{crisis.question}</p>
+      <p className="crisis-question"><span className="kicker">Bahas di timmu</span><br /><Glossed text={crisis.question} /></p>
+      <Concepts list={crisis.concepts} label="Ketuk istilahnya" />
       {crisis.didYouKnow && (
         <p className="muted small">
           Tahukah Anda? Krisis seperti ini pernah terjadi: {crisis.didYouKnow.title} ({crisis.didYouKnow.source}). Ceritanya dibahas di akhir permainan.
@@ -311,7 +367,7 @@ function DecideScreen({ view, send }: { view: PlayerView; send: Send }) {
         <PactPanel view={view} send={send} />
       ) : (
         <>
-          {view.step === 'rapat' && view.crisis && <p className="crisis-question"><span className="kicker">Bahas di timmu</span><br />{view.crisis.question}</p>}
+          {view.step === 'rapat' && view.crisis && <p className="crisis-question"><span className="kicker">Bahas di timmu</span><br /><Glossed text={view.crisis.question} /></p>}
           <p className="muted small">
             {ctx.proposers} dari {ctx.members} anggota sudah memilih. Angka di samping pilihan adalah jumlah suara.
             {view.step === 'pengesahan' ? ' Jika Juru Bicara tidak mengesahkan sampai waktu habis, pilihan terbanyak yang dipakai.' : ''}
@@ -543,6 +599,13 @@ function ResultsScreen({ view, send }: { view: PlayerView; send: Send }) {
         </div>
       </section>
     );
+  }
+
+  if (d?.section === 'penutup') {
+    // A post quiz still open comes first; the survey follows.
+    if (view.myQuiz?.open === 'pasca') return <QuizForm key="pasca" quiz={view.myQuiz} send={send} />;
+    if (view.mySurvey?.open) return <SurveyForm survey={view.mySurvey} send={send} />;
+    if (view.mySurvey?.done) return <SurveyThanks />;
   }
 
   if (d?.section === 'kuis' && view.myQuiz) {

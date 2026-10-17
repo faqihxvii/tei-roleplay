@@ -444,8 +444,9 @@ h1, h2, h3, .topbar-title, .crisis-title, .fp-headline, .question, .chain-title 
 
 /* Cards read as clippings: hard edges, ink rules, a little offset shadow like a stack of paper. */
 .crisis-card, .crisis-mini, .ending, .real-world, .titles li, .agenda-card.open, .reveal-card.open { box-shadow: 4px 4px 0 rgba(26, 26, 26, 0.12); }
-.crisis-card { position: relative; border-top: 10px solid var(--red); overflow: hidden; background: var(--card); }
-.crisis-card::after { content: ''; position: absolute; right: -40px; top: -40px; width: 220px; height: 220px; background: var(--halftone-red); border-radius: 50%; pointer-events: none; }
+.crisis-card { position: relative; border-top: 10px solid var(--red); background: var(--card); }
+/* The halftone sun sits inside the corner, masked to a quarter circle, so popovers are never clipped. */
+.crisis-card::after { content: ''; position: absolute; right: 0; top: 0; width: 180px; height: 180px; background: var(--halftone-red); pointer-events: none; -webkit-mask-image: radial-gradient(circle at 100% 0, #000 0 70%, transparent 71%); mask-image: radial-gradient(circle at 100% 0, #000 0 70%, transparent 71%); }
 .crisis-card .kicker:first-of-type { color: var(--red); }
 .crisis-card > * { position: relative; z-index: 1; }
 .crisis-rule { border-left-color: var(--red); background: var(--newsprint); }
@@ -512,8 +513,89 @@ h1, h2, h3, .topbar-title, .crisis-title, .fp-headline, .question, .chain-title 
 .toggle input { width: 22px; height: 22px; accent-color: var(--ink); }
 
 /* ---------- illustration slots (empty until the illustrator delivers) ---------- */
-.crisis-art { float: right; width: min(40%, 420px); height: auto; margin: 0 0 12px 20px; mix-blend-mode: multiply; }
 .portrait { display: block; width: 120px; height: 120px; object-fit: contain; mix-blend-mode: multiply; }
 .portrait.small { display: inline-block; width: 44px; height: 44px; vertical-align: middle; margin-right: 6px; }
 /* Caslon's long descenders need room under big headlines. */
 .ending h1, .crisis-title, .question, .real-world h1 { line-height: 1.08; padding-bottom: 0.08em; margin-bottom: 0.12em; }
+
+/* ---------- survey ---------- */
+.scale legend { line-height: 1.35; }
+.scale-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.scale-pick { position: relative; display: grid; place-items: center; min-height: 52px; border: 2px solid var(--ink); border-radius: var(--radius); background: var(--card); font-family: var(--font-num); font-size: 1.3rem; font-weight: 700; cursor: pointer; }
+.scale-pick input { position: absolute; opacity: 0; pointer-events: none; }
+.scale-pick.on { background: var(--ink); color: var(--paper); box-shadow: 3px 3px 0 var(--red); }
+.scale-pick:focus-within { outline: 3px solid var(--blue); outline-offset: 2px; }
+.scale-ends { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.8rem; color: var(--muted); }
+.field textarea { min-height: 84px; padding: 10px 14px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--card); font: inherit; font-weight: 400; resize: vertical; }
+.closing { max-width: 1000px; margin: clamp(24px, 6vh, 80px) auto 0; text-align: center; display: flex; flex-direction: column; gap: 20px; align-items: center; }
+.closing h1 { font-size: clamp(2.6rem, 6vw, 5rem); line-height: 1.08; padding-bottom: 0.08em; }
+.survey-table { width: 100%; border-collapse: collapse; background: var(--card); font-size: 0.95rem; }
+.survey-table th, .survey-table td { padding: 6px 8px; border-bottom: 1px solid var(--rule); text-align: left; }
+.survey-table td { font-family: var(--font-num); text-align: center; }
+.comments { margin: 8px 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+
+/* ---------- illustrations in the layout ---------- */
+.crisis-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 34%); gap: 8px 24px; align-items: start; }
+@media (max-width: 900px) { .crisis-top { grid-template-columns: 1fr; } }
+.crisis-art { display: block; margin: -12px -12px 0 0; }
+.crisis-art img, .fp-photo img { display: block; width: 100%; height: auto; mix-blend-mode: multiply; }
+.portrait.card { width: 76px; height: 76px; flex: none; margin: -6px -4px -6px -8px; }
+.status-card { padding-top: 22px; }
+.fp-lead.with-photo { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr); gap: 24px; align-items: center; }
+@media (max-width: 900px) { .fp-lead.with-photo { grid-template-columns: 1fr; } }
+.fp-photo { margin: 18px 0 0; border: 2px solid var(--ink); background: var(--card); padding: 6px; transform: rotate(1.2deg); box-shadow: 4px 4px 0 rgba(26, 26, 26, 0.14); }
+.fp-photo figcaption { font-family: var(--font-body); font-size: 0.8rem; color: var(--muted); padding-top: 4px; }
+
+/* ---------- city diorama ---------- */
+.diorama { margin: 0; padding: 10px 12px 2px; background: var(--card); border: 2px solid var(--ink); border-radius: var(--radius); box-shadow: 4px 4px 0 rgba(26, 26, 26, 0.12); }
+.diorama svg { display: block; width: 100%; height: auto; }
+.dio-name { font-family: var(--font-body); font-weight: 700; font-size: 17px; fill: var(--ink); }
+.dio-zone { font-family: var(--font-body); font-weight: 800; font-size: 13px; letter-spacing: 0.08em; fill: var(--red); }
+.dio-sign { font-family: var(--font-body); font-weight: 900; font-size: 20px; letter-spacing: 0.06em; fill: var(--red); stroke: var(--card); stroke-width: 4px; paint-order: stroke; }
+.dio-smoke { animation: dio-drift 4s ease-in-out infinite alternate; transform-box: fill-box; }
+.dio-wave { animation: dio-wave 1.2s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes dio-drift { from { transform: translate(0, 0); } to { transform: translate(6px, -6px); } }
+@keyframes dio-wave { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .dio-smoke, .dio-wave { animation: none !important; } }
+:root[data-motion='reduced'] :is(.dio-smoke, .dio-wave) { animation: none !important; }
+.team-portrait { display: block; width: 64px; height: 64px; margin: -4px auto 4px; }
+.phone .crisis-art { display: block; width: 100%; margin: 0 0 4px; }
+.fp-lead.with-photo .fp-headline { font-size: clamp(2rem, 3.6vw, 3.4rem); }
+
+/* ---------- glossary: tap a term ---------- */
+.term-wrap { position: relative; display: inline; }
+.term { display: inline; padding: 0; border: none; background: none; font: inherit; color: inherit; cursor: help; text-decoration: underline dotted var(--blue); text-decoration-thickness: 2px; text-underline-offset: 0.18em; }
+.term[aria-expanded='true'] { background: var(--highlight); }
+.term-pop { position: absolute; left: 0; top: calc(100% + 6px); z-index: 60; width: min(320px, 82vw); padding: 10px 12px; background: var(--ink); color: var(--paper); font-family: var(--font-body); font-size: 0.95rem; font-weight: 400; line-height: 1.4; border-radius: var(--radius); box-shadow: 4px 4px 0 var(--red); text-align: left; letter-spacing: 0; text-transform: none; }
+.term-pop strong { display: block; color: var(--highlight); text-transform: capitalize; margin-bottom: 2px; }
+.crisis-card .term-pop { font-size: 1.1rem; width: min(420px, 60vw); }
+.concepts { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: baseline; margin: 0; }
+.concept { padding: 3px 10px; border: 1.5px solid var(--rule); border-radius: 999px; background: var(--newsprint); font-size: 0.9rem; }
+.concept .term { text-decoration-style: dotted; }
+
+/* ---------- phone: role card, cast, how to play ---------- */
+.role-brief { padding: 14px 16px; background: var(--card); border: 2px solid var(--ink); border-radius: var(--radius); box-shadow: 4px 4px 0 rgba(26, 26, 26, 0.12); display: flex; flex-direction: column; gap: 10px; }
+.role-brief summary { cursor: pointer; font-weight: 700; min-height: 32px; }
+.role-brief[open] summary { margin-bottom: 4px; }
+.role-focus { font-family: var(--font-head); font-size: 1.35rem; line-height: 1.3; }
+.lever-list { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.lever-list div { display: grid; grid-template-columns: 96px 1fr; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--rule); }
+.lever-list dt { font-weight: 700; }
+.lever-list dd { margin: 0; font-size: 0.92rem; }
+.ally { padding: 8px 10px; background: var(--paper-2); border-radius: var(--radius); font-size: 0.92rem; }
+.cast { margin: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; align-items: end; }
+.cast-face { width: 100%; height: auto; aspect-ratio: 1; }
+.cast figcaption { grid-column: 1 / -1; text-align: center; padding-top: 2px; }
+.how ol { margin: 6px 0 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; }
+.check { padding: 12px 14px; background: var(--card); border: 1.5px solid var(--rule); border-radius: var(--radius); width: min(520px, 100%); }
+.check:has(input:checked) { border-color: var(--ink); box-shadow: 3px 3px 0 rgba(26, 26, 26, 0.12); }
+.check input { flex: none; width: 22px; height: 22px; accent-color: var(--ink); }
+.create-cast { display: grid; grid-template-columns: repeat(5, 92px); gap: 4px; }
+.create-lead { max-width: 520px; }
+
+/* On a phone, an explanation is a sheet at the bottom of the screen, never off its edge. */
+@media (max-width: 640px) {
+  .term-pop { position: fixed; left: 12px; right: 12px; top: auto; bottom: calc(16px + env(safe-area-inset-bottom)); width: auto; font-size: 1rem; }
+}
+/* Concept tags sit at the bottom of a card: on wide screens their explanation opens upward. */
+@media (min-width: 641px) { .concepts .term-pop { top: auto; bottom: calc(100% + 8px); } }

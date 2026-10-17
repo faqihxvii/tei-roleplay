@@ -4,6 +4,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { AGENDAS } from '../src/content/agendas';
+import { ROLE_BRIEF } from '../src/content/briefs';
 import { CRISIS_CARDS } from '../src/content/crises';
 import { POLICY_CARDS } from '../src/content/policies';
 import { GLOBAL_SHOCK_YEAR, HAND_SIZE, INITIAL_BUNGA, INITIAL_STATS, MAX_YEARS, RULES } from '../src/game';
@@ -142,53 +143,8 @@ function boardPage(): string {
     <div class="pipeline">${pipeline}</div>`, 'landscape');
 }
 
-interface RoleSheet {
-  focus: string;
-  lever: { name: string; options: [string, string][] };
-  power: { name: string; text: string };
-  resource?: { stat: Stat; max: number; income?: string };
-  allies: string;
-}
-
-const ROLE_SHEETS: Record<Role, RoleSheet> = {
-  pemerintah: {
-    focus: 'Mengelola APBN. Hanya kamu yang bisa membelanjakan Kas Negara.',
-    lever: { name: 'Pajak', options: [['Naik', 'Kas ▲▲, Kepercayaan ▼, Modal Pengusaha ▼'], ['Tetap', 'Tidak ada efek'], ['Turun', 'Kas ▼▼, Kepercayaan ▲, Modal Pengusaha ▲']] },
-    power: { name: 'Hak Anggaran', text: `Kartu bertanda "Belanja negara" hanya bisa dimainkan olehmu. Jika Kas berakhir di 2 atau kurang, semua kartu belanja tahun berikutnya hanya berefek setengah. Negara membayar beban rutin Kas −${RULES.bebanRutinKas} setiap akhir tahun.` },
-    allies: 'Butuh Bank Sentral untuk Cetak Uang, dan Masyarakat untuk Kepercayaan.',
-  },
-  bankSentral: {
-    focus: 'Menjaga harga tetap stabil, walau sering tidak populer.',
-    lever: { name: 'Suku bunga (geser di papan)', options: [['Naik 1', 'Kredibilitas ▲ sekarang. Tahun depan: Harga ▼, Lapangan Kerja ▼'], ['Tahan', 'Tidak ada efek'], ['Turun 1', 'Tahun depan: Lapangan Kerja ▲, Harga ▲']] },
-    power: { name: 'Independen: Tolak Cetak Uang', text: `Putuskan bersama pilihan rahasiamu. Jika Pemerintah memainkan Cetak Uang dan kamu menolak, kartunya batal dan Kredibilitas ▲. Selama bunga di bawah level ${RULES.inflasiBawaanDiBawahBunga}, Harga naik sendiri setiap akhir tahun.` },
-    resource: { stat: 'kredibilitas', max: 5 },
-    allies: 'Butuh Pemerintah agar tidak belanja berlebihan dan tidak meminta Cetak Uang.',
-  },
-  pengusaha: {
-    focus: 'Mengumpulkan Modal untuk bisnis. Untung jangka pendek, atau investasi untuk tahun depan?',
-    lever: { name: 'Harga jual', options: [['Naikkan', 'Modal ▲▲, Harga ▲, Kepercayaan ▼. Kenaikan upah tahun ini dibebankan ke harga, bukan ke Modal.'], ['Tahan', 'Kenaikan upah dibayar dari Modal.']] },
-    power: { name: 'Lobi', text: 'Mainkan kartu Lobi Insentif untuk memindahkan uang negara ke kantongmu. Lempar dadu: angka 1 berarti media membongkarnya. Masyarakat juga bisa membongkarnya lewat Investigasi Warga, tahun ini atau tahun depan.' },
-    resource: { stat: 'modal', max: 20, income: `Laba usaha: setiap akhir tahun, Modal + (Lapangan Kerja ÷ ${RULES.labaUsahaPembagi}, dibulatkan ke bawah). Bisnismu butuh ekonomi yang hidup.` },
-    allies: 'Butuh Serikat Buruh agar tidak mogok, dan Pemerintah untuk keringanan.',
-  },
-  buruh: {
-    focus: 'Memperjuangkan upah dan pekerjaan anggota.',
-    lever: { name: 'Tuntutan upah', options: [['Tidak menuntut', 'Solidaritas ▼ (anggota kecewa)'], ['Moderat', 'Kepercayaan ▲, Modal Pengusaha ▼ (atau Harga ▲ jika Pengusaha menaikkan harga)'], ['Tinggi', 'Efek moderat × 2, ditambah Lapangan Kerja ▼ dan Solidaritas ▲']] },
-    power: { name: 'Mogok', text: 'Bayar 2 Solidaritas untuk membatalkan kartu Pengusaha tahun ini. Akibatnya: Kas ▼, Keresahan ▲, Modal Pengusaha ▼▼. Ancaman mogok saat Lobi boleh hanya gertakan.' },
-    resource: { stat: 'solidaritas', max: 5 },
-    allies: 'Butuh Masyarakat untuk dukungan publik saat mogok.',
-  },
-  masyarakat: {
-    focus: 'Menjaga dapur tetap ngebul dan suara warga didengar.',
-    lever: { name: 'Konsumsi', options: [['Belanja', 'Lapangan Kerja ▲, Harga ▲, Tabungan ▼ (butuh Tabungan ≥ 1)'], ['Biasa', 'Tidak ada efek'], ['Hemat', 'Harga ▼, Lapangan Kerja ▼, Tabungan ▲']] },
-    power: { name: 'Suara Publik', text: 'Pilih satu tim lain. Efek Kepercayaan dari kartu tim itu tahun ini menjadi dua kali lipat, baik naik maupun turun.' },
-    resource: { stat: 'tabungan', max: 10, income: `Gaji: Tabungan +1 setiap akhir tahun selama Lapangan Kerja ≥ ${RULES.gajiMinKerja}. Harga ≥ 8 menggerus Tabungan −1.` },
-    allies: 'Bisa membongkar Lobi Pengusaha lewat kartu Investigasi Warga.',
-  },
-};
-
 function roleSheet(role: Role): string {
-  const sheet = ROLE_SHEETS[role];
+  const sheet = ROLE_BRIEF[role];
   const options = sheet.lever.options.map(([name, fx]) => `<tr><th>${e(name)}</th><td>${e(fx)}</td></tr>`).join('');
   const resource = sheet.resource
     ? (() => {
@@ -201,10 +157,10 @@ function roleSheet(role: Role): string {
   return page(`
     <div class="role-band" style="--c:${ROLE_COLOR[role]};--ci:${ROLE_INK[role]}">${roleMark(role)}<h1>${e(ROLE_LABEL[role])}</h1></div>
     <p class="focus">${e(sheet.focus)}</p>
-    <h2>Tuas: ${e(sheet.lever.name)} <small>pilih satu setiap tahun</small></h2>
+    <h2>Tuas: ${e(sheet.lever.paperName ?? sheet.lever.name)} <small>pilih satu setiap tahun</small></h2>
     <table class="lever">${options}</table>
     <h2>Kekuatan: ${e(sheet.power.name)}</h2>
-    <p>${e(sheet.power.text)}</p>
+    <p>${e(sheet.power.paper ?? sheet.power.text)}</p>
     ${resource}
     <h2>Setiap tahun</h2>
     <ol class="steps">

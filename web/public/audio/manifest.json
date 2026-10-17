@@ -1,5 +1,102 @@
 {
-  "format": ["webm", "mp3"],
-  "sfx": {},
-  "music": {}
+  "temporary": true,
+  "source": "Sintesis sementara dari web/audio (npm run audio:build). Ganti dengan rekaman sound designer sebelum rilis.",
+  "format": [
+    "webm",
+    "mp3"
+  ],
+  "sfx": {
+    "gabung": [
+      "sfx/gabung-1",
+      "sfx/gabung-2",
+      "sfx/gabung-3"
+    ],
+    "briefing": [
+      "sfx/briefing"
+    ],
+    "fase.krisis": [
+      "sfx/fase-krisis"
+    ],
+    "fase.rapat": [
+      "sfx/fase-rapat"
+    ],
+    "fase.lobi": [
+      "sfx/fase-lobi"
+    ],
+    "fase.pengesahan": [
+      "sfx/fase-pengesahan"
+    ],
+    "fase.pengungkapan": [
+      "sfx/fase-pengungkapan"
+    ],
+    "fase.koran": [
+      "sfx/fase-koran"
+    ],
+    "sah": [
+      "sfx/sah-1",
+      "sfx/sah-2",
+      "sfx/sah-3"
+    ],
+    "pakta.sepakat": [
+      "sfx/pakta-sepakat-1",
+      "sfx/pakta-sepakat-2",
+      "sfx/pakta-sepakat-3"
+    ],
+    "kartu.buka": [
+      "sfx/kartu-buka-1",
+      "sfx/kartu-buka-2",
+      "sfx/kartu-buka-3"
+    ],
+    "sebab.baik": [
+      "sfx/sebab-baik-1",
+      "sfx/sebab-baik-2",
+      "sfx/sebab-baik-3"
+    ],
+    "sebab.buruk": [
+      "sfx/sebab-buruk-1",
+      "sfx/sebab-buruk-2",
+      "sfx/sebab-buruk-3"
+    ],
+    "pakta.tepat": [
+      "sfx/pakta-tepat"
+    ],
+    "pakta.robek": [
+      "sfx/pakta-robek"
+    ],
+    "bahaya": [
+      "sfx/bahaya"
+    ],
+    "kolaps": [
+      "sfx/kolaps"
+    ],
+    "waktu.hampir": [
+      "sfx/waktu-hampir"
+    ],
+    "jeda": [
+      "sfx/jeda"
+    ],
+    "lanjut": [
+      "sfx/lanjut"
+    ],
+    "tebak": [
+      "sfx/tebak"
+    ],
+    "akhir.baik": [
+      "sfx/akhir-baik"
+    ],
+    "akhir.kolaps": [
+      "sfx/akhir-kolaps"
+    ],
+    "halaman": [
+      "sfx/halaman"
+    ],
+    "kuis.jawaban": [
+      "sfx/kuis-jawaban"
+    ]
+  },
+  "music": {
+    "tenang": "music/tenang",
+    "tegang": "music/tegang",
+    "krisis": "music/krisis"
+  }
 }

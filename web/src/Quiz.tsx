@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ClientMessage } from '../../room/src/protocol';
 import type { HostView, PlayerView } from '../../room/src/views';
+import { Glossed } from './Glossary';
 
 // Pre/post quiz: five questions on each phone, the class result on the main screen.
 
@@ -50,7 +51,7 @@ export function QuizMine({ quiz }: { quiz: NonNullable<PlayerView['myQuiz']> }) 
             <li key={i} className={r.pasca === r.right ? 'ok-item' : 'miss-item'}>
               <p><strong>{r.text}</strong></p>
               <p>Jawaban: {r.correct} {r.pasca === r.right ? '✓' : '✗'}</p>
-              <p className="muted small">{r.explanation}</p>
+              <p className="muted small"><Glossed text={r.explanation} /></p>
             </li>
           ))}
         </ol>
@@ -104,7 +105,7 @@ export function QuizSection({ view, send }: { view: HostView; send: Send }) {
             </div>
             <p className="db-values">{q.praPct ?? '–'}% → <strong>{q.pascaPct ?? '–'}%</strong></p>
             {q.answer && (
-              <p className="db-answer"><strong>Jawaban: {q.answer.option}.</strong> {q.answer.explanation}</p>
+              <p className="db-answer"><strong>Jawaban: {q.answer.option}.</strong> <Glossed text={q.answer.explanation} /></p>
             )}
           </li>
         ))}

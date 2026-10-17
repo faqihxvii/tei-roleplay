@@ -2,13 +2,13 @@
 
 Untuk ilustrator, animator, sound designer, dan engineer yang memasang aset mereka. Dasarnya adalah GDD, bagian "Art direction & audio" dan "Aksesibilitas & inklusi". Dokumen ini mencatat apa yang sudah ada di kode, dan apa yang harus dikirim agar aset langsung terpasang.
 
-**Status:** identitas tipografi, palet, tekstur, gerak, sistem audio, getaran HP, dan slot ilustrasi sudah ada. File ilustrasi, file Rive, dan rekaman suara belum ada. Sampai file itu dikirim, permainan berjalan utuh tanpa ilustrasi dan tanpa suara.
+**Status:** identitas, gerak, ilustrasi (karikatur, kartu krisis, diorama kota), sistem audio dengan suara sintesis sementara, dan getaran HP sudah ada. Rekaman suara final dari sound designer belum ada.
 
 ## Arah
 
 "Koran satir": kartun editorial yang dicetak risograph. Murah diproduksi, mudah dikenali dari bangku belakang, dan sengaja jauh dari kesan template.
 
-Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon, ikon generik sebagai visual utama, gambar stok, dan gambar AI (GDD). Audio memakai foley rekaman asli, bukan bunyi beep dari oscillator.
+Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon, ikon generik sebagai visual utama, dan gambar stok (GDD). Target audio rilis tetap foley rekaman asli. Suara sintesis hanya dipakai sementara untuk playtest; lihat bagian audio.
 
 ## Yang sudah ada di kode
 
@@ -93,55 +93,82 @@ HP senyap dan hanya bergetar (`web/src/haptics.ts`). Setiap getaran punya padana
 | 100-50-100 | Juru Bicara menerima tawaran pakta |
 | 120 ms | Keputusan tim disahkan (anggota selain Juru Bicara; Juru Bicara sudah merasakannya saat menahan tombol) |
 
-## Brief ilustrator
+## Ilustrasi
 
-Gaya: garis tinta tebal, maksimal tiga tinta (hitam, merah TEI, biru riso) di atas kertas, arsir halftone, dan sedikit misregistrasi. Gambar ditampilkan dengan `mix-blend-mode: multiply`, jadi latar putih file akan hilang menyatu dengan kertas. Tidak perlu latar transparan.
+**Keputusan (17 Oktober 2026):** larangan gambar AI di GDD dicabut. Ilustrasi dibuat sebagai SVG dari kode, dengan bantuan AI, dan dipakai sampai rilis. Ilustrator boleh memperhalus asalkan memakai gaya yang sama.
 
-Karakter harus seimbang gender, dan tidak boleh mengaitkan sifat buruk dengan suku, agama, atau daerah tertentu. Jangan memakai tokoh atau partai nyata (GDD).
+Sumbernya ada di `web/art/`:
 
-| Aset | Jumlah | Ukuran kirim | Nama file | Dipakai di |
-| --- | --- | --- | --- | --- |
-| Karikatur arketipe: Menteri berdasi, Gubernur Bank dengan kalkulator, Bos Pabrik, Ketua Serikat dengan toa, Ibu-ibu warga | 5 × 4 ekspresi (tenang, senang, panik, marah) | 640 × 640, WebP, ≤ 60 KB | `peran/<peran>-<ekspresi>.webp` | HP saat briefing (tenang); tabel skor akhir (ekspresi dipilih otomatis) |
-| Ilustrasi kartu krisis | 12 (+1 latihan) | 1200 × 800, WebP, ≤ 120 KB | `crisis/<id kartu>.webp`, misalnya `crisis/c_beras.webp` | Kartu krisis di layar utama, sepertiga kanan |
-| Diorama kota | 1 file Rive, 6 zona × 3 state | Lihat kontrak di bawah | `diorama/kota.riv` | Layar utama (dipasang engineer setelah file ada) |
-| Template halaman depan + karikatur | 1 + 6 | Menyusul setelah template disetujui | `koran/...` | Harian TEI |
+- `riso.ts`: tiga tinta, pola halftone, dan pelat warna yang digeser 4 × 3 unit di bawah garis tinta.
+- `people.ts`: lima arketipe × empat ekspresi.
+- `crises.ts`: 13 kartun editorial kartu krisis, termasuk Tahun 0.
+- `build.ts`: menulis file ke `web/public/art/` beserta `manifest.json`.
 
-Ekspresi di tabel skor akhir dipilih otomatis (`endExpression`):
+Setelah mengubah sumber, jalankan `npm run art:build`. Tes menolak file yang tertinggal dari sumbernya, file yang lebih dari 12 KB, file tanpa judul aksesibel, dan warna di luar empat warna palet.
+
+| Aset | Jumlah | Dipakai di |
+| --- | --- | --- |
+| Karikatur: Menteri berdasi, Gubernur Bank Sentral dengan kalkulator, Bos Pabrik berhelm proyek, Ketua Serikat dengan toa, Ibu warga dengan tas belanja | 5 × 4 (tenang, senang, panik, marah) | Kolom tim di lobi, HP saat briefing, kartu status tim di layar utama, tabel skor akhir |
+| Ilustrasi kartu krisis | 13 | Kartu krisis di layar utama dan di HP, serta foto di halaman depan Harian TEI |
+| Diorama kota | 6 distrik × 3 keadaan | Layar utama saat briefing, Rapat Tim, Lobi, dan Pengesahan (`web/src/Diorama.tsx`) |
+
+**Gender dan identitas:** pemerannya tiga perempuan (Gubernur Bank Sentral, Ketua Serikat, Ibu warga) dan dua laki-laki (Menteri, Bos Pabrik). Tidak ada penanda suku atau agama. Wajah memakai warna kertas.
+
+**Ekspresi di kartu status tim:**
+
+- **senang:** tim yang sudah sah.
+- **panik:** tim yang belum sah saat Pengesahan.
+- **tenang:** semua keadaan lain. Tim tanpa HP selalu tenang.
+
+**Ekspresi di tabel skor akhir:**
 
 - **panik:** jika negara kolaps.
 - **senang:** tim dengan skor tertinggi.
 - **marah:** tim yang agendanya gagal.
 - **tenang:** semua tim lain.
 
-Id kartu krisis: `c_beras`, `c_listrik`, `c_data`, dan seterusnya. Daftar lengkapnya ada di `engine/src/content/crises.ts`. Kartu latihan memakai id `c_latihan`.
+**Diorama.** Setiap distrik membaca satu angka, memakai batas zona yang sama dengan papan:
 
-**Kontrak Rive untuk diorama:**
+| Distrik | Membaca | Bahaya | Kolaps |
+| --- | --- | --- | --- |
+| Pasar | Harga | Antrean 3 orang | Antrean 6 orang, kios bertuliskan HABIS |
+| Pabrik | Lapangan Kerja | Asap berhenti, papan PHK | Kerja ≤ 2: TUTUP, gerbang dirantai |
+| Kas Negara | Kas | Tinggal dua koin | Brankas KOSONG |
+| Kantor Pemerintah | Kepercayaan | Bendera setengah tiang, dinding retak | Tulisan LENGSER? |
+| Permukiman | Indeks negara | Satu jendela padam | Semua jendela padam |
+| Jalan Raya | Keresahan | Tiga pendemo membawa poster | Kerumunan dan ban terbakar |
 
-- Artboard `Kota`, state machine `kota`.
-- Input angka 0–10: `harga`, `kerja`, `kas`, `kepercayaan`, `keresahan`.
-- Input trigger: `kolaps`.
-- Enam zona dan state-nya:
-  - **Pasar:** antrean memanjang saat Harga tinggi.
-  - **Pabrik:** tutup saat Lapangan Kerja rendah.
-  - **Bank:** —
-  - **Kantor pemerintah:** —
-  - **Permukiman:** —
-  - **Jalan raya:** demo saat Keresahan tinggi.
-- Setiap zona punya tiga state: aman, bahaya, kolaps. Batas zona sama dengan papan: lihat `ZONES` di `web/src/text.ts`.
-- Target 60 fps di laptop sekolah kelas menengah.
-- Harus ada state diam untuk mode kurangi gerak.
+Asap dan poster bergoyang pelan. Gerakan itu berhenti jika perangkat meminta kurangi gerak, atau jika fasilitator mencentangnya di konsol. Pembaca layar membaca keadaan keenam distrik dalam satu kalimat.
 
-**Pengiriman:** taruh file di `web/public/art/`, lalu daftarkan di `web/public/art/manifest.json`:
+Rive tidak dipakai. Diorama digambar langsung di halaman supaya bereaksi pada angka tanpa runtime tambahan, dan `diorama` di manifest tetap `null`.
 
-```json
-{
-  "crisis": { "c_beras": "crisis/c_beras.webp" },
-  "peran": { "buruh": { "tenang": "peran/buruh-tenang.webp", "marah": "peran/buruh-marah.webp" } },
-  "diorama": null
-}
-```
+## Audio sementara
 
-Ekspresi yang belum ada akan diganti dengan ekspresi tenang. Peran tanpa gambar tampil seperti sekarang.
+Sampai rekaman sound designer ada, layar utama memakai suara sintesis yang dibuat dari kode di `web/audio/`. Bunyi ini meniru bunyi fisik, bukan beep:
+
+- **Resonator modal** untuk bel redaksi, lonceng pasar, koin di kaleng, palu sidang, kapur, dan gong.
+- **Derau terfilter** untuk kertas, amplop, tanda tangan, kerumunan, dan rel laci.
+- **Membran bernada turun** untuk kendang (dung, tung, tak, ketipung).
+- **Gergaji band-limited lewat filter** untuk brass dan tuba.
+
+Musiknya satu lagu dalam D, 96 BPM, 16 birama (40 detik), diaransemen tiga cara:
+
+- **tenang:** oompah tuba, brass, kendang ringan, dan bonang.
+- **tegang:** minor, bas berdenyut, trompet bisu, kendang rapat.
+- **krisis:** brass sumbang dengan sekon turun, kendang ganda, dan kerumunan pelan.
+
+Ekor gema dilipat kembali ke awal supaya loop mulus. Player men-decode musik utuh, bukan streaming, sehingga titik loop tepat per sampel.
+
+| | Nilai |
+| --- | --- |
+| Efek | 25 cue, 37 file, mono. Masing-masing dinormalkan ke −18 LUFS (momentary maksimum, berbobot K) dengan puncak ≤ −1,5 dBFS. Bunyi transien boleh sedikit lebih pelan daripada dipotong limiter. |
+| Musik | 3 loop stereo, sekitar −20 LUFS integrated, puncak ≤ −1 dBFS |
+| Format | WebM/Opus (40 kbps efek, 72 kbps musik) dan MP3 |
+| Ukuran | Sekitar 3,8 MB seluruhnya, dimuat bertahap selama lobi |
+
+`npm run audio:build` merender ulang semuanya. Perintah ini butuh ffmpeg, dan hasilnya sama untuk seed yang sama. Manifest ditandai `"temporary": true`, dan konsol menampilkan "sintesis sementara".
+
+**Saat rekaman asli datang:** timpa file di `sfx/` dan `music/`, atau ubah daftar di manifest, lalu hapus `temporary`. Tes memastikan setiap cue tetap punya file di setiap format.
 
 ## Brief sound designer
 
@@ -222,6 +249,6 @@ Lalu jalankan `npm test`. Tes menolak manifest yang memuat nama cue atau loop ya
 
 ## Belum dibuat
 
-- Semua file ilustrasi, file Rive diorama, dan rekaman suara. Ini pekerjaan ilustrator, animator, dan sound designer (GDD, "Tim inti").
-- Komponen Rive untuk diorama. Akan dipasang setelah file `.riv` pertama ada, agar runtime-nya (sekitar 150 KB) tidak dimuat tanpa guna.
+- Rekaman foley dan musik final dari sound designer (GDD, "Tim inti"). Suara yang terpasang sekarang adalah sintesis sementara.
+- Karikatur untuk halaman depan Harian TEI (GDD: 6 karikatur). Untuk sementara, foto halaman depan memakai ilustrasi krisis tahun itu.
 - Kit cetak masih memakai huruf lamanya. Palet perannya sudah mengikuti palet baru.

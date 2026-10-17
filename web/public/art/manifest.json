@@ -1,5 +1,50 @@
 {
-  "crisis": {},
-  "peran": {},
+  "crisis": {
+    "c_beras": "crisis/c_beras.svg",
+    "c_pupuk": "crisis/c_pupuk.svg",
+    "c_minyak": "crisis/c_minyak.svg",
+    "c_listrik": "crisis/c_listrik.svg",
+    "c_asuransi": "crisis/c_asuransi.svg",
+    "c_pinjol": "crisis/c_pinjol.svg",
+    "c_phk": "crisis/c_phk.svg",
+    "c_ojol": "crisis/c_ojol.svg",
+    "c_data": "crisis/c_data.svg",
+    "c_judol": "crisis/c_judol.svg",
+    "c_rupiah": "crisis/c_rupiah.svg",
+    "c_resesi": "crisis/c_resesi.svg",
+    "c_latihan": "crisis/c_latihan.svg"
+  },
+  "peran": {
+    "pemerintah": {
+      "tenang": "peran/pemerintah-tenang.svg",
+      "senang": "peran/pemerintah-senang.svg",
+      "panik": "peran/pemerintah-panik.svg",
+      "marah": "peran/pemerintah-marah.svg"
+    },
+    "bankSentral": {
+      "tenang": "peran/bankSentral-tenang.svg",
+      "senang": "peran/bankSentral-senang.svg",
+      "panik": "peran/bankSentral-panik.svg",
+      "marah": "peran/bankSentral-marah.svg"
+    },
+    "pengusaha": {
+      "tenang": "peran/pengusaha-tenang.svg",
+      "senang": "peran/pengusaha-senang.svg",
+      "panik": "peran/pengusaha-panik.svg",
+      "marah": "peran/pengusaha-marah.svg"
+    },
+    "buruh": {
+      "tenang": "peran/buruh-tenang.svg",
+      "senang": "peran/buruh-senang.svg",
+      "panik": "peran/buruh-panik.svg",
+      "marah": "peran/buruh-marah.svg"
+    },
+    "masyarakat": {
+      "tenang": "peran/masyarakat-tenang.svg",
+      "senang": "peran/masyarakat-senang.svg",
+      "panik": "peran/masyarakat-panik.svg",
+      "marah": "peran/masyarakat-marah.svg"
+    }
+  },
   "diorama": null
 }
