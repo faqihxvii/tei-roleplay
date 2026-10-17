@@ -8,3 +8,4 @@ test-results/
 *.log
 .env*
 !.env.example
+engine/print/out/

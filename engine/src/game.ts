@@ -16,8 +16,8 @@ export const GLOBAL_SHOCK_YEAR = 3;
 export const RULES = {
   /** Routine spending (salaries, debt interest) taken from Kas every year. */
   bebanRutinKas: 1,
-  /** Chance a successful lobby is exposed by the press in the same year. */
-  lobiMediaChance: 0.2,
+  /** Chance a successful lobby is exposed by the press in the same year: a 1 on a six-sided die. */
+  lobiMediaChance: 1 / 6,
   /** Rakyat stays restless: Keresahan only falls through cards, never on its own. */
   keresahanTurunSaatAman: false,
   /** Prices creep up by 1 every year while the policy rate sits below this level. */

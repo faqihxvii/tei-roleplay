@@ -14,7 +14,8 @@
     "lint": "tsc --noEmit",
     "test": "tsx --test src/lib/gameEngine.test.ts engine/test/*.test.ts",
     "test:e2e": "playwright test",
-    "sim": "tsx engine/sim/run.ts"
+    "sim": "tsx engine/sim/run.ts",
+    "print-kit": "tsx engine/print/build.ts"
   },
   "dependencies": {
     "@google/genai": "^2.13.0",
