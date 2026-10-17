@@ -134,6 +134,20 @@ Laporan dikirim ke tiga tempat:
 2. Webhook (`TELEMETRY_WEBHOOK_URL`): dikirim saat permainan selesai, lalu paling sering sekali per menit, dan sekali lagi saat ruangan dibersihkan. Penerima sebaiknya menyimpan berdasarkan `id`, karena sesi yang sama bisa terkirim beberapa kali.
 3. Konsol fasilitator: tombol "Laporan sesi (JSON)" dan "Survei (CSV)". Hanya versi fasilitator yang memuat komentar survei. Komentar tidak ikut ke file maupun webhook, karena isinya bisa saja menyebut nama.
 
+### Laporan ke Google Sheets
+
+Spreadsheet laporan bisa menjadi penerima webhook lewat `tools/sheets-telemetry/Code.gs`, sebuah Apps Script kecil. Setiap sesi menjadi satu baris di tab **Sesi**, dengan rincian di tab **Waktu** (per fase), **Tahun** (krisis, judul koran, indikator), dan **Mentah** (JSON lengkap). Tab **Ringkasan** menghitung ukuran keberhasilan GDD dari tab Sesi. Kiriman ulang untuk sesi yang sama menimpa barisnya, jadi tidak ada duplikat.
+
+Pemasangan cukup sekali:
+
+1. Buka spreadsheet, lalu **Extensions → Apps Script**. Ganti isi `Code.gs` dengan isi file `tools/sheets-telemetry/Code.gs`, lalu simpan.
+2. Buka **Project Settings → Script Properties**. Tambahkan properti `KUNCI` berisi kata acak yang panjang.
+3. Pilih **Deploy → New deployment → Web app**, dengan *Execute as: Me* dan *Who has access: Anyone*. Izinkan akses ke spreadsheet, lalu salin alamat web app (berakhiran `/exec`).
+4. Di Render → **Environment**, isi `TELEMETRY_WEBHOOK_URL` dengan `<alamat web app>?key=<KUNCI>`, lalu simpan. Render akan restart sendiri.
+5. Uji dengan membuka `<alamat web app>` di browser. Halaman harus menampilkan "TEI: penerima laporan siap." Mainkan satu sesi singkat; baris pertama akan muncul di tab Sesi.
+
+Penerima menolak kiriman tanpa kunci yang benar dan isi yang bukan laporan TEI. Kalau kode Apps Script diubah, buat versi baru di **Deploy → Manage deployments**. Alamatnya tetap sama.
+
 ## Art & audio
 
 Arah "koran satir" dari GDD sudah terpasang:
