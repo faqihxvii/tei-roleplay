@@ -6,13 +6,20 @@ services:
     repo: https://github.com/faqihxvii/tei-roleplay
     branch: main
     region: singapore
-    buildCommand: npm ci && npm run build
+    # The build needs devDependencies (Vite, esbuild), which NODE_ENV=production would skip.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
-    healthCheckPath: /
+    healthCheckPath: /healthz
+    # Rooms live on a disk the free plan wipes on every deploy, so a deploy during class ends every
+    # game in progress. Deploy by hand (Manual Deploy) when no class is playing.
+    autoDeployTrigger: 'off'
     envVars:
       - key: NODE_ENV
         value: production
       - key: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD
+        value: "1"
+      # Render's proxy sits in front: read the client IP from X-Forwarded-For for the rate limits.
+      - key: TRUST_PROXY
         value: "1"
       # Optional: free-plan disks are wiped on restart, so post session reports somewhere durable,
       # e.g. the Google Sheets receiver in tools/sheets-telemetry (room/README.md).

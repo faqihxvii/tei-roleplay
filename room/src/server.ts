@@ -308,7 +308,7 @@ export async function createRoomServer(options: RoomServerOptions) {
     }
   }
 
-  async function persist(code: string): Promise<void> {
+  async function persist(code: string, postNow?: boolean): Promise<void> {
     const live = rooms.get(code);
     if (!live) return;
     try {
@@ -316,10 +316,10 @@ export async function createRoomServer(options: RoomServerOptions) {
     } catch (error) {
       console.error(`[room ${code}] snapshot gagal disimpan`, error);
     }
-    await saveReport(live, live.room.phase === 'selesai' && !live.lastPosted);
+    await saveReport(live, postNow ?? (live.room.phase === 'selesai' && !live.lastPosted));
   }
 
-  /** Writes the session report and posts it to the webhook at most once a minute (always on demand). */
+  /** Writes the session report and posts it to the webhook at most once a minute (always on demand, then waiting for the post). */
   async function saveReport(live: LiveRoom, postNow: boolean): Promise<void> {
     const reports = options.reports;
     if (!reports || live.room.phase === 'gabung') return; // nothing played yet
@@ -333,14 +333,12 @@ export async function createRoomServer(options: RoomServerOptions) {
     const every = reports.webhookEveryMs ?? WEBHOOK_EVERY_MS;
     const wait = postNow ? 0 : Math.max(0, (live.lastPosted ?? 0) + every - now());
     clearTimeout(live.postTimer);
-    const post = () => {
+    const post = async () => {
       live.lastPosted = now();
-      void postReport(reports.webhookUrl!, sessionReport(live.room)).then(ok => {
-        if (!ok) console.error(`[room ${live.room.code}] laporan sesi gagal dikirim ke webhook`);
-      });
+      if (!(await postReport(reports.webhookUrl!, sessionReport(live.room)))) console.error(`[room ${live.room.code}] laporan sesi gagal dikirim ke webhook`);
     };
-    if (wait === 0) post();
-    else live.postTimer = setTimeout(post, wait);
+    if (wait === 0) await post();
+    else live.postTimer = setTimeout(() => void post(), wait);
   }
 
   const ticker = setInterval(() => {
@@ -386,12 +384,14 @@ export async function createRoomServer(options: RoomServerOptions) {
     async close(): Promise<void> {
       clearInterval(ticker);
       clearInterval(sweeper);
-      for (const live of rooms.values()) {
+      // A restart can wipe the disk (Render's free plan), so every played session posts its last
+      // report before the process goes.
+      await Promise.all([...rooms.values()].map(async live => {
         clearTimeout(live.saveTimer);
         clearTimeout(live.postTimer);
-        await persist(live.room.code);
+        await persist(live.room.code, true);
         for (const conn of live.conns) conn.ws.terminate();
-      }
+      }));
       wss.close();
       await new Promise<void>(resolve => server.close(() => resolve()));
     },

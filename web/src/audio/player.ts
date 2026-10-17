@@ -63,7 +63,8 @@ export function createAudio(initial: AvSettings): AudioEngine {
     if (disposed || !(sfxCount + musicCount)) return;
     const howler = await import('howler');
     if (disposed) return;
-    Howl = howler.Howl;
+    const HowlClass = howler.Howl;
+    Howl = HowlClass;
     Howler = howler.Howler;
     const formats = manifest.format ?? ['webm', 'mp3'];
     const srcs = (path: string) => formats.map(f => `${BASE}${path}.${f}`);
@@ -72,13 +73,13 @@ export function createAudio(initial: AvSettings): AudioEngine {
       if (!CUES[cue]) continue;
       const files = Array.isArray(entry) ? entry : entry.files;
       const gain = (Array.isArray(entry) ? undefined : entry.gain) ?? CUES[cue].gain;
-      sfx.set(cue, { gain, howls: files.map(file => new Howl({ src: srcs(file), preload: true })) });
+      sfx.set(cue, { gain, howls: files.map(file => new HowlClass({ src: srcs(file), preload: true })) });
     }
     for (const [m, entry] of Object.entries(manifest.music ?? {}) as [Mood, string | { file: string; gain?: number }][]) {
       const file = typeof entry === 'string' ? entry : entry.file;
       const gain = (typeof entry === 'string' ? undefined : entry.gain) ?? MUSIC_GAIN;
       // Decoded whole (not streamed) so the loop point is sample-accurate: HTML5 audio leaves a gap.
-      tracks.set(m, { gain, howl: new Howl({ src: srcs(file), loop: true, volume: 0, preload: true }) });
+      tracks.set(m, { gain, howl: new HowlClass({ src: srcs(file), loop: true, volume: 0, preload: true }) });
     }
     applyGlobal();
     setMusic(wanted);

@@ -53,7 +53,7 @@ await host.locator('.practice-tag').waitFor();
 
 // who plays what
 const roleOf = {};
-for (const [name, p] of Object.entries(phones)) roleOf[(await p.textContent('.phone-head strong')).trim()] = p;
+for (const p of Object.values(phones)) roleOf[(await p.textContent('.phone-head strong')).trim()] = p;
 console.log('teams', Object.keys(roleOf));
 const next = async () => {
   await host.keyboard.press('k');
@@ -79,7 +79,7 @@ await shot(host, 'y1-krisis.png');
 
 await next(); // rapat
 await host.getByText('Rapat Tim', { exact: false }).first().waitFor();
-for (const [label, p] of Object.entries(roleOf)) {
+for (const p of Object.values(roleOf)) {
   await p.locator('.policy:not(.off)').first().click();
   await p.locator('.seg:not(.off)').last().click();
 }
@@ -98,7 +98,7 @@ await host.locator('.pact-card').waitFor();
 await shot(host, 'y1-lobi.png');
 await shot(buruh, 'y1-phone-pakta.png', true);
 await next(); // pengesahan
-for (const [label, p] of Object.entries(roleOf)) {
+for (const p of Object.values(roleOf)) {
   const hold = p.locator('button.hold');
   await hold.scrollIntoViewIfNeeded();
   const box = await hold.boundingBox();

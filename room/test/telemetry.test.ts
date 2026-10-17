@@ -236,3 +236,29 @@ test('the server saves reports, posts them to a webhook, and serves them only wi
     await app2.close();
   }
 });
+
+test('closing the server posts the last report of every played session, even mid-game and inside the throttle', async () => {
+  const received: SessionReport[] = [];
+  const hook = createServer((req, res) => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => { received.push(JSON.parse(body) as SessionReport); res.end('ok'); });
+  });
+  await new Promise<void>(resolve => hook.listen(0, '127.0.0.1', resolve));
+  const hookUrl = `http://127.0.0.1:${(hook.address() as AddressInfo).port}/`;
+  const app = await createRoomServer({ store: new MemoryStore(), reports: { webhookUrl: hookUrl, webhookEveryMs: 60 * 60 * 1000 } });
+  try {
+    const playing = room();
+    playing.startBriefing(T0);
+    playing.begin(false, T0);
+    const waiting = Room.create({ code: 'BCDG', hostToken: 'host-token-bbbbbbbbbbbb', seed: 3, options: { oknum: false }, now: T0 });
+    app.rooms.set(playing.code, { room: playing, conns: new Set(), lastPosted: Date.now() });
+    app.rooms.set(waiting.code, { room: waiting, conns: new Set() });
+    await app.close();
+    // Awaited by close(): no waiting needed.
+    assert.equal(received.length, 1, 'only the played session, and only once');
+    assert.equal(received[0]!.phase, 'tahun');
+  } finally {
+    hook.close();
+  }
+});
