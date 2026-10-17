@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { HostView, PublicStats, RevealView } from '../../room/src/views';
 import { CrisisArt, endExpression, Portrait } from './art';
 import { Diorama } from './Diorama';
+import { Concepts, Glossed } from './Glossary';
 import { cueBus } from './audio/bus';
 import { revealCue } from './audio/derive';
 import { Board, RoleMark, RoleName, Timer, roleProps, useSequence } from './shared';
@@ -76,7 +77,7 @@ function CrisisStage({ view }: { view: HostView }) {
         <div className="stack">
           <p className="kicker">Krisis tahun {view.year} · {crisis.category}</p>
           <h1 className="crisis-title">{crisis.title}</h1>
-          <p className="crisis-narrative">{crisis.narrative}</p>
+          <p className="crisis-narrative"><Glossed text={crisis.narrative} /></p>
         </div>
         <CrisisArt id={crisis.id} className="crisis-art" />
       </div>
@@ -88,9 +89,9 @@ function CrisisStage({ view }: { view: HostView }) {
         ))}
       </div>
       <p className="crisis-rule"><span className="kicker">Aturan tahun ini</span><br />{crisis.ruleText}</p>
-      <p className="crisis-question"><span className="kicker">Pertanyaan untuk Rapat Tim</span><br />{crisis.question}</p>
+      <p className="crisis-question"><span className="kicker">Pertanyaan untuk Rapat Tim</span><br /><Glossed text={crisis.question} /></p>
       {view.year >= 3 && <p className="muted">Mulai tahun 3, krisis menghantam dua kali lebih keras.</p>}
-      <p className="muted small">Konsep: {crisis.concepts.join(' · ')}</p>
+      <Concepts list={crisis.concepts} />
     </article>
   );
 }

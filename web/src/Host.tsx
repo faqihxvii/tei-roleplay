@@ -62,6 +62,10 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
         <p className="kicker">The Economic Influence · Halaman fasilitator</p>
         <h1>Buka ruangan baru</h1>
       </header>
+      <div className="create-cast" aria-hidden="true">
+        {ROLES.map(role => <Portrait key={role} role={role} className="cast-face" />)}
+      </div>
+      <p className="lead create-lead">Lima tim memerintah satu negara selama lima tahun. Siapkan proyektor, lalu pilih cara bermain kelas ini.</p>
       <label className="check">
         <input type="checkbox" checked={oknum} onChange={e => setOknum(e.target.checked)} />
         <span><strong>Mode Oknum.</strong> Satu tim diam-diam bermain untuk membuat negara kolaps.</span>

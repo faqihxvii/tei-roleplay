@@ -98,6 +98,20 @@ Opsi saat membuka ruangan. Lima soal skenario, satu per tujuan belajar GDD (fisk
 - Kunci jawaban dan penjelasan baru dikirim ke layar dan HP setelah fasilitator menekan "Tampilkan jawaban benar". HP menunjukkan skor sendiri (sebelum → sesudah) setelah kuis akhir dikirim.
 - Setiap pemain menjawab sekali per kuis. Ekspor CSV per nama panggilan tersedia di konsol untuk guru.
 
+## Kartu peran dan glosarium
+
+**Kartu peran di HP.** Kartu ini terbuka saat briefing, dan bisa dibuka kembali sepanjang permainan. Isinya:
+
+- apa yang dipedulikan peran itu;
+- tuas beserta efek tiap pilihan;
+- kekuatan khusus;
+- angka rahasia tim;
+- kawan dan lawan.
+
+Isinya sama dengan lembar peran di kit cetak (`engine/src/content/briefs.ts`). Hanya kalimat yang khusus untuk kertas yang berbeda, misalnya dadu dan token.
+
+**Glosarium** (`web/src/content/glossary.ts`). Istilah ekonomi bisa diketuk di narasi dan pertanyaan krisis, tag konsep, kartu peran, dan penjelasan kuis. Penjelasannya satu kalimat, dengan tingkat baca kelas 10–12. Di HP, penjelasan muncul sebagai lembar di bagian bawah layar. Setiap konsep kartu krisis wajib punya entri, dan tes akan gagal jika ada yang belum.
+
 ## Survei dan telemetri
 
 Survei penutup terbuka di HP ketika debrief sampai di bagian Penutup. Isinya tiga pertanyaan skala 1–5 (keseruan, kejelasan aturan, membantu memahami) dan satu komentar opsional, maksimal 200 karakter. Kalau kuis akhir belum diisi, HP menampilkan kuis dulu.
