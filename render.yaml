@@ -4,7 +4,8 @@ services:
     name: tei-roleplay
     plan: free
     repo: https://github.com/faqihxvii/tei-roleplay
-    branch: ccr-4bc99e3c-hjd9h2
+    branch: main
+    region: singapore
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /
