@@ -5,6 +5,7 @@ import '@fontsource-variable/geist/wght.css';
 import '@fontsource-variable/geist-mono/wght.css';
 import '@fontsource/instrument-serif/latin-400.css';
 import '@fontsource/instrument-serif/latin-400-italic.css';
+import './styles/tokens.css';
 import './styles.css';
 
 // The host screen pulls in the QR encoder; phones never download it (GDD: phone payload ≤ 300 KB).

@@ -1,0 +1,121 @@
+/*
+ * TEI design tokens. The single source for colour, type, space, shape and motion.
+ *
+ * Three layers, each only reading the one above it:
+ *   1. Primitives: the raw brand palette (economic.co.id). Never used by components directly.
+ *   2. Semantic tokens: what a value is for (background, text, brand, danger). Components use these.
+ *   3. Component tokens: the few values that belong to one component (charts, diorama, roles).
+ *
+ * Typography is a closed set: four sizes for UI text, four for the projector, three families, four
+ * weights, three trackings and four line heights. web/test/tokens.test.ts fails if a stylesheet uses
+ * a raw size, weight, tracking or line height instead of one of these.
+ */
+:root {
+  /* ---------- 1. Primitives ---------- */
+  --tei-red-600: #c30700;
+  --tei-red-800: #8d1b16;
+  --tei-red-950: #5c120e;
+  --tei-pink-300: #f5a99d;
+  --tei-pink-100: #fde4df;
+  --neutral-0: #ffffff;
+  --neutral-50: #fdfcf9;
+  --neutral-100: #f7f6f2;
+  --neutral-150: #f2eee7;
+  --neutral-200: #e2ddd3;
+  --neutral-300: #cfc9bf;
+  --neutral-400: #b8b3a8;
+  --neutral-600: #5b5852;
+  --neutral-900: #171717;
+  --neutral-950: #1a1a18;
+  --green-700: #166534;
+  --amber-800: #8a4b0f;
+
+  /* ---------- 2. Semantic colour ---------- */
+  --color-bg: var(--neutral-100);              /* page background, warm off-white */
+  --color-surface: var(--neutral-0);           /* cards, inputs */
+  --color-surface-sunken: var(--neutral-150);  /* secondary buttons, gauge tracks, closed cards */
+  --color-surface-paper: var(--neutral-50);    /* Harian TEI pages */
+  --color-inverse: var(--neutral-950);         /* dark panels */
+  --color-text: var(--neutral-900);
+  --color-text-muted: var(--neutral-600);
+  --color-text-inverse: var(--neutral-0);
+  --color-text-inverse-muted: var(--neutral-300);
+  --color-text-placeholder: var(--neutral-400);
+  --color-border: var(--neutral-200);
+  --color-brand: var(--tei-red-600);           /* logo, primary action, headlines, danger */
+  --color-brand-strong: var(--tei-red-800);    /* kickers, hover, focus ring */
+  --color-brand-soft: var(--tei-pink-300);     /* accents on dark, decorative arcs */
+  --color-highlight: var(--tei-pink-100);      /* team question, coach card */
+  --color-on-highlight: var(--tei-red-950);
+  --color-success: var(--green-700);
+  --color-warning: var(--amber-800);
+  --color-danger: var(--tei-red-600);
+
+  /* ---------- 2. Typography ---------- */
+  --font-sans: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-serif: 'Instrument Serif', 'Times New Roman', Georgia, serif;   /* Harian TEI, quotes, one accent word */
+  --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;  /* numbers */
+
+  /* UI sizes: phones, console, small print on the main screen. */
+  --text-2xs: 0.75rem;   /* 12px: kickers, labels, tags */
+  --text-xs: 0.875rem;   /* 14px: captions, meta, secondary lines */
+  --text-sm: 1rem;       /* 16px: body text */
+  --text-md: 1.25rem;    /* 20px: lead text, list items on the main screen */
+  --text-lg: 1.5rem;     /* 24px: card titles, phone headings */
+  --text-xl: 2rem;       /* 32px: big numbers in cards */
+  --text-2xl: 3.5rem;    /* 56px: the final score on a phone */
+  /* Projector sizes: fluid, readable from the back row. */
+  --display-sm: clamp(1.25rem, 2.2vw, 1.875rem);  /* narrative, prompts, hints */
+  --display-md: clamp(1.75rem, 3.4vw, 3rem);      /* screen and section titles */
+  --display-lg: clamp(2.25rem, 5vw, 4.5rem);      /* crisis title, headlines, questions */
+  --display-xl: clamp(3rem, 9vw, 7rem);           /* room code, briefing timer, masthead */
+  /* Relative sizes, for text set inside a heading. */
+  --text-rel-sm: 0.75em;
+  --text-rel-xs: 0.5em;
+
+  --weight-regular: 400;
+  --weight-semibold: 600;   /* labels, buttons, emphasis in running text */
+  --weight-bold: 700;       /* names, numbers */
+  --weight-black: 800;      /* headings */
+
+  --tracking-display: -0.035em;   /* headings, as on economic.co.id */
+  --tracking-tight: -0.02em;      /* large body text */
+  --tracking-normal: 0;
+  --tracking-caps: 0.1em;         /* small capitals: kickers, labels, room code */
+  --tracking-code: 0.3em;         /* the room-code input */
+
+  --leading-none: 1;
+  --leading-display: 1.05;
+  --leading-snug: 1.25;
+  --leading-body: 1.45;
+
+  /* ---------- 2. Space, shape, motion ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --radius: 0;            /* the brand is square */
+  --border-hairline: 1px solid var(--color-border);
+  --border-strong: 1px solid var(--color-text);
+  --rule-brand: 3px;      /* the short red rule on top of cards */
+  --focus-ring: 3px solid var(--color-brand-strong);
+  --shadow-panel: -4px 0 20px rgba(0, 0, 0, 0.15);   /* the console drawer, the only raised surface */
+  --overlay-press: rgba(0, 0, 0, 0.28);              /* hold-to-confirm fill */
+  --duration-fast: 160ms;
+  --duration-base: 400ms;
+  --duration-slow: 700ms;
+
+  /* ---------- 3. Component tokens ---------- */
+  /* SVG text is in drawing units, so it has its own small scale. */
+  --svg-text-sm: 12px;
+  --svg-text-md: 17px;
+  --svg-text-lg: 20px;
+  /* Textures */
+  --halftone-red: radial-gradient(circle at center, rgba(195, 7, 0, 0.2) 1.2px, transparent 1.6px) 0 0 / 7px 7px;
+  --halftone-ink: radial-gradient(circle at center, rgba(23, 23, 23, 0.12) 1.1px, transparent 1.5px) 0 0 / 6px 6px;
+  /* Role colours come from engine/src/content/roles.ts, set per element as --role and --role-ink. */
+}
