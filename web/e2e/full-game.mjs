@@ -237,6 +237,9 @@ for (const cue of ['gabung', 'briefing', 'fase.krisis', 'fase.rapat', 'fase.lobi
   if (!heard.has(cue)) errors.push(`cue ${cue} tidak terdengar`);
 }
 if (!heard.has('akhir.baik') && !heard.has('akhir.kolaps')) errors.push('cue akhir tidak terdengar');
+// With the synthesized set installed, cues must actually reach Howler, not just be requested.
+const played = new Set((await host.evaluate(() => window.__teiAudio ?? [])).filter(c => c.played).map(c => c.cue));
+for (const cue of ['fase.krisis', 'sah', 'fase.koran']) if (!played.has(cue)) errors.push(`cue ${cue} tidak diputar`);
 if ((await edisi.evaluate(() => window.__teiAudio ?? null)) !== null) errors.push('tab cetak memutar suara');
 await browser.close();
 // The only expected console error is the missing favicon.

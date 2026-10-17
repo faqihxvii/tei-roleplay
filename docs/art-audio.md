@@ -2,7 +2,7 @@
 
 Untuk ilustrator, animator, sound designer, dan engineer yang memasang aset mereka. Dasarnya adalah GDD, bagian "Art direction & audio" dan "Aksesibilitas & inklusi". Dokumen ini mencatat apa yang sudah ada di kode, dan apa yang harus dikirim agar aset langsung terpasang.
 
-**Status:** identitas, gerak, ilustrasi (karikatur, kartu krisis, diorama kota), sistem audio, dan getaran HP sudah ada. Rekaman suara final belum ada.
+**Status:** identitas, gerak, ilustrasi (karikatur, kartu krisis, diorama kota), sistem audio dengan suara sintesis sementara, dan getaran HP sudah ada. Rekaman suara final dari sound designer belum ada.
 
 ## Arah
 
@@ -141,6 +141,34 @@ Setelah mengubah sumber, jalankan `npm run art:build`. Tes menolak file yang ter
 Asap dan poster bergoyang pelan. Gerakan itu berhenti jika perangkat meminta kurangi gerak, atau jika fasilitator mencentangnya di konsol. Pembaca layar membaca keadaan keenam distrik dalam satu kalimat.
 
 Rive tidak dipakai. Diorama digambar langsung di halaman supaya bereaksi pada angka tanpa runtime tambahan, dan `diorama` di manifest tetap `null`.
+
+## Audio sementara
+
+Sampai rekaman sound designer ada, layar utama memakai suara sintesis yang dibuat dari kode di `web/audio/`. Bunyi ini meniru bunyi fisik, bukan beep:
+
+- **Resonator modal** untuk bel redaksi, lonceng pasar, koin di kaleng, palu sidang, kapur, dan gong.
+- **Derau terfilter** untuk kertas, amplop, tanda tangan, kerumunan, dan rel laci.
+- **Membran bernada turun** untuk kendang (dung, tung, tak, ketipung).
+- **Gergaji band-limited lewat filter** untuk brass dan tuba.
+
+Musiknya satu lagu dalam D, 96 BPM, 16 birama (40 detik), diaransemen tiga cara:
+
+- **tenang:** oompah tuba, brass, kendang ringan, dan bonang.
+- **tegang:** minor, bas berdenyut, trompet bisu, kendang rapat.
+- **krisis:** brass sumbang dengan sekon turun, kendang ganda, dan kerumunan pelan.
+
+Ekor gema dilipat kembali ke awal supaya loop mulus. Player men-decode musik utuh, bukan streaming, sehingga titik loop tepat per sampel.
+
+| | Nilai |
+| --- | --- |
+| Efek | 25 cue, 37 file, mono. Masing-masing dinormalkan ke −18 LUFS (momentary maksimum, berbobot K) dengan puncak ≤ −1,5 dBFS. Bunyi transien boleh sedikit lebih pelan daripada dipotong limiter. |
+| Musik | 3 loop stereo, sekitar −20 LUFS integrated, puncak ≤ −1 dBFS |
+| Format | WebM/Opus (40 kbps efek, 72 kbps musik) dan MP3 |
+| Ukuran | Sekitar 3,8 MB seluruhnya, dimuat bertahap selama lobi |
+
+`npm run audio:build` merender ulang semuanya. Perintah ini butuh ffmpeg, dan hasilnya sama untuk seed yang sama. Manifest ditandai `"temporary": true`, dan konsol menampilkan "sintesis sementara".
+
+**Saat rekaman asli datang:** timpa file di `sfx/` dan `music/`, atau ubah daftar di manifest, lalu hapus `temporary`. Tes memastikan setiap cue tetap punya file di setiap format.
 
 ## Brief sound designer
 

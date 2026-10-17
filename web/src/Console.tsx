@@ -48,7 +48,7 @@ export function AvControls({ compact = false }: { compact?: boolean }) {
   const av = useAvSettings();
   const status = useAudioStatus();
   const note = status.state === 'kosong' ? 'Belum ada file suara terpasang. Permainan tetap utuh tanpa suara.'
-    : status.state === 'siap' ? `${status.sfx} efek suara dan ${status.music} musik terpasang.` : 'Memeriksa file suara…';
+    : status.state === 'siap' ? `${status.sfx} efek suara dan ${status.music} musik terpasang${status.temporary ? ' (sintesis sementara, menunggu rekaman sound designer)' : ''}.` : 'Memeriksa file suara…';
   if (compact) {
     return (
       <label className="toggle">

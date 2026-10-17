@@ -60,7 +60,7 @@ export function prefersReducedMotion(): boolean {
 }
 
 /** What the audio engine found in public/audio/manifest.json, for the console. */
-export type AudioStatus = { state: 'memuat' } | { state: 'kosong' } | { state: 'siap'; sfx: number; music: number };
+export type AudioStatus = { state: 'memuat' } | { state: 'kosong' } | { state: 'siap'; sfx: number; music: number; temporary: boolean };
 let status: AudioStatus = { state: 'memuat' };
 const statusListeners = new Set<() => void>();
 export const audioStatus = {

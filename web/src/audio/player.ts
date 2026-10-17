@@ -12,6 +12,8 @@ import { audioStatus, type AvSettings } from './settings';
 
 type Entry = string[] | { files: string[]; gain?: number };
 interface Manifest {
+  /** Set while the files are synthesized stand-ins (web/audio), so the console can say so. */
+  temporary?: boolean;
   format?: string[];
   sfx?: Partial<Record<CueId, Entry>>;
   music?: Partial<Record<Mood, string | { file: string; gain?: number }>>;
@@ -57,7 +59,7 @@ export function createAudio(initial: AvSettings): AudioEngine {
     }
     const sfxCount = Object.keys(manifest.sfx ?? {}).length;
     const musicCount = Object.keys(manifest.music ?? {}).length;
-    audioStatus.set(sfxCount + musicCount ? { state: 'siap', sfx: sfxCount, music: musicCount } : { state: 'kosong' });
+    audioStatus.set(sfxCount + musicCount ? { state: 'siap', sfx: sfxCount, music: musicCount, temporary: !!manifest.temporary } : { state: 'kosong' });
     if (disposed || !(sfxCount + musicCount)) return;
     const howler = await import('howler');
     if (disposed) return;
@@ -75,8 +77,8 @@ export function createAudio(initial: AvSettings): AudioEngine {
     for (const [m, entry] of Object.entries(manifest.music ?? {}) as [Mood, string | { file: string; gain?: number }][]) {
       const file = typeof entry === 'string' ? entry : entry.file;
       const gain = (typeof entry === 'string' ? undefined : entry.gain) ?? MUSIC_GAIN;
-      // Long loops stream instead of decoding whole into memory.
-      tracks.set(m, { gain, howl: new Howl({ src: srcs(file), loop: true, html5: true, volume: 0, preload: true }) });
+      // Decoded whole (not streamed) so the loop point is sample-accurate: HTML5 audio leaves a gap.
+      tracks.set(m, { gain, howl: new Howl({ src: srcs(file), loop: true, volume: 0, preload: true }) });
     }
     applyGlobal();
     setMusic(wanted);
