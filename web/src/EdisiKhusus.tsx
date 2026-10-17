@@ -1,6 +1,6 @@
 import type { HostView } from '../../room/src/views';
 import { ResultsBody, TimelineTable } from './MainScreens';
-import { RoleName } from './shared';
+import { RoleName, TeiLogo } from './shared';
 import { INDICATOR_LABEL, INDICATOR_ORDER } from './text';
 
 // "Edisi Khusus": every front page of the session plus the results, laid out to print or save as
@@ -16,9 +16,9 @@ export function EdisiKhusus({ view }: { view: HostView }) {
         <span className="muted small">Pilih "Simpan sebagai PDF" di jendela cetak.</span>
       </div>
       <header className="fp-mast edisi-mast">
-        <span>Ruangan {view.code}</span>
+        <TeiLogo />
         <h1>Harian TEI</h1>
-        <span>Edisi Khusus {history.length} Tahun</span>
+        <span>Edisi Khusus {history.length} Tahun<br />Ruangan {view.code}</span>
       </header>
       <ResultsBody view={view} />
       <section className="edisi-page">
@@ -28,9 +28,9 @@ export function EdisiKhusus({ view }: { view: HostView }) {
       {history.map(year => (
         <article key={year.year} className="edisi-page frontpage">
           <header className="fp-mast">
-            <span>Edisi Tahun {year.year}</span>
+            <TeiLogo />
             <h1>Harian TEI</h1>
-            <span>Krisis: {year.crisis}</span>
+            <span>Edisi Tahun {year.year}<br />Krisis: {year.crisis}</span>
           </header>
           <h2 className="fp-headline">{year.headline}</h2>
           <p className="fp-sub">{year.subheadline}</p>

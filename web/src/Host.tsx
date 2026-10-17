@@ -9,7 +9,7 @@ import { DebriefScreen } from './Debrief';
 import { QuizCount } from './Quiz';
 import { Portrait } from './art';
 import { Diorama } from './Diorama';
-import { RoleMark, roleProps } from './shared';
+import { RoleMark, roleProps, TeiLogo } from './shared';
 import { EdisiKhusus } from './EdisiKhusus';
 import { GuessScreen, YearScreen } from './MainScreens';
 import { formatSeconds, storage, useClockOffset, useRoomSocket, useSecondsLeft } from './socket';
@@ -59,8 +59,9 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
   return (
     <main className="host center">
       <header className="masthead">
-        <p className="kicker">The Economic Influence · Halaman fasilitator</p>
-        <h1>Buka ruangan baru</h1>
+        <TeiLogo />
+        <p className="kicker">Halaman fasilitator</p>
+        <h1>Buka ruangan <span className="accent-serif">baru.</span></h1>
       </header>
       <div className="create-cast" aria-hidden="true">
         {ROLES.map(role => <Portrait key={role} role={role} className="cast-face" />)}

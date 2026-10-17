@@ -1,5 +1,5 @@
 import type { Role } from '../../engine/src/types';
-import { BLUE, circle, drawing, ellipse, fill, INK, line, merge, PAPER, rect, RED, shape, svg, type Drawing } from './riso';
+import { PINK, circle, drawing, ellipse, fill, INK, line, merge, PAPER, rect, RED, shape, svg, type Drawing } from './riso';
 
 // The five caricature archetypes (GDD, "Ilustrasi"), each in four moods. Busts on a 320 × 320
 // canvas. Gender is balanced across the cast and no figure carries an ethnic or religious marker
@@ -95,7 +95,7 @@ function face(expr: Expression, opts: { browY?: number; heavyBrows?: boolean; gl
     d.ink.push(ellipse(160, 210, 11, 14, { fill: INK }));
     const drops = ['M246 178 Q258 196 252 206 Q240 210 240 196 Z', 'M72 184 Q80 200 74 210 Q62 210 64 198 Z'];
     for (const drop of drops) {
-      d.color.push(fill(drop, BLUE));
+      d.color.push(fill(drop, PINK));
       d.ink.push(line(drop, 4));
     }
   } else {
@@ -120,7 +120,7 @@ function face(expr: Expression, opts: { browY?: number; heavyBrows?: boolean; gl
 // ---------- the cast ----------
 
 function menteri(expr: Expression): Drawing {
-  const suit = bust('url(#ht-blue)');
+  const suit = bust('url(#ht-pink)');
   const shirt: Drawing = { color: [fill('M126 238 L160 300 L194 238 Z', PAPER)], ink: [fill('M126 238 L160 300 L194 238 Z', PAPER), line('M126 238 L160 300 L194 238', 5)] };
   const tie = shape('M152 248 L168 248 L174 296 L160 314 L146 296 Z', RED, 5);
   const lapels: Drawing = { color: [], ink: [line('M126 238 L138 290 L118 270 M194 238 L182 290 L202 270', 5)] };
@@ -134,13 +134,13 @@ function menteri(expr: Expression): Drawing {
 }
 
 function gubernur(expr: Expression): Drawing {
-  const blazer = bust('url(#ht-blue)');
+  const blazer = bust('url(#ht-pink)');
   const blouse: Drawing = { color: [fill('M132 238 Q160 262 188 238 L184 320 L136 320 Z', PAPER)], ink: [fill('M132 238 Q160 262 188 238 L184 320 L136 320 Z', PAPER), line('M132 238 Q160 262 188 238', 5), line('M132 238 L120 300 M188 238 L200 300', 5)] };
   const pearls: Drawing = { color: [], ink: [0, 1, 2, 3, 4, 5, 6].map(i => circle(138 + i * 7.3, 252 + Math.sin((i / 6) * Math.PI) * 9, 3.6, { fill: PAPER, stroke: INK, 'stroke-width': 2 })) };
   const bun: Drawing = { color: [], ink: [circle(160, 56, 24, { fill: INK })] };
   const hair: Drawing = { color: [], ink: [fill('M84 172 C70 94 108 62 160 62 C212 62 250 94 236 172 C230 138 218 112 200 102 C176 114 140 114 118 104 C100 116 90 138 84 172 Z', INK)] };
   const calc: Drawing = {
-    color: [rect(214, 252, 66, 70, { fill: PAPER, transform: 'rotate(-10 247 287)' }), rect(222, 258, 50, 16, { fill: 'url(#ht-blue-light)', transform: 'rotate(-10 247 287)' })],
+    color: [rect(214, 252, 66, 70, { fill: PAPER, transform: 'rotate(-10 247 287)' }), rect(222, 258, 50, 16, { fill: 'url(#ht-pink-light)', transform: 'rotate(-10 247 287)' })],
     ink: [
       rect(214, 252, 66, 70, { rx: 6, fill: PAPER, stroke: INK, 'stroke-width': 5, transform: 'rotate(-10 247 287)' }),
       rect(222, 258, 50, 16, { fill: 'none', stroke: INK, 'stroke-width': 3, transform: 'rotate(-10 247 287)' }),
@@ -151,7 +151,7 @@ function gubernur(expr: Expression): Drawing {
 }
 
 function bos(expr: Expression): Drawing {
-  const shirt = bust('url(#ht-blue-light)', 'M22 320 C30 258 90 232 160 232 C230 232 290 258 298 320 Z');
+  const shirt = bust('url(#ht-pink-light)', 'M22 320 C30 258 90 232 160 232 C230 232 290 258 298 320 Z');
   const vest: Drawing = {
     color: [fill('M40 320 C46 280 80 252 124 242 L144 320 Z', RED), fill('M280 320 C274 280 240 252 196 242 L176 320 Z', RED)],
     ink: [line('M40 320 C46 280 80 252 124 242 L144 320', 5), line('M280 320 C274 280 240 252 196 242 L176 320', 5), fill('M58 290 L136 282 L138 296 L54 304 Z', PAPER), fill('M262 290 L184 282 L182 296 L266 304 Z', PAPER)],
@@ -165,7 +165,7 @@ function bos(expr: Expression): Drawing {
 }
 
 function ketua(expr: Expression): Drawing {
-  const shirt = bust('url(#ht-blue-light)');
+  const shirt = bust('url(#ht-pink-light)');
   const collar: Drawing = { color: [], ink: [line('M134 238 L150 262 L160 244 L170 262 L186 238', 5), circle(160, 280, 3.5, { fill: INK }), circle(160, 304, 3.5, { fill: INK })] };
   const pony: Drawing = { color: [], ink: [fill('M218 96 C262 104 276 156 258 200 C250 176 240 150 220 130 Z', INK)] };
   const hair: Drawing = { color: [], ink: [fill('M86 152 C78 86 120 62 162 62 C206 62 242 90 234 152 C224 120 200 102 160 102 C124 102 98 120 86 152 Z', INK)] };
@@ -199,11 +199,11 @@ function ibu(expr: Expression): Drawing {
   curls.ink.push(fill('M100 112 C120 84 200 84 220 112 C200 100 120 100 100 112 Z', INK));
   const earrings: Drawing = { color: [circle(88, 182, 6, { fill: RED }), circle(232, 182, 6, { fill: RED })], ink: [circle(88, 182, 6, { fill: 'none', stroke: INK, 'stroke-width': 3 }), circle(232, 182, 6, { fill: 'none', stroke: INK, 'stroke-width': 3 })] };
   const leek: Drawing = {
-    color: [fill('M246 230 C250 190 262 168 276 150 L284 158 C272 178 262 200 258 232 Z', BLUE), fill('M262 232 C270 204 286 186 302 176 L306 186 C292 198 280 214 274 234 Z', BLUE)],
+    color: [fill('M246 230 C250 190 262 168 276 150 L284 158 C272 178 262 200 258 232 Z', PINK), fill('M262 232 C270 204 286 186 302 176 L306 186 C292 198 280 214 274 234 Z', PINK)],
     ink: [line('M246 230 C250 190 262 168 276 150 L284 158 C272 178 262 200 258 232', 4), line('M262 232 C270 204 286 186 302 176 L306 186 C292 198 280 214 274 234', 4)],
   };
   const bag: Drawing = {
-    color: [fill('M214 238 L304 238 L296 320 L222 320 Z', 'url(#ht-blue-light)')],
+    color: [fill('M214 238 L304 238 L296 320 L222 320 Z', 'url(#ht-pink-light)')],
     ink: [fill('M214 238 L304 238 L296 320 L222 320 Z', PAPER), line('M214 238 L304 238 L296 320 L222 320 Z', 6), line('M234 238 C234 210 284 210 284 238', 5), line('M222 262 L298 262', 3)],
   };
   return merge(daster, neckline, neckAndEars(), head(), curls, face(expr, { browY: 126 }), nose(), earrings, leek, bag);

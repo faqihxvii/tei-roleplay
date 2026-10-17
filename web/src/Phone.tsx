@@ -10,7 +10,7 @@ import { CrisisArt, Portrait } from './art';
 import { Concepts, Glossed } from './Glossary';
 import { SurveyForm, SurveyThanks } from './Survey';
 import { useHaptics } from './haptics';
-import { Board, HoldButton, RoleMark, RoleName, Timer, roleProps } from './shared';
+import { Board, HoldButton, RoleMark, RoleName, TeiLogo, Timer, roleProps } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
 import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, PRACTICE_COACH, STEP_LABEL, signed } from './text';
 
@@ -120,8 +120,8 @@ function JoinForm({ busy, error, onJoin }: { busy: boolean; error: string | null
   return (
     <main className="phone">
       <header className="masthead">
-        <p className="kicker">The Economic Influence</p>
-        <h1>Masuk ruangan</h1>
+        <TeiLogo />
+        <h1>Masuk <span className="accent-serif">ruangan.</span></h1>
       </header>
       <Cast />
       <form className="stack" onSubmit={submit}>

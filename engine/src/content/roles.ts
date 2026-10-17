@@ -25,7 +25,7 @@ export const ROLE_COLOR: Record<Role, string> = {
   pemerintah: '#1b2a41',
   bankSentral: '#0067a5',
   pengusaha: '#e0a100',
-  buruh: '#c91212',
+  buruh: '#c30700',
   masyarakat: '#5fb49c',
 };
 

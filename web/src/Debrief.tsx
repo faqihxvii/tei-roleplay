@@ -8,7 +8,7 @@ import { exportDecisions, exportPacts, exportQuiz, exportReport, exportSurvey, e
 import { QuizSection } from './Quiz';
 import { ClosingSection } from './Survey';
 import { ResultsBody, TimelineTable } from './MainScreens';
-import { RoleName, roleProps } from './shared';
+import { RoleName, roleProps, TeiLogo } from './shared';
 import { INDICATOR_LABEL, INDICATOR_ORDER, signed } from './text';
 import { TimelineChart } from './TimelineChart';
 
@@ -58,9 +58,12 @@ export function DebriefScreen({ view, send, consoleOpen }: { view: HostView; sen
   return (
     <>
       <header className="topbar">
-        <div>
-          <p className="topbar-title">Debrief · {SECTION_LABEL[d.section]}</p>
-          <p className="topbar-hint">{HINT[d.section]}</p>
+        <div className="topbar-lead">
+          <TeiLogo />
+          <div>
+            <p className="topbar-title">Debrief · {SECTION_LABEL[d.section]}</p>
+            <p className="topbar-hint">{HINT[d.section]}</p>
+          </div>
         </div>
         <span className="room-tag">Ruangan {view.code}</span>
       </header>
