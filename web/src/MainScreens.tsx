@@ -151,6 +151,7 @@ function RevealStage({ reveal }: { reveal: RevealView }) {
   const pactsShown = Math.max(0, Math.min(shown - reveal.teams.length - reveal.groups.length, reveal.pacts.length));
   const done = shown >= total;
   // Keyed on the count only: a fresh broadcast of the same reveal must not replay its last sound.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { cueBus.emit(revealCue(reveal, shown)); }, [reveal.year, shown]);
 
   // The board moves one cause at a time; once everything is shown it settles on the engine's numbers.

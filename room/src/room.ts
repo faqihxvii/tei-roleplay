@@ -246,8 +246,11 @@ export class Room {
   static restore(snapshot: RoomSnapshot): Room {
     // Snapshots from the join-flow release predate the year loop: fill in what they lack.
     const legacyPhase: string = snapshot.phase;
-    const s: RoomSnapshot = {
+    const defaults: Partial<RoomSnapshot> = {
       step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, pacts: [], years: [], finals: {}, results: null, debrief: null, practice: null, quiz: {}, quizPostOpen: false, usedVariants: [], telemetry: emptyTelemetry(), survey: {}, surveyOpen: false,
+    };
+    const s: RoomSnapshot = {
+      ...defaults,
       ...structuredClone(snapshot),
       phase: legacyPhase === 'lobi' ? 'gabung' : snapshot.phase,
     };
