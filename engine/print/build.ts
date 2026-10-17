@@ -2,7 +2,7 @@
 // tuned rules. Usage: npm run print-kit  ->  engine/print/out/tei-kit-cetak.pdf (+ .html)
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { chromium } from '@playwright/test';
+import { chromium } from 'playwright';
 import { AGENDAS } from '../src/content/agendas';
 import { CRISIS_CARDS } from '../src/content/crises';
 import { POLICY_CARDS } from '../src/content/policies';
