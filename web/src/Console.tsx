@@ -4,6 +4,7 @@ import { ROLES, type AgendaId, type Decision, type Role } from '../../engine/src
 import type { ClientMessage } from '../../room/src/protocol';
 import type { HostView } from '../../room/src/views';
 import { ExportPanel } from './Debrief';
+import { avSettings, useAudioStatus, useAvSettings } from './audio/settings';
 import { DecisionForm } from './DecisionForm';
 import { RoleName } from './shared';
 
@@ -41,6 +42,37 @@ export function ClockControls({ view, send }: { view: HostView; send: Send }) {
   );
 }
 
+/** Master volume and mute (GDD: in the facilitator console), plus the main screen's own motion switch. */
+export function AvControls({ compact = false }: { compact?: boolean }) {
+  const av = useAvSettings();
+  const status = useAudioStatus();
+  const note = status.state === 'kosong' ? 'Belum ada file suara terpasang. Permainan tetap utuh tanpa suara.'
+    : status.state === 'siap' ? `${status.sfx} efek suara dan ${status.music} musik terpasang.` : 'Memeriksa file suara…';
+  if (compact) {
+    return (
+      <label className="toggle">
+        <input type="checkbox" checked={!av.muted} onChange={e => avSettings.set({ muted: !e.target.checked })} />
+        <span>Suara di layar utama</span>
+      </label>
+    );
+  }
+  return (
+    <div className="av-controls">
+      <button className={`btn${av.muted ? ' primary' : ''}`} onClick={() => avSettings.set({ muted: !av.muted })} aria-pressed={av.muted}>
+        {av.muted ? 'Bunyikan' : 'Bisukan'}
+      </button>
+      <input type="range" min={0} max={100} step={5} value={Math.round(av.volume * 100)} aria-label="Volume utama"
+        onChange={e => avSettings.set({ volume: Number(e.target.value) / 100 })} disabled={av.muted} />
+      <span className="timer" aria-hidden="true">{Math.round(av.volume * 100)}</span>
+      <label className="toggle"><input type="checkbox" checked={av.music} onChange={e => avSettings.set({ music: e.target.checked })} /> Musik</label>
+      <label className="toggle"><input type="checkbox" checked={av.sfx} onChange={e => avSettings.set({ sfx: e.target.checked })} /> Efek suara</label>
+      <span />
+      <label className="toggle av-note"><input type="checkbox" checked={av.reducedMotion} onChange={e => avSettings.set({ reducedMotion: e.target.checked })} /> Kurangi gerak di layar utama (animasi diganti potong atau pudar)</label>
+      <p className="muted small av-note">{note} HP pemain selalu senyap dan hanya bergetar.</p>
+    </div>
+  );
+}
+
 export function Console({ view, send, onClose }: { view: HostView; send: Send; onClose: () => void }) {
   const [deciding, setDeciding] = useState<Role | null>(null);
 
@@ -63,6 +95,11 @@ export function Console({ view, send, onClose }: { view: HostView; send: Send; o
             <button className={`btn${view.tempo === 'santai' ? ' primary' : ''}`} onClick={() => send({ t: 'tempo', tempo: 'santai' })}>Santai (+50%)</button>
           </div>
           <p className="muted small">Tempo baru berlaku mulai fase berikutnya.</p>
+        </section>
+
+        <section className="stack">
+          <h3 className="label">Suara dan gerak</h3>
+          <AvControls />
         </section>
 
         {view.console && Object.keys(view.console.decisions).length > 0 && (

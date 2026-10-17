@@ -37,7 +37,7 @@ TEI_BASE=http://<alamat-jaringan>:5173 npm run room:e2e -- <folder-tangkapan-lay
 - `src/protocol.ts`: format pesan dan validasi ketat untuk semua input klien.
 - `src/server.ts`: Express + `ws`. Membuat ruangan, menyiarkan tampilan, batas laju, cek Origin, heartbeat, timer fase, dan pembersihan ruangan yang ditinggal.
 - `src/store.ts`: snapshot ke file (tulis lalu rename). Antarmukanya kecil agar bisa diganti KV atau database.
-- `../web/`: klien grey-box. `/` untuk HP, `/host` untuk layar utama dan konsol fasilitator.
+- `../web/`: klien. `/` untuk HP, `/host` untuk layar utama dan konsol fasilitator. Identitas visual, gerak, audio layar utama, getaran HP, dan slot ilustrasi dijelaskan di `../docs/art-audio.md`.
 
 ## Aturan yang sudah berlaku
 
@@ -93,9 +93,27 @@ Opsi saat membuka ruangan. Lima soal skenario, satu per tujuan belajar GDD (fisk
 - Kunci jawaban dan penjelasan baru dikirim ke layar dan HP setelah fasilitator menekan "Tampilkan jawaban benar". HP menunjukkan skor sendiri (sebelum → sesudah) setelah kuis akhir dikirim.
 - Setiap pemain menjawab sekali per kuis. Ekspor CSV per nama panggilan tersedia di konsol untuk guru.
 
+## Art & audio
+
+Arah "koran satir" dari GDD sudah terpasang:
+
+- **Tipografi dan tinta:** headline Libre Caslon Condensed, teks isi Source Sans 3, angka IBM Plex Mono. Tinta merah TEI dan biru riso di atas kertas krem, dengan halftone dan misregistrasi tipis.
+- **Warna peran:** bisa dibedakan oleh pengidap buta warna, dan selalu disertai pola dan kode huruf.
+- **Gerak:** setiap gerak punya makna (cap, kertas, tinta), dengan versi kurangi gerak.
+
+Audio hanya keluar dari layar utama:
+
+- 25 cue diturunkan dari perubahan state.
+- Tiga loop musik berganti menurut Keresahan.
+- Konsol menyediakan bisu, volume, musik, efek, dan sakelar kurangi gerak.
+
+HP hanya bergetar.
+
+Ilustrasi, file Rive, dan rekaman suara dipasang lewat `web/public/art/manifest.json` dan `web/public/audio/manifest.json` tanpa mengubah kode. Selama manifest kosong, permainan berjalan utuh tanpa gambar dan tanpa suara. Brief untuk ilustrator dan sound designer ada di `docs/art-audio.md`.
+
 Ekspor di konsol (K): tiga CSV (garis waktu, keputusan per tim, log pakta; pemisah titik koma untuk Excel berbahasa Indonesia) dan Edisi Khusus, halaman semua headline dan hasil yang siap dicetak atau disimpan sebagai PDF.
 
 ## Belum dibuat
 
 - Teks Harian TEI (8 varian per tag, 20 kombinasi) perlu ditinjau editor ekonomi dan pembaca sensitivitas sebelum pilot.
-- Audio, animasi Rive, dan art direction final.
+- File ilustrasi, diorama Rive, dan rekaman suara dari ilustrator, animator, dan sound designer (brief: `docs/art-audio.md`).

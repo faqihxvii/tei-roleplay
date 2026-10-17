@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ROLE_CODE, ROLE_COLOR, ROLE_LABEL } from '../../engine/src/content/roles';
+import { ROLE_CODE, ROLE_COLOR, ROLE_INK, ROLE_LABEL } from '../../engine/src/content/roles';
 import type { Role } from '../../engine/src/types';
 import type { PublicStats } from '../../room/src/views';
 import { formatSeconds, useSecondsLeft } from './socket';
 import { INDICATOR_LABEL, INDICATOR_ORDER, signed, ZONES, zoneOf } from './text';
 
+/** Spread on any element that draws a role: fill, text colour on the fill, and the role's pattern. */
+export const roleProps = (role: Role) => ({
+  'data-role': role,
+  style: { ['--role' as string]: ROLE_COLOR[role], ['--role-ink' as string]: ROLE_INK[role] },
+});
+
 export function RoleMark({ role, small = false }: { role: Role; small?: boolean }) {
   return (
-    <span className={`role-mark${small ? ' small' : ''}`} style={{ ['--role' as string]: ROLE_COLOR[role] }} aria-hidden="true">
+    <span className={`role-mark${small ? ' small' : ''}`} {...roleProps(role)} aria-hidden="true">
       {ROLE_CODE[role]}
     </span>
   );

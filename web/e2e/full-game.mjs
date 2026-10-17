@@ -11,7 +11,9 @@ const BASE = process.env.TEI_BASE ?? 'http://127.0.0.1:5173';
 if (OUT) mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--no-proxy-server'] });
 const errors = [];
-const shot = (page, name, fullPage = false) => (OUT ? page.screenshot({ path: `${OUT}/${name}`, fullPage }) : null);
+// Settle finite animations (paper, stamp, ink) first so the picture shows the resting layout.
+const settle = page => page.evaluate(() => Promise.all(document.getAnimations().filter(a => a.effect?.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => null))));
+const shot = async (page, name, fullPage = false) => { if (!OUT) return; await settle(page); await page.screenshot({ path: `${OUT}/${name}`, fullPage }); };
 const host = await (await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true })).newPage();
 host.on('pageerror', e => errors.push('host: ' + e.message));
 host.on('console', m => { if (m.type() === 'error') errors.push('host console: ' + m.text()); });
@@ -191,6 +193,13 @@ for (const name of ['Garis waktu (CSV)', 'Keputusan per tim (CSV)', 'Log pakta (
 const [edisi] = await Promise.all([host.context().waitForEvent('page'), host.getByRole('link', { name: /Edisi Khusus/ }).click()]);
 await edisi.locator('.edisi .frontpage').first().waitFor();
 await shot(edisi, 'edisi-khusus.png', true);
+// Every cue the main screen asked for, file or not. The print tab stays silent.
+const heard = new Set((await host.evaluate(() => window.__teiAudio ?? [])).map(c => c.cue));
+for (const cue of ['gabung', 'briefing', 'fase.krisis', 'fase.rapat', 'fase.lobi', 'fase.pengesahan', 'sah', 'fase.pengungkapan', 'kartu.buka', 'fase.koran', 'tebak', 'halaman', 'kuis.jawaban']) {
+  if (!heard.has(cue)) errors.push(`cue ${cue} tidak terdengar`);
+}
+if (!heard.has('akhir.baik') && !heard.has('akhir.kolaps')) errors.push('cue akhir tidak terdengar');
+if ((await edisi.evaluate(() => window.__teiAudio ?? null)) !== null) errors.push('tab cetak memutar suara');
 await browser.close();
 // The only expected console error is the missing favicon.
 const real = errors.filter(e => !e.includes('404'));

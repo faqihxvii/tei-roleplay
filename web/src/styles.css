@@ -1,24 +1,43 @@
-/* Grey-box styling: newsprint neutrals, one accent per role. Final art direction comes later. */
+/*
+ * Art direction: "koran satir", an editorial cartoon printed on a risograph (GDD, "Art direction & audio").
+ * Four inks: TEI red, riso blue, ink black on cream paper. Condensed serif headlines, humanist sans body,
+ * monospace numbers. Texture is used sparingly so text stays sharp on a projector.
+ */
 :root {
-  --paper: #f4f1ea;
-  --card: #ffffff;
+  --paper: #f4efe3;
+  --paper-2: #e9e2d2;
+  --newsprint: #faf6ec;
+  --card: #fffdf8;
   --ink: #1a1a1a;
-  --muted: #5c5a55;
-  --rule: #d8d3c7;
+  --muted: #59564f;
+  --rule: #d6cdb9;
   --accent: #c91212;
+  --red: #c91212;
+  --blue: #0067a5;
+  --highlight: #fbe3a6;
+  --highlight-ink: #3d2a06;
   --ok: #166534;
   --warn: #8a4b0f;
-  --radius: 10px;
+  --radius: 6px;
+  --font-head: 'Libre Caslon Condensed', 'Bitstream Charter', Georgia, serif;
+  --font-body: 'Source Sans 3 Variable', 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-num: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  /* Paper fibre: low-contrast noise, never under 4.5:1 for text on top. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.3 0 0 0 0 0.2 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --halftone-red: radial-gradient(circle at center, rgba(201, 18, 18, 0.22) 1.2px, transparent 1.6px) 0 0 / 7px 7px;
+  --halftone-ink: radial-gradient(circle at center, rgba(26, 26, 26, 0.14) 1.1px, transparent 1.5px) 0 0 / 6px 6px;
+  /* Misregistration: a blue plate printed a hair off the black one. */
+  --misreg: 0.04em 0.025em 0 rgba(0, 103, 165, 0.38);
   color-scheme: light;
-  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-body);
   color: var(--ink);
   background: var(--paper);
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--paper); line-height: 1.45; -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--grain), var(--paper); line-height: 1.45; -webkit-text-size-adjust: 100%; }
 h1, h2, h3 { margin: 0; line-height: 1.15; }
-h1 { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: clamp(1.8rem, 5vw, 2.6rem); }
+h1 { font-family: var(--font-head); font-size: clamp(1.8rem, 5vw, 2.6rem); }
 p { margin: 0; }
 button, input, select { font: inherit; color: inherit; }
 
@@ -38,15 +57,15 @@ button, input, select { font: inherit; color: inherit; }
   min-height: 48px; padding: 10px 18px; border-radius: var(--radius);
   border: 1.5px solid var(--ink); background: var(--card); font-weight: 600; cursor: pointer;
 }
-.btn:hover:not(:disabled) { background: #ece8de; }
+.btn:hover:not(:disabled) { background: var(--paper-2); }
 .btn.primary { background: var(--ink); color: var(--paper); }
 .btn.primary:hover:not(:disabled) { background: #333; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 
 .banner { position: sticky; top: 0; z-index: 10; padding: 10px 16px; background: var(--ink); color: var(--paper); text-align: center; font-weight: 600; }
 .banner.warn { background: var(--warn); }
-.badge { display: inline-block; align-self: flex-start; padding: 8px 12px; border-radius: var(--radius); background: #fde7c7; color: #5a3108; font-weight: 600; }
+.badge { display: inline-block; align-self: flex-start; padding: 8px 12px; border-radius: var(--radius); background: var(--highlight); color: var(--highlight-ink); font-weight: 600; }
 
 /* Phone */
 .phone { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding: 24px 16px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 20px; }
@@ -62,7 +81,7 @@ button, input, select { font: inherit; color: inherit; }
 .role-mark.small { min-width: 34px; height: 26px; font-size: 0.75rem; margin-right: 8px; vertical-align: middle; }
 .agenda { padding: 16px; border-radius: var(--radius); background: var(--ink); color: var(--paper); display: flex; flex-direction: column; gap: 8px; }
 .agenda .kicker, .agenda .muted { color: #c9c4b8; }
-.agenda h3 { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: 1.5rem; }
+.agenda h3 { font-family: var(--font-head); font-size: 1.5rem; }
 details.agenda summary { cursor: pointer; font-weight: 600; min-height: 32px; }
 .members { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .members li { padding: 6px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--rule); }
@@ -102,9 +121,8 @@ details.agenda summary { cursor: pointer; font-weight: 600; min-height: 32px; }
 .chip select { max-width: 120px; min-height: 32px; border: 1px solid var(--rule); border-radius: 6px; background: var(--card); font-size: 0.8rem; }
 .tag { font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: var(--ink); color: var(--paper); }
 .icon-btn { width: 32px; height: 32px; border: none; border-radius: 6px; background: transparent; font-size: 1.2rem; cursor: pointer; }
-.icon-btn:hover { background: #e7e2d6; }
+.icon-btn:hover { background: var(--paper-2); }
 
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 .field input::placeholder { color: #b8b3a8; }
 
 /* ---------- year loop ---------- */
@@ -119,7 +137,7 @@ kbd { font: inherit; font-size: 0.75em; padding: 1px 6px; border: 1px solid curr
 .timer { font-variant-numeric: tabular-nums; font-weight: 700; padding: 4px 10px; border-radius: 8px; background: var(--card); border: 1px solid var(--rule); white-space: nowrap; }
 .timer.big { font-size: clamp(1.6rem, 3vw, 2.6rem); padding: 6px 16px; }
 .timer.urgent { background: var(--accent); color: #fff; border-color: var(--accent); }
-.timer.paused { background: #fde7c7; color: #5a3108; }
+.timer.paused { background: var(--highlight); color: var(--highlight-ink); }
 
 /* Board */
 .board { display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--rule); }
@@ -129,7 +147,7 @@ kbd { font: inherit; font-size: 0.75em; padding: 1px 6px; border: 1px solid curr
 .gauge-value { font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .board.compact .gauge-value { font-size: 1.1rem; }
 .gauge-value small { font-size: 0.6em; color: var(--muted); }
-.gauge-track { position: relative; height: 14px; border-radius: 7px; background: #ece8de; overflow: hidden; }
+.gauge-track { position: relative; height: 14px; border-radius: 7px; background: var(--paper-2); overflow: hidden; }
 .gauge-fill { position: absolute; inset: 0 auto 0 0; background: var(--ink); border-radius: 7px; transition: width 600ms ease; }
 .gauge-danger { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, rgba(201,18,18,0.28) 0 4px, transparent 4px 8px); }
 .gauge-danger.tinggi { right: 0; }
@@ -140,7 +158,7 @@ kbd { font: inherit; font-size: 0.75em; padding: 1px 6px; border: 1px solid curr
 
 /* Main screen */
 .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 3px double var(--ink); padding-bottom: 12px; }
-.topbar-title { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: clamp(1.8rem, 3.4vw, 3rem); font-weight: 700; line-height: 1.1; }
+.topbar-title { font-family: var(--font-head); font-size: clamp(1.8rem, 3.4vw, 3rem); font-weight: 700; line-height: 1.1; }
 .topbar-hint { font-size: clamp(1.1rem, 1.8vw, 1.6rem); color: var(--muted); }
 .topbar-right { display: flex; align-items: center; gap: 12px; }
 .room-tag { font-weight: 700; letter-spacing: 0.08em; color: var(--muted); }
@@ -155,19 +173,19 @@ kbd { font: inherit; font-size: 0.75em; padding: 1px 6px; border: 1px solid curr
 .chip-effect { padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 1.1rem; border: 2px solid currentColor; }
 .chip-effect.bad { color: var(--accent); }
 .chip-effect.good { color: var(--ok); }
-.survey { font-size: 1.4rem; padding: 12px 16px; background: #fde7c7; border-radius: 8px; }
+.survey { font-size: 1.4rem; padding: 12px 16px; background: var(--highlight); border-radius: 8px; }
 .crisis-mini { padding: 16px; border-radius: var(--radius); background: var(--card); border: 2px solid var(--ink); display: flex; flex-direction: column; gap: 8px; }
-.crisis-mini h2 { font-family: Charter, 'Bitstream Charter', Georgia, serif; }
+.crisis-mini h2 { font-family: var(--font-head); }
 
 .team-status { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .status-card { position: relative; display: flex; gap: 14px; align-items: center; padding: 18px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--rule); }
 .status-card.locked { border-color: var(--ink); }
 .status-name { font-size: 1.3rem; font-weight: 700; }
-.stamp { align-self: center; padding: 10px 26px; border: 5px double var(--accent); color: var(--accent); font-weight: 900; font-size: 2.4rem; letter-spacing: 0.12em; transform: rotate(-8deg); border-radius: 8px; animation: stamp 300ms ease-out; }
-.stamp.small { position: absolute; right: 12px; top: 8px; font-size: 1rem; padding: 2px 10px; border-width: 3px; }
+.stamp { align-self: center; padding: 10px 26px; border: 5px double var(--accent); color: var(--accent); font-weight: 900; font-size: 2.4rem; letter-spacing: 0.12em; transform: rotate(-8deg); border-radius: 8px; }
+.stamp.small { position: absolute; right: 12px; bottom: 10px; font-size: 1rem; padding: 2px 10px; border-width: 3px; }
 @keyframes stamp { from { transform: rotate(-8deg) scale(2.2); opacity: 0; } to { transform: rotate(-8deg) scale(1); opacity: 1; } }
 
-.lobby-table h2, .headlines h2, .timeline h2 { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: clamp(1.6rem, 3vw, 2.4rem); margin-bottom: 12px; }
+.lobby-table h2, .headlines h2, .timeline h2 { font-family: var(--font-head); font-size: clamp(1.6rem, 3vw, 2.4rem); margin-bottom: 12px; }
 .pact-cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .pact-card { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; padding: 16px 20px; border-radius: var(--radius); background: var(--card); border: 2px solid var(--ok); font-size: 1.2rem; }
 .pact-card.torn { border: 2px dashed var(--accent); background: repeating-linear-gradient(-45deg, var(--card) 0 14px, #fbeaea 14px 16px); }
@@ -176,7 +194,7 @@ kbd { font: inherit; font-size: 0.75em; padding: 1px 6px; border: 1px solid curr
 
 .reveal { display: flex; flex-direction: column; gap: 20px; }
 .reveal-teams { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
-.reveal-card { padding: 14px; border-radius: var(--radius); background: #e7e2d6; border: 1px solid var(--rule); min-height: 130px; }
+.reveal-card { padding: 14px; border-radius: var(--radius); background: var(--paper-2); border: 1px solid var(--rule); min-height: 130px; }
 .reveal-card.open { background: var(--card); border-color: var(--ink); animation: flip 400ms ease-out; }
 .reveal-card ul { margin: 8px 0 0; padding-left: 18px; font-size: 1.05rem; }
 @keyframes flip { from { transform: rotateY(90deg); } to { transform: rotateY(0); } }
@@ -188,21 +206,21 @@ kbd { font: inherit; font-size: 0.75em; padding: 1px 6px; border: 1px solid curr
 .collapse-banner .kicker { color: #fff; }
 .collapse-line { font-size: clamp(1.6rem, 3.4vw, 2.8rem); font-weight: 800; }
 
-.frontpage { background: #fbf8f1; border: 1px solid var(--rule); padding: clamp(20px, 3vw, 40px); box-shadow: 0 2px 0 var(--rule); font-family: Charter, 'Bitstream Charter', Georgia, serif; }
-.fp-mast { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; border-bottom: 4px double var(--ink); padding-bottom: 8px; font-family: Inter, system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); }
+.frontpage { background: var(--newsprint); border: 1px solid var(--rule); padding: clamp(20px, 3vw, 40px); box-shadow: 0 2px 0 var(--rule); font-family: var(--font-head); }
+.fp-mast { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; border-bottom: 4px double var(--ink); padding-bottom: 8px; font-family: var(--font-body); font-size: 0.85rem; color: var(--muted); }
 .fp-mast span:last-child { text-align: right; }
 .fp-mast h1 { font-size: clamp(2.4rem, 6vw, 4.6rem); color: var(--ink); text-align: center; letter-spacing: 0.02em; }
 .fp-headline { font-size: clamp(2rem, 4.6vw, 3.8rem); line-height: 1.08; margin: 18px 0 10px; }
 .fp-sub { font-size: clamp(1.2rem, 2.2vw, 1.8rem); color: #3b3a36; border-bottom: 1px solid var(--rule); padding-bottom: 16px; }
 .fp-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 0.8fr); gap: 24px; margin-top: 16px; }
 @media (max-width: 900px) { .fp-body { grid-template-columns: 1fr; } }
-.fp-body h3 { font-family: Inter, system-ui, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
+.fp-body h3 { font-family: var(--font-body); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
 .fp-chart table { width: 100%; border-collapse: collapse; font-size: 1.1rem; }
 .fp-chart th { text-align: left; font-weight: 400; padding: 4px 0; }
 .fp-chart td { text-align: right; padding: 4px 0 4px 8px; font-variant-numeric: tabular-nums; }
 .fp-voices blockquote { margin: 0 0 12px; font-size: 1.15rem; font-style: italic; }
-.fp-voices cite { display: block; font-style: normal; font-size: 0.85rem; color: var(--muted); font-family: Inter, system-ui, sans-serif; }
-.fp-ad { border: 2px solid var(--ink); padding: 12px; font-family: Inter, system-ui, sans-serif; font-size: 0.95rem; align-self: start; }
+.fp-voices cite { display: block; font-style: normal; font-size: 0.85rem; color: var(--muted); font-family: var(--font-body); }
+.fp-ad { border: 2px solid var(--ink); padding: 12px; font-family: var(--font-body); font-size: 0.95rem; align-self: start; }
 
 .results { display: flex; flex-direction: column; gap: 28px; }
 .ending { text-align: center; padding: 24px; border-radius: var(--radius); background: var(--card); border: 2px solid var(--ink); }
@@ -213,7 +231,7 @@ kbd { font: inherit; font-size: 0.75em; padding: 1px 6px; border: 1px solid curr
 .score-table th, .score-table td, .timeline th, .timeline td { padding: 10px 12px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
 .score-table .score { font-size: 1.8rem; font-weight: 800; text-align: right; }
 .timeline td { text-align: center; font-variant-numeric: tabular-nums; }
-.headlines ol { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: 1.25rem; }
+.headlines ol { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-family: var(--font-head); font-size: 1.25rem; }
 
 /* Console */
 .console-toggle { position: fixed; right: 16px; bottom: 16px; z-index: 30; padding: 10px 14px; border-radius: 999px; border: 1.5px solid var(--ink); background: var(--card); font-weight: 600; cursor: pointer; opacity: 0.55; }
@@ -255,10 +273,10 @@ legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg.on { background: var(--ink); color: var(--paper); }
 .seg.off { opacity: 0.4; cursor: not-allowed; }
-.seg:focus-within { outline: 3px solid #2563eb; outline-offset: 2px; }
+.seg:focus-within { outline: 3px solid var(--blue); outline-offset: 2px; }
 fieldset:disabled .seg { opacity: 0.5; cursor: not-allowed; }
 .frozen { font-weight: 400; color: var(--accent); font-size: 0.85rem; }
-.votes { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #fde7c7; color: #5a3108; font-size: 0.75rem; font-weight: 800; }
+.votes { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--highlight); color: var(--highlight-ink); font-size: 0.75rem; font-weight: 800; }
 .seg.on .votes { background: var(--paper); color: var(--ink); }
 .field.compact select { min-height: 48px; padding: 8px 10px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--card); font-weight: 400; }
 .sah-box { padding-top: 8px; border-top: 1px solid var(--rule); }
@@ -272,7 +290,7 @@ fieldset:disabled .seg { opacity: 0.5; cursor: not-allowed; }
 .pact.ditolak, .pact.ditarik, .pact.kedaluwarsa { opacity: 0.6; }
 .pact-form { padding: 12px; border-radius: var(--radius); border: 1.5px dashed var(--ink); }
 .reveal-mine ul { margin: 0; padding-left: 18px; }
-.headline-mini { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: 1.4rem; }
+.headline-mini { font-family: var(--font-head); font-size: 1.4rem; }
 .guess { display: flex; gap: 10px; padding: 10px; border-radius: 8px; background: var(--card); border: 1.5px solid var(--rule); margin-bottom: 6px; cursor: pointer; }
 .guess.on { border-color: var(--ink); }
 .big-score { font-size: 3.4rem; font-weight: 800; line-height: 1; }
@@ -302,7 +320,7 @@ fieldset:disabled .seg { opacity: 0.5; cursor: not-allowed; }
 .panel .hatch-line { stroke: rgba(201,18,18,0.35); stroke-width: 2; }
 .panel .crosshair { stroke: var(--muted); stroke-width: 1; }
 .panel .hit { fill: transparent; cursor: pointer; }
-.panel .hit:focus-visible { outline: none; stroke: #2563eb; stroke-width: 2; }
+.panel .hit:focus-visible { outline: none; stroke: var(--blue); stroke-width: 2; }
 .tip { position: absolute; transform: translate(-50%, calc(-100% - 12px)); padding: 6px 10px; border-radius: 6px; background: var(--ink); color: var(--paper); font-size: 0.85rem; white-space: nowrap; pointer-events: none; z-index: 2; display: flex; flex-direction: column; }
 .tip-hint { font-size: 0.75rem; opacity: 0.75; }
 .markers { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 1.05rem; }
@@ -313,15 +331,15 @@ fieldset:disabled .seg { opacity: 0.5; cursor: not-allowed; }
 .turning { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .turn { width: 100%; text-align: left; padding: 12px 14px; border-radius: var(--radius); border: 1.5px solid var(--rule); background: var(--card); font-weight: 600; cursor: pointer; }
 .turn.on { border-color: var(--ink); box-shadow: inset 4px 0 0 var(--accent); }
-.chain-title { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: clamp(1.8rem, 3.4vw, 3rem); margin-bottom: 16px; }
+.chain-title { font-family: var(--font-head); font-size: clamp(1.8rem, 3.4vw, 3rem); margin-bottom: 16px; }
 .links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .link { display: flex; gap: 16px; align-items: flex-start; padding: 14px 16px; background: var(--card); border-radius: var(--radius); }
 .link-label { font-size: 1.3rem; }
 
 .agenda-reveal { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-.agenda-card { padding: 16px; border-radius: var(--radius); background: #e7e2d6; min-height: 180px; display: flex; flex-direction: column; gap: 8px; }
+.agenda-card { padding: 16px; border-radius: var(--radius); background: var(--paper-2); min-height: 180px; display: flex; flex-direction: column; gap: 8px; }
 .agenda-card.open { background: var(--card); border: 2px solid var(--ink); animation: flip 400ms ease-out; }
-.agenda-card h3 { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: 1.4rem; }
+.agenda-card h3 { font-family: var(--font-head); font-size: 1.4rem; }
 .guesses { margin: 0; padding-left: 18px; }
 
 .discussion { display: flex; flex-direction: column; gap: 20px; }
@@ -336,14 +354,14 @@ fieldset:disabled .seg { opacity: 0.5; cursor: not-allowed; }
 .chain-mini { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .chain-mini li { padding: 8px 10px; background: var(--card); border-radius: 8px; }
 .chain-mini li.mine { border-left: 4px solid var(--role, var(--ink)); font-weight: 600; }
-.question-mini { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: 1.6rem; }
+.question-mini { font-family: var(--font-head); font-size: 1.6rem; }
 
 /* Edisi Khusus */
 .edisi { max-width: 1100px; margin: 0 auto; padding: 24px 16px; display: flex; flex-direction: column; gap: 28px; }
 .edisi-mast h1 { font-size: clamp(3rem, 8vw, 5.5rem); }
-.edisi-page h2 { font-family: Charter, 'Bitstream Charter', Georgia, serif; }
-.edisi-decisions { margin: 0 0 12px; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-family: Inter, system-ui, sans-serif; font-size: 0.95rem; }
-.edisi-stats { width: 100%; border-collapse: collapse; font-family: Inter, system-ui, sans-serif; margin-bottom: 12px; }
+.edisi-page h2 { font-family: var(--font-head); }
+.edisi-decisions { margin: 0 0 12px; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-family: var(--font-body); font-size: 0.95rem; }
+.edisi-stats { width: 100%; border-collapse: collapse; font-family: var(--font-body); margin-bottom: 12px; }
 .edisi-stats th { text-align: left; font-weight: 400; padding: 2px 0; }
 .edisi-stats td { text-align: right; font-variant-numeric: tabular-nums; }
 @media print {
@@ -356,9 +374,9 @@ fieldset:disabled .seg { opacity: 0.5; cursor: not-allowed; }
 
 /* ---------- Year 0 practice ---------- */
 .topbar.practice { border-bottom-style: dashed; }
-.practice-tag { display: inline-block; vertical-align: middle; padding: 2px 12px; border-radius: 6px; background: #fde7c7; color: #5a3108; font-family: Inter, system-ui, sans-serif; font-size: 0.5em; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
-.coach { padding: 12px 14px; border-radius: var(--radius); background: #fde7c7; color: #3d2206; border-left: 6px solid #b4690e; }
-.coach .kicker { color: #6b3f0d; }
+.practice-tag { display: inline-block; vertical-align: middle; padding: 2px 12px; border-radius: 6px; background: var(--highlight); color: var(--highlight-ink); font-family: var(--font-body); font-size: 0.5em; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.coach { padding: 12px 14px; border-radius: var(--radius); background: var(--highlight); color: var(--highlight-ink); border-left: 6px solid #b07a00; }
+.coach .kicker { color: var(--highlight-ink); }
 
 /* ---------- quiz ---------- */
 .quiz .choice legend { line-height: 1.35; }
@@ -386,7 +404,116 @@ fieldset:disabled .seg { opacity: 0.5; cursor: not-allowed; }
 .db-answer { grid-column: 1 / -1; padding-top: 6px; border-top: 1px solid var(--rule); }
 
 /* crisis narrative and team question */
-.crisis-narrative { font-family: Charter, 'Bitstream Charter', Georgia, serif; font-size: clamp(1.2rem, 2.1vw, 1.8rem); line-height: 1.4; max-width: 60ch; }
-.crisis-question { padding: 12px 16px; border-radius: 8px; background: #fde7c7; color: #3d2206; font-weight: 600; }
-.crisis-question .kicker { color: #6b3f0d; }
+.crisis-narrative { font-family: var(--font-head); font-size: clamp(1.2rem, 2.1vw, 1.8rem); line-height: 1.4; max-width: 60ch; }
+.crisis-question { padding: 12px 16px; border-radius: 8px; background: var(--highlight); color: var(--highlight-ink); font-weight: 600; }
+.crisis-question .kicker { color: var(--highlight-ink); }
 .crisis-question.big { font-size: clamp(1.4rem, 2.6vw, 2.2rem); }
+
+/* ---------- identity: type, ink, texture ---------- */
+h1, h2, h3, .topbar-title, .crisis-title, .fp-headline, .question, .chain-title { font-weight: 700; letter-spacing: -0.005em; }
+.riso, .crisis-title, .fp-headline, .fp-mast h1, .ending h1, .question, .real-world h1, .edisi-mast h1, .masthead h1 { text-shadow: var(--misreg); }
+.timer, .gauge-value, .room-code, .big-timer, .score-table .score, .big-score, .db-values, .fp-chart td, .timeline td, .count strong, .code-input, .votes, .db-num, .delta {
+  font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: 0;
+}
+.room-code { letter-spacing: 0.08em; font-weight: 700; }
+.kicker, .label { font-family: var(--font-body); }
+.masthead { border-bottom: 4px double var(--ink); }
+.masthead .kicker::before, .topbar-title::before { content: none; }
+
+/* Roles: fill + ink pair, and a pattern so a role never depends on colour alone. */
+[data-role='pemerintah'] { --role-pattern: repeating-linear-gradient(0deg, rgba(255,255,255,0.45) 0 2px, transparent 2px 5px); }
+[data-role='bankSentral'] { --role-pattern: linear-gradient(90deg, rgba(255,255,255,0.4) 1.5px, transparent 1.5px) 0 0 / 6px 6px, linear-gradient(0deg, rgba(255,255,255,0.4) 1.5px, transparent 1.5px) 0 0 / 6px 6px; }
+[data-role='pengusaha'] { --role-pattern: repeating-linear-gradient(45deg, rgba(26,26,26,0.45) 0 2px, transparent 2px 6px); }
+[data-role='buruh'] { --role-pattern: repeating-linear-gradient(90deg, rgba(255,255,255,0.45) 0 2px, transparent 2px 6px); }
+[data-role='masyarakat'] { --role-pattern: radial-gradient(circle, rgba(26,26,26,0.5) 1.3px, transparent 1.7px) 0 0 / 6px 6px; }
+.role-mark {
+  border-radius: 4px; color: var(--role-ink, #fff); font-family: var(--font-num); font-weight: 700;
+  background: linear-gradient(var(--role), var(--role)) top / 100% calc(100% - 7px) no-repeat, var(--role-pattern, none), var(--role);
+  padding-bottom: 6px;
+}
+.role-mark.small { padding-bottom: 4px; background: linear-gradient(var(--role), var(--role)) top / 100% calc(100% - 5px) no-repeat, var(--role-pattern, none), var(--role); }
+.team, .status-card, .reveal-card, .agenda-card { position: relative; }
+.status-card[data-role]::before, .reveal-card[data-role]::before, .agenda-card[data-role]::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 7px; border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--role-pattern, none), var(--role);
+}
+.team[data-role] { border-top: none; padding-top: 20px; }
+.team[data-role]::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 7px; border-radius: var(--radius) var(--radius) 0 0; background: var(--role-pattern, none), var(--role); }
+.role-card { border-left: none; position: relative; padding-left: 26px; }
+.role-card::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 10px; border-radius: var(--radius) 0 0 var(--radius); background: var(--role-pattern, none), var(--role); }
+
+/* Cards read as clippings: hard edges, ink rules, a little offset shadow like a stack of paper. */
+.crisis-card, .crisis-mini, .ending, .real-world, .titles li, .agenda-card.open, .reveal-card.open { box-shadow: 4px 4px 0 rgba(26, 26, 26, 0.12); }
+.crisis-card { position: relative; border-top: 10px solid var(--red); overflow: hidden; background: var(--card); }
+.crisis-card::after { content: ''; position: absolute; right: -40px; top: -40px; width: 220px; height: 220px; background: var(--halftone-red); border-radius: 50%; pointer-events: none; }
+.crisis-card .kicker:first-of-type { color: var(--red); }
+.crisis-card > * { position: relative; z-index: 1; }
+.crisis-rule { border-left-color: var(--red); background: var(--newsprint); }
+.collapse-banner { background: var(--halftone-ink), var(--red); }
+.frontpage { background: var(--grain), var(--newsprint); box-shadow: 6px 6px 0 rgba(26, 26, 26, 0.14); }
+.fp-mast h1 { font-size: clamp(2.8rem, 7vw, 5.4rem); letter-spacing: 0.01em; }
+.fp-headline { font-size: clamp(2.2rem, 5vw, 4.2rem); }
+.fp-ad { background: var(--halftone-ink), var(--card); }
+.topbar { border-bottom: 4px double var(--ink); }
+.btn { border-radius: var(--radius); border-width: 2px; }
+.btn.primary { box-shadow: 3px 3px 0 var(--red); }
+.btn.primary:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--red); }
+.btn.hold { box-shadow: 3px 3px 0 var(--ink); }
+.gauge-fill { background: var(--ink); }
+.gauge-track { border-radius: 2px; background: var(--halftone-ink), var(--paper-2); }
+.gauge-fill { border-radius: 2px; }
+.crisis-question { border-left: 6px solid #b07a00; border-radius: 4px; }
+
+/* ---------- motion with meaning (GDD, "Gerak") ---------- */
+/* Stamp: lands hard, ink spreads, settles. */
+.stamp { animation: stamp-slam 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes stamp-slam {
+  0% { transform: rotate(-8deg) scale(2.4); opacity: 0; filter: blur(2px); }
+  55% { transform: rotate(-8deg) scale(0.94); opacity: 1; filter: blur(0); }
+  75% { transform: rotate(-8deg) scale(1.03); }
+  100% { transform: rotate(-8deg) scale(1); }
+}
+.status-card.locked { animation: thud 360ms ease-out; }
+@keyframes thud { 0%, 100% { transform: none; } 40% { transform: translateY(3px); } }
+/* Paper: the front page slides onto the table. */
+.frontpage { animation: paper-in 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-origin: 30% 100%; }
+@keyframes paper-in { from { opacity: 0; transform: translateY(60px) rotate(-2.5deg); } to { opacity: 1; transform: none; } }
+/* Ink: causes soak into the page. */
+.causes li, .links .link { animation: ink-in 520ms ease-out both; }
+@keyframes ink-in { from { opacity: 0; filter: blur(3px); transform: translateY(4px); } to { opacity: 1; filter: none; transform: none; } }
+/* A torn pact rips once. */
+.pact-card.torn { animation: rip 480ms ease-out; }
+@keyframes rip { 0% { transform: none; } 30% { transform: rotate(-1.2deg) translateX(-6px); } 60% { transform: rotate(0.8deg) translateX(4px); } 100% { transform: none; } }
+.crisis-card { animation: paper-in 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.collapse-banner { animation: stamp-in 500ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+@keyframes stamp-in { from { transform: scale(1.4); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fade-only { from { opacity: 0; } to { opacity: 1; } }
+
+/* Reduced motion: cut or fade, never move (GDD). The main screen also has its own switch in the console. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+  .stamp, .status-card.locked, .frontpage, .causes li, .links .link, .pact-card.torn, .crisis-card, .collapse-banner, .reveal-card.open, .agenda-card.open, .chain-mini li {
+    animation: fade-only 160ms ease-out both !important;
+  }
+}
+:root[data-motion='reduced'] *, :root[data-motion='reduced'] *::before, :root[data-motion='reduced'] *::after { transition: none !important; }
+:root[data-motion='reduced'] :is(.stamp, .status-card.locked, .frontpage, .causes li, .links .link, .pact-card.torn, .crisis-card, .collapse-banner, .reveal-card.open, .agenda-card.open) {
+  animation: fade-only 160ms ease-out both !important;
+}
+.stamp.small { animation-duration: 360ms; }
+/* Hold-to-confirm progress is feedback, not decoration: it keeps filling under reduced motion. */
+.btn.hold.holding .hold-fill { transition: width var(--hold-ms) linear !important; }
+
+/* ---------- facilitator console: sound and motion ---------- */
+.av-controls { display: grid; grid-template-columns: auto 1fr auto; gap: 10px 12px; align-items: center; }
+.av-controls input[type='range'] { width: 100%; accent-color: var(--ink); min-height: 32px; }
+.av-note { grid-column: 1 / -1; }
+.toggle { display: flex; gap: 10px; align-items: center; min-height: 40px; }
+.toggle input { width: 22px; height: 22px; accent-color: var(--ink); }
+
+/* ---------- illustration slots (empty until the illustrator delivers) ---------- */
+.crisis-art { float: right; width: min(40%, 420px); height: auto; margin: 0 0 12px 20px; mix-blend-mode: multiply; }
+.portrait { display: block; width: 120px; height: 120px; object-fit: contain; mix-blend-mode: multiply; }
+.portrait.small { display: inline-block; width: 44px; height: 44px; vertical-align: middle; margin-right: 6px; }
+/* Caslon's long descenders need room under big headlines. */
+.ending h1, .crisis-title, .question, .real-world h1 { line-height: 1.08; padding-bottom: 0.08em; margin-bottom: 0.12em; }

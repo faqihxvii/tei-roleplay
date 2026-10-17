@@ -11,7 +11,7 @@ import { PACT_TEMPLATES, PACT_TERMS } from '../src/pacts';
 import { SCORE } from '../src/scoring';
 import { ROLES, type CrisisCard, type PolicyCard, type Role, type Stat } from '../src/types';
 import {
-  arrows, CATEGORY_LABEL, effectEntries, escapeHtml as e, exactEffects, ROLE_CODE, ROLE_COLOR, ROLE_LABEL,
+  arrows, CATEGORY_LABEL, effectEntries, escapeHtml as e, exactEffects, ROLE_CODE, ROLE_COLOR, ROLE_INK, ROLE_LABEL,
   STAT_LABEL, TAG_LABEL,
 } from './labels';
 
@@ -61,7 +61,7 @@ function policyCard(card: PolicyCard): string {
   const requires = card.requires ? `<div class="req">Syarat: ${Object.entries(card.requires).map(([s, n]) => `${STAT_LABEL[s as Stat]} ≥ ${n}`).join(', ')}</div>` : '';
   const tags = card.tags.map(t => TAG_LABEL[t]).filter(Boolean).map(t => `<span class="tag">${e(t!)}</span>`).join('');
   const note = CARD_NOTES[card.id] ? `<div class="note">${e(CARD_NOTES[card.id]!)}</div>` : '';
-  return `<div class="card" style="--c:${ROLE_COLOR[card.role]}">
+  return `<div class="card" style="--c:${ROLE_COLOR[card.role]};--ci:${ROLE_INK[card.role]}">
     <div class="band">${roleMark(card.role)}${e(ROLE_LABEL[card.role])}<span class="code">${cardCode.get(card.id)}</span></div>
     <div class="body">
       <h3>${e(card.name)}</h3>
@@ -91,10 +91,11 @@ function crisisCard(card: CrisisCard): string {
 function agendaCard(agenda: (typeof AGENDAS)[number]): string {
   const role = agenda.role;
   const color = role ? ROLE_COLOR[role] : '#000';
+  const ink = role ? ROLE_INK[role] : '#fff';
   const footer = role
     ? 'Rahasiakan. Jika negara kolaps, semua tim kalah.'
     : 'Rahasiakan. Kamu menang jika negara kolaps dan identitasmu tidak tertebak oleh mayoritas tim.';
-  return `<div class="card agenda" style="--c:${color}">
+  return `<div class="card agenda" style="--c:${color};--ci:${ink}">
     <div class="band">${role ? roleMark(role) : ''}AGENDA RAHASIA · ${e(role ? ROLE_LABEL[role] : 'Oknum')}</div>
     <div class="body">
       <div class="seal">${role ? '?' : '!'}</div>
@@ -198,7 +199,7 @@ function roleSheet(role: Role): string {
       })()
     : '';
   return page(`
-    <div class="role-band" style="--c:${ROLE_COLOR[role]}">${roleMark(role)}<h1>${e(ROLE_LABEL[role])}</h1></div>
+    <div class="role-band" style="--c:${ROLE_COLOR[role]};--ci:${ROLE_INK[role]}">${roleMark(role)}<h1>${e(ROLE_LABEL[role])}</h1></div>
     <p class="focus">${e(sheet.focus)}</p>
     <h2>Tuas: ${e(sheet.lever.name)} <small>pilih satu setiap tahun</small></h2>
     <table class="lever">${options}</table>
@@ -381,7 +382,7 @@ table { border-collapse: collapse; width: 100%; }
 .sheet-title span { font-weight: 400; color: #666; }
 .grid { display: grid; grid-template-columns: repeat(3, 63mm); grid-auto-rows: 88mm; gap: 0; }
 .card { width: 63mm; height: 88mm; border: 0.3mm dashed #999; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
-.card .band { background: var(--c, #111); color: #fff; font: 700 7.5pt Inter; letter-spacing: .03em; padding: 2mm 3mm; display: flex; align-items: center; text-transform: uppercase; }
+.card .band { background: var(--c, #111); color: var(--ci, #fff); font: 700 7.5pt Inter; letter-spacing: .03em; padding: 2mm 3mm; display: flex; align-items: center; text-transform: uppercase; }
 .card .band .code { margin-left: auto; font-weight: 400; opacity: .85; }
 .card .body { padding: 2.5mm 3mm; display: flex; flex-direction: column; flex: 1; }
 .card h3 { font-size: 13pt; line-height: 1.1; margin-bottom: 1.5mm; }
@@ -403,7 +404,7 @@ table { border-collapse: collapse; width: 100%; }
 .narrative { font-size: 8pt; color: #333; }
 .card .rule b { display: block; font-size: 6.5pt; text-transform: uppercase; letter-spacing: .08em; color: #666; }
 .card.agenda .body { align-items: center; text-align: center; justify-content: center; }
-.card.agenda .seal { width: 14mm; height: 14mm; border-radius: 50%; border: 0.6mm solid var(--c); color: var(--c); font: 700 18pt 'Bitstream Charter', serif; display: flex; align-items: center; justify-content: center; margin-bottom: 3mm; }
+.card.agenda .seal { width: 14mm; height: 14mm; border-radius: 50%; border: 0.6mm solid #111; background: var(--c); color: var(--ci, #fff); font: 700 18pt 'Bitstream Charter', serif; display: flex; align-items: center; justify-content: center; margin-bottom: 3mm; }
 .card.agenda h3 { font-size: 15pt; }
 .card.agenda .goal { font-size: 10pt; margin: 2mm 0 4mm; }
 .card.agenda .foot { font-size: 7pt; color: #555; margin-top: auto; }
@@ -436,8 +437,8 @@ table { border-collapse: collapse; width: 100%; }
 .slot span { display: block; font-size: 7pt; color: #666; }
 
 /* role sheet */
-.role-band { background: var(--c); color: #fff; padding: 4mm 5mm; display: flex; align-items: center; margin-bottom: 3mm; }
-.role-band h1 { color: #fff; margin: 0; font-size: 26pt; }
+.role-band { background: var(--c); color: var(--ci, #fff); padding: 4mm 5mm; display: flex; align-items: center; margin-bottom: 3mm; }
+.role-band h1 { color: var(--ci, #fff); margin: 0; font-size: 26pt; }
 .role-band .mark { font-size: 9pt; }
 .focus { font-size: 12pt; font-family: 'Bitstream Charter', serif; font-style: italic; }
 .lever th { width: 30mm; text-align: left; vertical-align: top; padding: 1.5mm 2mm; border-bottom: 0.3mm solid #ccc; }

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
-import { ROLE_CODE, ROLE_COLOR, ROLE_LABEL } from '../../engine/src/content/roles';
+import { ROLE_LABEL } from '../../engine/src/content/roles';
 import { ROLES, type Role } from '../../engine/src/types';
 import type { ClientMessage, ServerMessage } from '../../room/src/protocol';
 import type { HostView, PlayerSummary } from '../../room/src/views';
-import { ClockControls, Console, useConsoleToggle } from './Console';
+import { useHostAudio } from './audio/useHostAudio';
+import { AvControls, ClockControls, Console, useConsoleToggle } from './Console';
 import { DebriefScreen } from './Debrief';
 import { QuizCount } from './Quiz';
+import { RoleMark, roleProps } from './shared';
 import { EdisiKhusus } from './EdisiKhusus';
 import { GuessScreen, YearScreen } from './MainScreens';
 import { formatSeconds, storage, useClockOffset, useRoomSocket, useSecondsLeft } from './socket';
@@ -96,6 +98,9 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
     }
   };
   const { status, send } = useRoomSocket((): ClientMessage => ({ t: 'host', code, token }), onMessage, true);
+  const printing = new URLSearchParams(location.search).get('cetak') === 'edisi';
+  // The print tab stays silent; only the projected screen plays sound (GDD, "Audio").
+  useHostAudio(view, clock.now, !printing);
 
   useEffect(() => {
     if (!notice) return;
@@ -104,7 +109,7 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
   }, [notice]);
 
   if (!view) return <main className="host center">Menghubungkan ke ruangan {code}…</main>;
-  if (new URLSearchParams(location.search).get('cetak') === 'edisi') return <EdisiKhusus view={view} />;
+  if (printing) return <EdisiKhusus view={view} />;
 
   return (
     <main className="host">
@@ -169,6 +174,7 @@ function Lobby({ view, send }: { view: HostView; send: (m: ClientMessage) => voi
           <p className="muted small">Seret nama ke tim lain, atau pakai menu di setiap nama. Bagi seimbang mempertahankan tim yang sudah diatur.</p>
           <button className="btn primary" onClick={() => send({ t: 'startBriefing' })} disabled={!view.players.length}>Mulai briefing peran</button>
           <p className="muted small">Pemain tanpa tim akan dimasukkan ke tim terkecil. Tim tanpa anggota dimainkan lewat konsol fasilitator.</p>
+          <AvControls compact />
         </section>
       </div>
       <Teams view={view} editable send={send} />
@@ -225,13 +231,13 @@ function Teams({ view, editable = false, send }: { view: HostView; editable?: bo
           <div
             key={key}
             className={`team${dragOver === key ? ' drag-over' : ''}`}
-            style={role ? { ['--role' as string]: ROLE_COLOR[role] } : undefined}
+            {...(role ? roleProps(role) : {})}
             onDragOver={editable ? e => { e.preventDefault(); setDragOver(key); } : undefined}
             onDragLeave={editable ? () => setDragOver(null) : undefined}
             onDrop={editable ? drop(role) : undefined}
           >
             <h2>
-              {role && <span className="role-mark small" aria-hidden="true">{ROLE_CODE[role]}</span>}
+              {role && <RoleMark role={role} small />}
               {role ? ROLE_LABEL[role] : 'Belum dapat tim'}
               <span className="muted"> · {members.length}</span>
             </h2>

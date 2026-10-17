@@ -125,6 +125,8 @@ interface Common extends Clock {
   tempo: Tempo;
   stats: PublicStats | null;
   crisis: {
+    /** Card id, for the illustration slot (public/art/manifest.json). */
+    id: string;
     title: string;
     ruleText: string;
     category: string;
@@ -339,6 +341,7 @@ function common(room: Room): Common {
   if (game && s.phase === 'tahun' && !resolvedView) {
     const card = getCrisis(game.crisisId);
     crisis = {
+      id: card.id,
       title: card.title,
       ruleText: card.ruleText,
       category: card.category,

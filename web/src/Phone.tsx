@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ROLE_COLOR, ROLE_LABEL } from '../../engine/src/content/roles';
+import { ROLE_LABEL } from '../../engine/src/content/roles';
 import { ROLES, type AgendaId, type Decision, type Role } from '../../engine/src/types';
 import type { ClientMessage, ServerMessage } from '../../room/src/protocol';
 import type { PlayerView } from '../../room/src/views';
 import { DecisionForm } from './DecisionForm';
 import { QuizForm, QuizMine } from './Quiz';
-import { Board, HoldButton, RoleMark, RoleName, Timer } from './shared';
+import { Portrait } from './art';
+import { useHaptics } from './haptics';
+import { Board, HoldButton, RoleMark, RoleName, Timer, roleProps } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
 import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, PRACTICE_COACH, STEP_LABEL, signed } from './text';
 
@@ -28,8 +30,8 @@ export function Phone() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [kicked, setKicked] = useState(false);
+  useHaptics(view);
   const clock = useClockOffset();
-  const lastStep = useRef<string | null>(null);
 
   const hello = (): ClientMessage | null => {
     const s = sessionRef.current;
@@ -50,10 +52,6 @@ export function Phone() {
         break;
       case 'player-state': {
         clock.sync(message.now);
-        // Buzz when the phase changes, so phones on the desk call attention (GDD, "UX/UI").
-        const step = `${message.view.phase}/${message.view.step}`;
-        if (lastStep.current && lastStep.current !== step) navigator.vibrate?.(60);
-        lastStep.current = step;
         setView(message.view);
         break;
       }
@@ -97,7 +95,7 @@ export function Phone() {
   }
 
   return (
-    <main className="phone" style={view.team ? { ['--role' as string]: ROLE_COLOR[view.team.role] } : undefined}>
+    <main className="phone" {...(view.team ? roleProps(view.team.role) : {})}>
       {status !== 'terhubung' && <p className="banner" role="status">{status === 'terputus' ? 'Sinyal putus. Menyambung ulang…' : 'Menghubungkan…'}</p>}
       {notice && <p className="banner warn" role="alert">{notice}</p>}
       <PhoneHeader view={view} now={clock.now} />
@@ -221,6 +219,7 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
   if (view.phase === 'briefing') {
     return (
       <section className="stack">
+        <Portrait role={team.role} />
         {view.me.isSpokesperson && <p className="badge">Kamu Juru Bicara tahun 1: kamu yang mengesahkan keputusan tim dan membuat pakta.</p>}
         {agenda}
         {resource}

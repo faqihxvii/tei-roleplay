@@ -7,7 +7,7 @@ import type { HostView } from '../../room/src/views';
 import { exportDecisions, exportPacts, exportQuiz, exportTimeline } from './exports';
 import { QuizSection } from './Quiz';
 import { ResultsBody, TimelineTable } from './MainScreens';
-import { RoleName } from './shared';
+import { RoleName, roleProps } from './shared';
 import { INDICATOR_LABEL, INDICATOR_ORDER, signed } from './text';
 import { TimelineChart } from './TimelineChart';
 
@@ -175,7 +175,7 @@ function AgendaSection({ view, send }: { view: HostView; send: Send }) {
     <section className="stack">
       <div className="agenda-reveal">
         {d.agendas.map((a, i) => (
-          <article key={a.role} className={`agenda-card${i < d.agendaShown ? ' open' : ''}`}>
+          <article key={a.role} className={`agenda-card${i < d.agendaShown ? ' open' : ''}`} {...roleProps(a.role)}>
             <RoleName role={a.role} />
             {i < d.agendaShown ? (
               <>

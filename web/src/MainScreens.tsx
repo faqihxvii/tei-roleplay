@@ -1,5 +1,9 @@
+import { useEffect } from 'react';
 import type { HostView, PublicStats, RevealView } from '../../room/src/views';
-import { Board, RoleMark, RoleName, Timer, useSequence } from './shared';
+import { CrisisArt, endExpression, Portrait } from './art';
+import { cueBus } from './audio/bus';
+import { revealCue } from './audio/derive';
+import { Board, RoleMark, RoleName, Timer, roleProps, useSequence } from './shared';
 import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL, INDICATOR_ORDER, PRACTICE_COACH, signed, STEP_HINT, STEP_LABEL } from './text';
 
 // The projected main screen during the year loop and the end of the game. Text sized to be read
@@ -66,6 +70,7 @@ function CrisisStage({ view }: { view: HostView }) {
       {view.pemilu && view.stats && (
         <p className="survey">Tahun pemilu. Hasil survei Kepercayaan Publik: <strong>{view.stats.kepercayaan}</strong> dari 10.</p>
       )}
+      <CrisisArt id={crisis.id} />
       <p className="kicker">Krisis tahun {view.year} · {crisis.category}</p>
       <h1 className="crisis-title">{crisis.title}</h1>
       <p className="crisis-narrative">{crisis.narrative}</p>
@@ -93,7 +98,7 @@ function TeamsStage({ view }: { view: HostView }) {
     )}
     <section className="team-status">
       {view.teams.map(team => (
-        <div key={team.role} className={`status-card${team.locked ? ' locked' : ''}`}>
+        <div key={team.role} className={`status-card${team.locked ? ' locked' : ''}`} {...roleProps(team.role)}>
           <RoleMark role={team.role} />
           <div>
             <p className="status-name">{team.label}</p>
@@ -135,6 +140,8 @@ function RevealStage({ reveal }: { reveal: RevealView }) {
   const groupsShown = Math.max(0, Math.min(shown - reveal.teams.length, reveal.groups.length));
   const pactsShown = Math.max(0, Math.min(shown - reveal.teams.length - reveal.groups.length, reveal.pacts.length));
   const done = shown >= total;
+  // Keyed on the count only: a fresh broadcast of the same reveal must not replay its last sound.
+  useEffect(() => { cueBus.emit(revealCue(reveal, shown)); }, [reveal.year, shown]);
 
   // The board moves one cause at a time; once everything is shown it settles on the engine's numbers.
   const running = { ...reveal.statsBefore };
@@ -153,7 +160,7 @@ function RevealStage({ reveal }: { reveal: RevealView }) {
       <section className="reveal">
         <div className="reveal-teams">
           {reveal.teams.map((team, i) => (
-            <div key={team.role} className={`reveal-card${i < teamsShown ? ' open' : ''}`}>
+            <div key={team.role} className={`reveal-card${i < teamsShown ? ' open' : ''}`} {...roleProps(team.role)}>
               <RoleName role={team.role} />
               {i < teamsShown ? (
                 <ul>
@@ -255,7 +262,7 @@ export function GuessScreen({ view, now }: { view: HostView; now: () => number }
       <TopBar view={view} now={now} />
       <section className="team-status">
         {view.teams.map(team => (
-          <div key={team.role} className={`status-card${team.finalDone ? ' locked' : ''}`}>
+          <div key={team.role} className={`status-card${team.finalDone ? ' locked' : ''}`} {...roleProps(team.role)}>
             <RoleMark role={team.role} />
             <div>
               <p className="status-name">{team.label}</p>
@@ -273,6 +280,7 @@ export function GuessScreen({ view, now }: { view: HostView; now: () => number }
 export function ResultsBody({ view }: { view: HostView }) {
   const results = view.results!;
   const ranked = [...results.teams].sort((a, b) => b.score - a.score);
+  const top = ranked[0]?.score ?? 0;
   return (
     <section className="results">
       <div className={`ending ${results.ending}`}>
@@ -304,7 +312,7 @@ export function ResultsBody({ view }: { view: HostView }) {
         <tbody>
           {ranked.map(t => (
             <tr key={t.role}>
-              <th scope="row"><RoleName role={t.role} /></th>
+              <th scope="row"><Portrait role={t.role} expression={endExpression(t, results.ending === 'kolaps', top)} className="small" /><RoleName role={t.role} /></th>
               <td><strong>{t.agendaName}</strong> {t.achieved ? '✓' : '✗'}<br /><span className="muted small">{t.agendaDescription}</span></td>
               <td>{t.correctGuesses} benar</td>
               <td>{t.pactsKept} ditepati, {t.pactsBroken} dilanggar</td>

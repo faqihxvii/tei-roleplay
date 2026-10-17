@@ -1,6 +1,6 @@
 import type { CrisisCategory, Effects, Stat, Tag } from '../src/types';
 
-export { ROLE_CODE, ROLE_COLOR, ROLE_LABEL } from '../src/content/roles';
+export { ROLE_CODE, ROLE_COLOR, ROLE_INK, ROLE_LABEL } from '../src/content/roles';
 
 export const STAT_LABEL: Record<Stat, string> = {
   harga: 'Harga',
