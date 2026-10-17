@@ -18,6 +18,7 @@ host.on('console', m => { if (m.type() === 'error') errors.push('host console: '
 await host.goto(BASE + '/host');
 await host.getByLabel(/Mode Oknum/).check();
 await host.getByLabel(/Tahun 0 latihan/).check();
+await host.getByLabel(/Kuis pra\/pasca/).check();
 await host.getByRole('button', { name: 'Buka ruangan' }).click();
 await host.waitForSelector('.room-code');
 const code = (await host.textContent('.room-code')).trim();
@@ -34,6 +35,15 @@ for (const name of names) {
   await p.getByText(`Halo, ${name}.`).waitFor();
   phones[name] = p;
 }
+// Pre quiz on every phone: first option everywhere, except one player who doesn't know.
+for (const [i, p] of Object.values(phones).entries()) {
+  await p.locator('.quiz').waitFor();
+  for (const fs of await p.locator('.quiz fieldset').all()) await fs.locator('.guess').nth(i === 0 ? 4 : 0).click();
+  if (i === 1) await shot(p, 'phone-kuis-pra.png', true);
+  await p.getByRole('button', { name: 'Kirim jawaban' }).click();
+  await p.getByText('Kuis awal terkirim').waitFor();
+}
+await host.getByText('dari 4 pemain selesai').waitFor();
 await host.getByRole('button', { name: 'Bagi seimbang' }).click();
 await host.getByRole('button', { name: 'Mulai briefing peran' }).click();
 await host.getByRole('button', { name: 'Mulai Tahun 0 (latihan)' }).click();
@@ -154,9 +164,24 @@ await host.keyboard.press('ArrowRight');
 await host.locator('.debrief-body').waitFor();
 await shot(host, 'debrief-6-dunia-nyata.png', true);
 
+// Post quiz: the same five questions, answered by every phone.
+await host.keyboard.press('ArrowRight');
+await host.locator('.dumbbells').waitFor();
+for (const p of Object.values(phones)) {
+  await p.locator('.quiz').waitFor();
+  for (const fs of await p.locator('.quiz fieldset').all()) await fs.locator('.guess').nth(1).click();
+  await p.getByRole('button', { name: 'Kirim jawaban' }).click();
+}
+await host.locator('.quiz-head').getByText(/Kuis akhir: 4 dari 4/).waitFor();
+await host.getByRole('button', { name: 'Tampilkan jawaban benar' }).click();
+await host.locator('.db-answer').first().waitFor();
+await shot(host, 'debrief-7-kuis.png', true);
+await roleOf['Pemerintah'].locator('.review').waitFor();
+await shot(roleOf['Pemerintah'], 'phone-kuis-hasil.png', true);
+
 // Export: three CSV files and the printable Edisi Khusus.
 await host.keyboard.press('k');
-for (const name of ['Garis waktu (CSV)', 'Keputusan per tim (CSV)', 'Log pakta (CSV)']) {
+for (const name of ['Garis waktu (CSV)', 'Keputusan per tim (CSV)', 'Log pakta (CSV)', 'Kuis pra/pasca (CSV)']) {
   const [download] = await Promise.all([host.waitForEvent('download'), host.getByRole('button', { name }).click()]);
   const path = await download.path();
   const { readFileSync } = await import('node:fs');

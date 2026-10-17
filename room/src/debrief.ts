@@ -13,8 +13,9 @@ import type { RoomSnapshot } from './room';
 // agenda reveal against the guesses, three rounds of questions, and a real-world link.
 // Everything here is public: by the end of the game every decision has been revealed.
 
-export type DebriefSection = 'hasil' | 'garisWaktu' | 'sebab' | 'agenda' | 'diskusi' | 'duniaNyata';
-export const DEBRIEF_SECTIONS: DebriefSection[] = ['hasil', 'garisWaktu', 'sebab', 'agenda', 'diskusi', 'duniaNyata'];
+export type DebriefSection = 'hasil' | 'garisWaktu' | 'sebab' | 'agenda' | 'diskusi' | 'duniaNyata' | 'kuis';
+/** 'kuis' only appears when the room plays with the pre/post quiz. */
+export const DEBRIEF_SECTIONS: DebriefSection[] = ['hasil', 'garisWaktu', 'sebab', 'agenda', 'diskusi', 'duniaNyata', 'kuis'];
 
 export interface DebriefState {
   section: DebriefSection;
@@ -23,9 +24,11 @@ export interface DebriefState {
   agendaShown: number;
   /** Discussion: 0 what happened, 1 why, 2 where in the real world. */
   round: number;
+  /** Quiz: whether the correct answers are on screen yet. */
+  quizReveal: boolean;
 }
 
-export const initialDebrief = (): DebriefState => ({ section: 'hasil', focus: null, agendaShown: 0, round: 0 });
+export const initialDebrief = (): DebriefState => ({ section: 'hasil', focus: null, agendaShown: 0, round: 0, quizReveal: false });
 
 export interface TurningPoint {
   stat: Indicator;

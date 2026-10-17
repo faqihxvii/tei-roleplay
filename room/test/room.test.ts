@@ -425,3 +425,62 @@ test('a refresh during the practice restores it, and the practice still ends cle
   restored.endPractice(T0);
   assert.deepEqual(restored.state.game, room.state.practice!.game);
 });
+
+test('quiz: five questions, each with one right answer among four', async () => {
+  const { QUIZ } = await import('../src/content/quiz');
+  assert.equal(QUIZ.length, 5);
+  for (const q of QUIZ) {
+    assert.equal(q.options.length, 4);
+    assert.ok(q.correct >= 0 && q.correct < 4);
+    assert.equal(new Set(q.options).size, 4);
+  }
+  // The key is spread out, so "always pick B" scores poorly.
+  assert.ok(new Set(QUIZ.map(q => q.correct)).size >= 3);
+});
+
+test('quiz: the pre quiz closes when play starts, the post quiz opens in the debrief', async () => {
+  const { QUIZ } = await import('../src/content/quiz');
+  const right = QUIZ.map(q => q.correct);
+  const room = roomWith(['A', 'B', 'C', 'D', 'E'], { oknum: false, kuis: true } as never);
+  const [a, b, c] = players(room).map(p => p.id);
+  assert.equal(playerView(room, a!).myQuiz!.open, 'pra');
+  assert.ok(!JSON.stringify(playerView(room, a!)).includes('"correct"'));
+  room.submitQuiz(a!, 'pra', [-1, -1, -1, -1, -1], T0);
+  assert.throws(() => room.submitQuiz(a!, 'pra', right, T0), (e: RoomError) => e.code === 'fase-salah'); // once only
+  assert.throws(() => room.submitQuiz(b!, 'pra', [0, 0, 0], T0), (e: RoomError) => e.code === 'keputusan-salah');
+  assert.throws(() => room.submitQuiz(b!, 'pra', [9, 0, 0, 0, 0], T0), (e: RoomError) => e.code === 'keputusan-salah');
+  room.startBriefing(T0);
+  room.submitQuiz(b!, 'pra', right, T0); // still allowed in the briefing
+  room.next(T0); // year 1 begins
+  assert.equal(playerView(room, c!).myQuiz!.open, null);
+  assert.throws(() => room.submitQuiz(c!, 'pra', right, T0), (e: RoomError) => e.code === 'fase-salah');
+
+  playOut(room);
+  for (const role of ROLES) room.submitFinal(spokesperson(room, role), { agendas: {}, oknum: null }, T0);
+  assert.equal(playerView(room, a!).myQuiz!.open, null); // not until the debrief gets there
+  room.setDebrief({ section: 'kuis' }, T0);
+  assert.equal(playerView(room, a!).myQuiz!.open, 'pasca');
+  room.submitQuiz(a!, 'pasca', right, T0);
+  room.submitQuiz(b!, 'pasca', right, T0);
+
+  const summary = hostView(room).quiz!;
+  assert.equal(summary.praDone, 2);
+  assert.equal(summary.pascaDone, 2);
+  assert.equal(summary.results!.praMean, 50); // one blank, one perfect
+  assert.equal(summary.results!.pascaMean, 100);
+  assert.equal(summary.results!.gain, 50);
+  assert.ok(summary.results!.questions.every(q => q.answer === null));
+  assert.deepEqual(playerView(room, a!).myQuiz!.scores, { pra: 0, pasca: 5 });
+  assert.equal(playerView(room, a!).myQuiz!.review, null);
+
+  room.setDebrief({ quizReveal: true }, T0);
+  assert.ok(hostView(room).quiz!.results!.questions.every(q => q.answer));
+  assert.equal(playerView(room, a!).myQuiz!.review!.length, 5);
+  assert.equal(hostView(room).quizRows!.find(r => r.nickname === 'A')!.pascaScore, 5);
+});
+
+test('quiz: the section is refused when the room plays without it', () => {
+  const room = finished();
+  assert.throws(() => room.setDebrief({ section: 'kuis' }, T0), (e: RoomError) => e.code === 'fase-salah');
+  assert.equal(hostView(room).quiz, null);
+});

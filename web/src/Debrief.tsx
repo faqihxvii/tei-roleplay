@@ -4,7 +4,8 @@ import { ROLES } from '../../engine/src/types';
 import type { DebriefSection } from '../../room/src/debrief';
 import type { ClientMessage } from '../../room/src/protocol';
 import type { HostView } from '../../room/src/views';
-import { exportDecisions, exportPacts, exportTimeline } from './exports';
+import { exportDecisions, exportPacts, exportQuiz, exportTimeline } from './exports';
+import { QuizSection } from './Quiz';
 import { ResultsBody, TimelineTable } from './MainScreens';
 import { RoleName } from './shared';
 import { INDICATOR_LABEL, INDICATOR_ORDER, signed } from './text';
@@ -22,14 +23,16 @@ export const SECTION_LABEL: Record<DebriefSection, string> = {
   agenda: 'Buka agenda',
   diskusi: 'Diskusi',
   duniaNyata: 'Di Dunia Nyata',
+  kuis: 'Kuis akhir',
 };
-const ORDER: DebriefSection[] = ['hasil', 'garisWaktu', 'sebab', 'agenda', 'diskusi', 'duniaNyata'];
+const ALL: DebriefSection[] = ['hasil', 'garisWaktu', 'sebab', 'agenda', 'diskusi', 'duniaNyata', 'kuis'];
 
 const bad = (stat: string, amount: number) => ((stat === 'harga' || stat === 'keresahan') ? amount > 0 : amount < 0);
 
 export function DebriefScreen({ view, send, consoleOpen }: { view: HostView; send: Send; consoleOpen: boolean }) {
   const d = view.debrief!;
   const go = (section: DebriefSection) => send({ t: 'debrief', patch: { section } });
+  const ORDER = view.quiz ? ALL : ALL.filter(s => s !== 'kuis');
   const index = ORDER.indexOf(d.section);
 
   useEffect(() => {
@@ -58,6 +61,7 @@ export function DebriefScreen({ view, send, consoleOpen }: { view: HostView; sen
         {d.section === 'agenda' && <AgendaSection view={view} send={send} />}
         {d.section === 'diskusi' && <DiscussionSection view={view} send={send} />}
         {d.section === 'duniaNyata' && <RealWorldSection view={view} />}
+        {d.section === 'kuis' && <QuizSection view={view} send={send} />}
       </div>
       <nav className="debrief-nav" aria-label="Bagian debrief">
         <button className="btn" disabled={index === 0} onClick={() => go(ORDER[index - 1]!)} aria-label="Bagian sebelumnya">←</button>
@@ -79,6 +83,7 @@ const HINT: Record<DebriefSection, string> = {
   agenda: 'Agenda rahasia dibuka satu per satu, dibandingkan dengan tebakan tim lain.',
   diskusi: 'Apa yang terjadi? Mengapa? Di mana ini terjadi di dunia nyata?',
   duniaNyata: 'Krisis di permainan ini pernah terjadi sungguhan.',
+  kuis: 'Lima soal yang sama seperti sebelum bermain. Jawab di HP.',
 };
 
 function TimelineSection({ view, send }: { view: HostView; send: Send }) {
@@ -236,6 +241,7 @@ export function ExportPanel({ view }: { view: HostView }) {
         <button className="btn" onClick={() => exportTimeline(view)}>Garis waktu (CSV)</button>
         <button className="btn" onClick={() => exportDecisions(view)}>Keputusan per tim (CSV)</button>
         <button className="btn" onClick={() => exportPacts(view)}>Log pakta (CSV)</button>
+        {view.quizRows && <button className="btn" onClick={() => exportQuiz(view)}>Kuis pra/pasca (CSV)</button>}
       </div>
       <a className="btn primary" href={`/host?r=${view.code}&cetak=edisi`} target="_blank" rel="noopener">Edisi Khusus (cetak atau simpan PDF)</a>
     </section>

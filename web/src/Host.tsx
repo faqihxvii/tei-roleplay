@@ -5,6 +5,7 @@ import type { ClientMessage, ServerMessage } from '../../room/src/protocol';
 import type { HostView, PlayerSummary } from '../../room/src/views';
 import { ClockControls, Console, useConsoleToggle } from './Console';
 import { DebriefScreen } from './Debrief';
+import { QuizCount } from './Quiz';
 import { EdisiKhusus } from './EdisiKhusus';
 import { GuessScreen, YearScreen } from './MainScreens';
 import { formatSeconds, storage, useClockOffset, useRoomSocket, useSecondsLeft } from './socket';
@@ -33,6 +34,7 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
   const [oknum, setOknum] = useState(false);
   const [santai, setSantai] = useState(false);
   const [latihan, setLatihan] = useState(true);
+  const [kuis, setKuis] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +42,7 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/rooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ oknum, latihan, tempo: santai ? 'santai' : 'normal' }) });
+      const res = await fetch('/api/rooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ oknum, latihan, kuis, tempo: santai ? 'santai' : 'normal' }) });
       const body = (await res.json()) as { code?: string; hostToken?: string; message?: string };
       if (!res.ok || !body.code || !body.hostToken) throw new Error(body.message ?? 'Ruangan gagal dibuat.');
       onCreated(body.code, body.hostToken);
@@ -63,6 +65,10 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
       <label className="check">
         <input type="checkbox" checked={latihan} onChange={e => setLatihan(e.target.checked)} />
         <span><strong>Tahun 0 latihan.</strong> Satu putaran terpandu 3 menit setelah briefing, di negara simulasi yang hasilnya dibuang.</span>
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={kuis} onChange={e => setKuis(e.target.checked)} />
+        <span><strong>Kuis pra/pasca.</strong> Lima soal di HP sebelum bermain dan di akhir debrief, untuk mengukur pemahaman kelas.</span>
       </label>
       <label className="check">
         <input type="checkbox" checked={santai} onChange={e => setSantai(e.target.checked)} />
@@ -154,6 +160,7 @@ function Lobby({ view, send }: { view: HostView; send: (m: ClientMessage) => voi
         <JoinPanel code={view.code} />
         <section className="console">
           <p className="count"><strong>{view.players.length}</strong> pemain · {connected} terhubung</p>
+          <QuizCount view={view} stage="pra" />
           {view.options.oknum && <p className="badge">Mode Oknum aktif</p>}
           <div className="row">
             <button className="btn" onClick={() => send({ t: 'assign', mode: 'acak' })} disabled={!view.players.length}>Bagi acak</button>
@@ -177,6 +184,7 @@ function Briefing({ view, send, now }: { view: HostView; send: (m: ClientMessage
         <p className="kicker">Briefing peran</p>
         <p className="big-timer" aria-live="off">{seconds !== null ? formatSeconds(seconds) : '–'}</p>
         <p className="lead">Baca kartu peran dan agenda rahasia timmu di HP. Jangan perlihatkan ke tim lain.</p>
+        <QuizCount view={view} stage="pra" />
         <div className="row">
           <ClockControls view={view} send={send} />
           {view.options.latihan ? (

@@ -2,7 +2,7 @@ import type { PactTermId } from '../../engine/src/pacts';
 import { PACT_TERMS } from '../../engine/src/pacts';
 import { INDICATORS, ROLES, type AgendaId, type Decision, type Indicator, type Role } from '../../engine/src/types';
 import { DEBRIEF_SECTIONS, type DebriefSection, type DebriefState } from './debrief';
-import type { AssignMode, FinalVote, RoomErrorCode, Tempo } from './room';
+import type { AssignMode, FinalVote, QuizStage, RoomErrorCode, Tempo } from './room';
 import type { HostView, PlayerView } from './views';
 
 // Wire format between the server and its clients. Everything a client sends is untrusted,
@@ -32,7 +32,8 @@ export type ClientMessage =
   | { t: 'lock'; decision: Decision }
   | { t: 'pactPropose'; to: Role; fromTerm: PactTermId; toTerm: PactTermId }
   | { t: 'pactRespond'; pactId: string; accept: boolean }
-  | { t: 'final'; vote: FinalVote };
+  | { t: 'final'; vote: FinalVote }
+  | { t: 'quiz'; stage: QuizStage; answers: number[] };
 
 export type ServerMessage =
   | { t: 'welcome'; as: 'host' }
@@ -45,7 +46,7 @@ export type ServerMessage =
 export const HOST_ONLY = new Set<ClientMessage['t']>([
   'assign', 'move', 'kick', 'startBriefing', 'next', 'begin', 'endPractice', 'pause', 'resume-clock', 'addTime', 'tempo', 'hostDecide', 'hostFinal', 'debrief',
 ]);
-export const PLAYER_ONLY = new Set<ClientMessage['t']>(['propose', 'lock', 'pactPropose', 'pactRespond', 'final']);
+export const PLAYER_ONLY = new Set<ClientMessage['t']>(['propose', 'lock', 'pactPropose', 'pactRespond', 'final', 'quiz']);
 
 const CODE_RE = /^[A-Z]{4}$/;
 const TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;
@@ -97,6 +98,10 @@ function parseDebrief(v: unknown): Partial<DebriefState> | null {
     else if (isObj(v.focus) && INDICATORS.includes(v.focus.stat as Indicator) && Number.isInteger(v.focus.year) && (v.focus.year as number) >= 1 && (v.focus.year as number) <= 5) {
       patch.focus = { stat: v.focus.stat as Indicator, year: v.focus.year as number };
     } else return null;
+  }
+  if (v.quizReveal !== undefined) {
+    if (typeof v.quizReveal !== 'boolean') return null;
+    patch.quizReveal = v.quizReveal;
   }
   for (const key of ['agendaShown', 'round'] as const) {
     if (v[key] === undefined) continue;
@@ -172,6 +177,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         : null;
     case 'pactRespond':
       return isString(m.pactId, ID_RE) && typeof m.accept === 'boolean' ? { t: 'pactRespond', pactId: m.pactId, accept: m.accept } : null;
+    case 'quiz':
+      return (m.stage === 'pra' || m.stage === 'pasca') && Array.isArray(m.answers) && m.answers.length <= 10 && m.answers.every(a => Number.isInteger(a))
+        ? { t: 'quiz', stage: m.stage, answers: m.answers as number[] }
+        : null;
     case 'final': {
       const vote = parseFinal(m.vote);
       return vote ? { t: 'final', vote } : null;

@@ -44,3 +44,18 @@ export function exportPacts(view: HostView): void {
   }
   download(`TEI-${view.code}-pakta.csv`, csv(rows));
 }
+
+export function exportQuiz(view: HostView): void {
+  const rows: (string | number)[][] = [['Nama panggilan', 'Tim', 'Skor pra (dari 5)', 'Skor pasca (dari 5)', ...[1, 2, 3, 4, 5].flatMap(n => [`Soal ${n} pra`, `Soal ${n} pasca`])]];
+  const show = (a: number | undefined) => (a === undefined ? '' : a === -1 ? 'tidak tahu' : 'ABCD'[a]!);
+  for (const r of view.quizRows ?? []) {
+    rows.push([
+      r.nickname,
+      r.role ? ROLE_LABEL[r.role] : '',
+      r.praScore ?? '',
+      r.pascaScore ?? '',
+      ...[0, 1, 2, 3, 4].flatMap(i => [show(r.pra?.[i]), show(r.pasca?.[i])]),
+    ]);
+  }
+  download(`TEI-${view.code}-kuis.csv`, csv(rows));
+}

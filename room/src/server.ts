@@ -76,7 +76,7 @@ export async function createRoomServer(options: RoomServerOptions) {
     let code = roomCode();
     while (rooms.has(code)) code = roomCode();
     const hostToken = newToken();
-    const room = Room.create({ code, hostToken, seed: newSeed(), options: { oknum: req.body?.oknum === true, latihan: req.body?.latihan === true }, tempo: req.body?.tempo === 'santai' ? 'santai' : 'normal', now: now() });
+    const room = Room.create({ code, hostToken, seed: newSeed(), options: { oknum: req.body?.oknum === true, latihan: req.body?.latihan === true, kuis: req.body?.kuis === true }, tempo: req.body?.tempo === 'santai' ? 'santai' : 'normal', now: now() });
     rooms.set(code, { room, conns: new Set() });
     void persist(code);
     res.status(201).json({ code, hostToken });
@@ -220,6 +220,7 @@ export async function createRoomServer(options: RoomServerOptions) {
         case 'pactPropose': room.proposePact(playerId, message.to, message.fromTerm, message.toTerm, newId(), t); break;
         case 'pactRespond': room.respondPact(playerId, message.pactId, message.accept, t); break;
         case 'final': room.submitFinal(playerId, message.vote, t); break;
+        case 'quiz': room.submitQuiz(playerId, message.stage, message.answers, t); break;
       }
       changed(live, `${room.phase}/${room.step}` !== before);
     } catch (error) {

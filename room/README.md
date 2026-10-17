@@ -83,11 +83,20 @@ Setelah skor keluar, fasilitator memandu enam bagian dari layar utama (tombol di
 | Diskusi | Tiga putaran: Apa yang terjadi? Mengapa? Di dunia nyata? Pertanyaan diisi data sesi. | Pertanyaan yang sama plus satu pertanyaan refleksi per peran |
 | Di Dunia Nyata | Peristiwa nyata yang mirip krisis terberat sesi itu, dengan sumber | Teks dan tautan sumber |
 
+## Kuis pra/pasca
+
+Opsi saat membuka ruangan. Lima soal skenario, satu per tujuan belajar GDD (fiskal vs moneter, dampak tertunda, paradoks hemat, konflik kepentingan upah-harga, cetak uang dan defisit), ditambah pilihan "Tidak tahu" agar kuis awal tidak dipenuhi tebakan asal. Soal ada di `src/content/quiz.ts`.
+
+- Kuis awal terbuka di HP selama lobi dan briefing, dan tertutup begitu permainan dimulai (termasuk Tahun 0). Layar lobi menampilkan berapa pemain sudah selesai.
+- Kuis akhir terbuka ketika fasilitator sampai di bagian terakhir debrief, "Kuis akhir".
+- Layar utama hanya menampilkan angka kelas: persentase benar per soal sebelum dan sesudah, rata-rata, dan kenaikan untuk pemain yang ikut keduanya (target GDD: +20 poin). Tidak ada nama atau skor perorangan.
+- Kunci jawaban dan penjelasan baru dikirim ke layar dan HP setelah fasilitator menekan "Tampilkan jawaban benar". HP menunjukkan skor sendiri (sebelum → sesudah) setelah kuis akhir dikirim.
+- Setiap pemain menjawab sekali per kuis. Ekspor CSV per nama panggilan tersedia di konsol untuk guru.
+
 Ekspor di konsol (K): tiga CSV (garis waktu, keputusan per tim, log pakta; pemisah titik koma untuk Excel berbahasa Indonesia) dan Edisi Khusus, halaman semua headline dan hasil yang siap dicetak atau disimpan sebagai PDF.
 
 ## Belum dibuat
 
-- Kuis pra/pasca.
 - Narasi, pertanyaan tim, dan "Tahukah Anda" di kartu krisis (belum ada di data engine).
 - Templat headline baru 2–3 varian per tag; GDD meminta minimal 8. Perlu ruang penulis.
 - Audio, animasi Rive, dan art direction final.

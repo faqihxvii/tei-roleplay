@@ -9,7 +9,8 @@ import { INDICATORS, ROLES, type Collapse, type Decision, type Effects, type Gam
 import { debriefView, history, type DebriefView, type YearHistory } from './debrief';
 import type { FrontPage } from './koran';
 import { causeRole, describeDecision, groupDeltas, isIndicator, OWN_RESOURCE, STAT_NAME, type CauseGroup } from './labels';
-import { DECIDING_STEPS, MAX_PACTS_PER_TEAM, type FinalVote, type LockSource, type PactRecord, type Room, type RoomOptions, type RoomPhase, type Tempo, type YearStep } from './room';
+import { QUIZ, quizScore } from './content/quiz';
+import { DECIDING_STEPS, MAX_PACTS_PER_TEAM, type QuizStage, type FinalVote, type LockSource, type PactRecord, type Room, type RoomOptions, type RoomPhase, type Tempo, type YearStep } from './room';
 
 // What each screen may see. The projected host screen never receives agendas, hands or private
 // resources; a phone receives only its own team's (GDD, "UX/UI": secrets never reach the main screen).
@@ -133,6 +134,27 @@ interface Common extends Clock {
   frontPage: FrontPage | null;
   results: ResultsView | null;
   debrief: DebriefView | null;
+  quiz: QuizSummary | null;
+}
+
+export interface QuizQuestionResult {
+  id: string;
+  concept: string;
+  text: string;
+  /** Share of takers who answered right, 0–100; null before anyone has. */
+  praPct: number | null;
+  pascaPct: number | null;
+  /** Only once the facilitator reveals the answers. */
+  answer: { option: string; explanation: string } | null;
+}
+
+/** Class-level numbers only: the main screen never shows who scored what. */
+export interface QuizSummary {
+  eligible: number;
+  praDone: number;
+  pascaDone: number;
+  /** After the game: per question, and the mean gain for players who took both. */
+  results: { questions: QuizQuestionResult[]; praMean: number | null; pascaMean: number | null; paired: number; gain: number | null } | null;
 }
 
 export interface HostView extends Common {
@@ -141,6 +163,8 @@ export interface HostView extends Common {
   spokespeople: Partial<Record<Role, string>>;
   /** After the game: the full record for the export and the Edisi Khusus. */
   history: YearHistory[] | null;
+  /** After the game, for the teacher's CSV only (never drawn on the main screen): quiz rows per nickname. */
+  quizRows: { nickname: string; role: Role | null; pra: number[] | null; pasca: number[] | null; praScore: number | null; pascaScore: number | null }[] | null;
   /** Console only: every team's decision form during the deciding steps. */
   console: { decisions: Partial<Record<Role, DecisionContext>>; agendaOptions: Record<Role, { id: string; name: string }[]> } | null;
 }
@@ -156,6 +180,15 @@ export interface PlayerView extends Common {
     resource: { stat: Stat; label: string; value: number; change: number | null } | null;
   } | null;
   decision: (DecisionContext & { myProposal: Decision | null }) | null;
+  myQuiz: {
+    open: QuizStage | null;
+    questions: { id: string; text: string; options: string[] }[];
+    done: { pra: boolean; pasca: boolean };
+    /** Own scores, shown once the post quiz is in so the pre score teaches nothing early. */
+    scores: { pra: number | null; pasca: number | null } | null;
+    /** Own answers against the key, after the facilitator reveals it. */
+    review: { text: string; correct: string; explanation: string; pra: number | null; pasca: number | null; right: number }[] | null;
+  } | null;
   lobby: { terms: Record<Role, { id: string; text: string }[]>; maxPacts: number } | null;
   final: { options: Record<Role, { id: string; name: string; description: string }[]>; mine: FinalVote | null } | null;
 }
@@ -333,7 +366,39 @@ function common(room: Room): Common {
     frontPage: s.step === 'koran' ? asYear(s.years.at(-1)?.frontPage ?? null, year) : null,
     results: resultsView(room),
     debrief: s.phase === 'selesai' ? debriefView(s, room.pactTally()) : null,
+    quiz: quizSummary(room),
   };
+}
+
+const pct = (n: number, d: number) => (d ? Math.round((n / d) * 100) : null);
+
+function quizSummary(room: Room): QuizSummary | null {
+  const s = room.state;
+  if (!s.options.kuis) return null;
+  const entries = Object.values(s.quiz);
+  const pra = entries.filter(e => e.pra).map(e => e.pra!);
+  const pasca = entries.filter(e => e.pasca).map(e => e.pasca!);
+  let results: QuizSummary['results'] = null;
+  if (s.phase === 'selesai') {
+    const reveal = !!s.debrief?.quizReveal;
+    const paired = entries.filter(e => e.pra && e.pasca);
+    const mean = (list: number[][]) => (list.length ? Math.round((list.reduce((a, l) => a + quizScore(l), 0) / list.length / QUIZ.length) * 100) : null);
+    results = {
+      questions: QUIZ.map((q, i) => ({
+        id: q.id,
+        concept: q.concept,
+        text: q.text,
+        praPct: pct(pra.filter(a => a[i] === q.correct).length, pra.length),
+        pascaPct: pct(pasca.filter(a => a[i] === q.correct).length, pasca.length),
+        answer: reveal ? { option: q.options[q.correct]!, explanation: q.explanation } : null,
+      })),
+      praMean: mean(pra),
+      pascaMean: mean(pasca),
+      paired: paired.length,
+      gain: paired.length ? mean(paired.map(e => e.pasca!))! - mean(paired.map(e => e.pra!))! : null,
+    };
+  }
+  return { eligible: s.players.length, praDone: pra.length, pascaDone: pasca.length, results };
 }
 
 /** Stamps the displayed year on a record, so the practice reads as year 0. */
@@ -362,6 +427,12 @@ export function hostView(room: Room): HostView {
     offlineRoles: [...s.offlineRoles],
     spokespeople,
     history: s.phase === 'selesai' ? history(s) : null,
+    quizRows: s.phase === 'selesai' && s.options.kuis
+      ? s.players.map(p => {
+          const q = s.quiz[p.id] ?? {};
+          return { nickname: p.nickname, role: p.role, pra: q.pra ?? null, pasca: q.pasca ?? null, praScore: q.pra ? quizScore(q.pra) : null, pascaScore: q.pasca ? quizScore(q.pasca) : null };
+        })
+      : null,
     console,
   };
 }
@@ -418,8 +489,25 @@ export function playerView(room: Room, playerId: string): PlayerView {
     ? room.pactsThisYear().filter(p => (p.from === role || p.to === role) && p.status !== 'disepakati').map(p => pactView(room, p))
     : [];
 
+  let myQuiz: PlayerView['myQuiz'] = null;
+  if (s.options.kuis) {
+    const mine = s.quiz[playerId] ?? {};
+    const open = room.openQuiz(playerId);
+    const scores = mine.pasca ? { pra: mine.pra ? quizScore(mine.pra) : null, pasca: quizScore(mine.pasca) } : null;
+    myQuiz = {
+      open,
+      questions: open ? QUIZ.map(q => ({ id: q.id, text: q.text, options: q.options })) : [],
+      done: { pra: !!mine.pra, pasca: !!mine.pasca },
+      scores,
+      review: mine.pasca && s.debrief?.quizReveal
+        ? QUIZ.map((q, i) => ({ text: q.text, correct: q.options[q.correct]!, explanation: q.explanation, pra: mine.pra?.[i] ?? null, pasca: mine.pasca![i]!, right: q.correct }))
+        : null,
+    };
+  }
+
   return {
     ...base,
+    myQuiz,
     pacts: [...base.pacts, ...ownPacts],
     me: { id: player.id, nickname: player.nickname, role, isSpokesperson: !!role && spokesperson?.id === player.id },
     team,

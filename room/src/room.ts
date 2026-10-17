@@ -5,6 +5,7 @@ import { checkPacts, emptyTally, PACT_TERMS, type PactTally, type PactTermId } f
 import { Rng } from '../../engine/src/rng';
 import { isOknumIdentified, scoreGame, type TeamResult } from '../../engine/src/scoring';
 import { ROLES, type AgendaId, type Decision, type DecisionFor, type GameState, type Role, type YearDecisions } from '../../engine/src/types';
+import { DONT_KNOW, QUIZ } from './content/quiz';
 import { initialDebrief, type DebriefState } from './debrief';
 import { buildFrontPage, type FrontPage } from './koran';
 
@@ -49,7 +50,11 @@ export interface RoomOptions {
   oknum: boolean;
   /** Play the guided Year 0 practice between the briefing and year 1. */
   latihan?: boolean;
+  /** Pre/post quiz: five questions on each phone before and after play. */
+  kuis?: boolean;
 }
+
+export type QuizStage = 'pra' | 'pasca';
 
 /** The real game, set aside while the class practises on a throwaway country. */
 export interface PracticeStash {
@@ -129,6 +134,10 @@ export interface RoomSnapshot {
   finals: Partial<Record<Role, FinalVote>>;
   results: FinalResults | null;
   debrief: DebriefState | null;
+  /** Quiz answers per player id, each submitted once. */
+  quiz: Record<string, { pra?: number[]; pasca?: number[] }>;
+  /** The post quiz opens when the debrief reaches it and stays open. */
+  quizPostOpen: boolean;
   /** Set while Year 0 runs; holds the real game until the practice ends. */
   practice: PracticeStash | null;
   /** Headline variants already printed this session, so none repeats (GDD, "Cara headline disusun"). */
@@ -216,6 +225,8 @@ export class Room {
       results: null,
       debrief: null,
       practice: null,
+      quiz: {},
+      quizPostOpen: false,
       usedVariants: [],
     });
   }
@@ -225,7 +236,7 @@ export class Room {
     // Snapshots from the join-flow release predate the year loop: fill in what they lack.
     const legacyPhase: string = snapshot.phase;
     const s: RoomSnapshot = {
-      step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, pacts: [], years: [], finals: {}, results: null, debrief: null, practice: null, usedVariants: [],
+      step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, pacts: [], years: [], finals: {}, results: null, debrief: null, practice: null, quiz: {}, quizPostOpen: false, usedVariants: [],
       ...structuredClone(snapshot),
       phase: legacyPhase === 'lobi' ? 'gabung' : snapshot.phase,
     };
@@ -712,13 +723,41 @@ export class Room {
   setDebrief(patch: Partial<DebriefState>, now: number): void {
     if (this.s.phase !== 'selesai' || !this.s.debrief || !this.s.game) throw new RoomError('fase-salah');
     const d = this.s.debrief;
-    if (patch.section !== undefined) d.section = patch.section;
+    if (patch.section !== undefined) {
+      if (patch.section === 'kuis' && !this.s.options.kuis) throw new RoomError('fase-salah');
+      d.section = patch.section;
+      if (patch.section === 'kuis') this.s.quizPostOpen = true;
+    }
+    if (patch.quizReveal !== undefined) d.quizReveal = patch.quizReveal;
     if (patch.focus !== undefined) {
       if (patch.focus && !this.s.game.log[patch.focus.year - 1]) throw new RoomError('keputusan-salah');
       d.focus = patch.focus;
     }
     if (patch.agendaShown !== undefined) d.agendaShown = Math.max(0, Math.min(ROLES.length, patch.agendaShown));
     if (patch.round !== undefined) d.round = Math.max(0, Math.min(2, patch.round));
+    this.touch(now);
+  }
+
+  // ---------- quiz ----------
+
+  /** Which quiz a player may answer right now, if any. */
+  openQuiz(playerId: string): QuizStage | null {
+    const s = this.s;
+    if (!s.options.kuis) return null;
+    const mine = s.quiz[playerId] ?? {};
+    // The pre quiz must come before any play, Year 0 included.
+    if ((s.phase === 'gabung' || s.phase === 'briefing') && !mine.pra) return 'pra';
+    if (s.phase === 'selesai' && s.quizPostOpen && !mine.pasca) return 'pasca';
+    return null;
+  }
+
+  submitQuiz(playerId: string, stage: QuizStage, answers: number[], now: number): void {
+    this.player(playerId);
+    if (this.openQuiz(playerId) !== stage) throw new RoomError('fase-salah');
+    if (answers.length !== QUIZ.length || answers.some((a, i) => !Number.isInteger(a) || a < DONT_KNOW || a >= QUIZ[i]!.options.length)) {
+      throw new RoomError('keputusan-salah');
+    }
+    (this.s.quiz[playerId] ??= {})[stage] = [...answers];
     this.touch(now);
   }
 

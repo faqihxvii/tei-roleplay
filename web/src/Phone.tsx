@@ -4,6 +4,7 @@ import { ROLES, type AgendaId, type Decision, type Role } from '../../engine/src
 import type { ClientMessage, ServerMessage } from '../../room/src/protocol';
 import type { PlayerView } from '../../room/src/views';
 import { DecisionForm } from './DecisionForm';
+import { QuizForm, QuizMine } from './Quiz';
 import { Board, HoldButton, RoleMark, RoleName, Timer } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
 import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, PRACTICE_COACH, STEP_LABEL, signed } from './text';
@@ -165,12 +166,17 @@ function PhoneHeader({ view, now }: { view: PlayerView; now: () => number }) {
 
 function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
   const team = view.team;
+  const quiz = view.myQuiz;
+  const preQuiz = quiz?.open === 'pra' ? <QuizForm key="pra" quiz={quiz} send={send} /> : quiz?.done.pra && (view.phase === 'gabung' || view.phase === 'briefing') ? <p className="muted small">Kuis awal terkirim. Terima kasih.</p> : null;
   if (!team) {
     return (
-      <section className="center grow">
-        <p className="kicker">Ruangan {view.code}</p>
-        <p className="lead">Halo, {view.me.nickname}.</p>
-        <p className="muted">Tunggu fasilitator membagi tim. Lihat layar utama.</p>
+      <section className="stack">
+        <div className="center">
+          <p className="kicker">Ruangan {view.code}</p>
+          <p className="lead">Halo, {view.me.nickname}.</p>
+          <p className="muted">Tunggu fasilitator membagi tim. Lihat layar utama.</p>
+        </div>
+        {preQuiz}
       </section>
     );
   }
@@ -207,6 +213,7 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
       <section className="stack">
         {members}
         <p className="muted">Tim masih bisa berubah. Tunggu fasilitator memulai briefing.</p>
+        {preQuiz}
       </section>
     );
   }
@@ -218,12 +225,13 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
         {agenda}
         {resource}
         {members}
+        {preQuiz}
       </section>
     );
   }
 
   if (view.phase === 'tebak') return <FinalScreen view={view} send={send} />;
-  if (view.phase === 'selesai') return <ResultsScreen view={view} />;
+  if (view.phase === 'selesai') return <ResultsScreen view={view} send={send} />;
 
   // A year in progress.
   const coach = view.practice && view.step ? PRACTICE_COACH[view.step] : null;
@@ -466,7 +474,7 @@ function FinalScreen({ view, send }: { view: PlayerView; send: Send }) {
   );
 }
 
-function ResultsScreen({ view }: { view: PlayerView }) {
+function ResultsScreen({ view, send }: { view: PlayerView; send: Send }) {
   const results = view.results;
   const d = view.debrief;
   if (!results) return null;
@@ -529,6 +537,10 @@ function ResultsScreen({ view }: { view: PlayerView }) {
         </div>
       </section>
     );
+  }
+
+  if (d?.section === 'kuis' && view.myQuiz) {
+    return view.myQuiz.open === 'pasca' ? <QuizForm key="pasca" quiz={view.myQuiz} send={send} /> : <QuizMine quiz={view.myQuiz} />;
   }
 
   if (d?.section === 'duniaNyata' && d.realWorld) {
