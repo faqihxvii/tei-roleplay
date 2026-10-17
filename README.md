@@ -1,6 +1,6 @@
 # The Economic Influence
 
-Game kelas tentang ekonomi dan kebijakan publik dalam lima peran. Pemain bergabung lewat HP, layar utama menampilkan negara, dan fasilitator memandu dari laptop. Semua krisis, kebijakan, dan headline ditulis manual; tidak ada pemanggilan AI.
+Game kelas tentang ekonomi dan kebijakan publik dalam lima peran. Versi daring: **https://play.economic.co.id** (layar fasilitator di `/host`). Pemain bergabung lewat HP, layar utama menampilkan negara, dan fasilitator memandu dari laptop. Semua krisis, kebijakan, dan headline ditulis manual; tidak ada pemanggilan AI.
 
 Dokumentasi lengkap server ruangan, aturan putaran, kuis, dan debrief ada di [`room/README.md`](room/README.md). Brief art dan audio ada di [`docs/art-audio.md`](docs/art-audio.md).
 
@@ -39,7 +39,7 @@ npm run print-kit # kit cetak PDF (butuh Chromium)
 npm run room:e2e  # satu permainan penuh di browser (butuh server dan klien berjalan)
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) menjalankan lint, tes, dan build di setiap PR dan push ke `main`. Dependabot mengusulkan pembaruan dependensi sebulan sekali.
+GitHub Actions (`.github/workflows/ci.yml`) menjalankan lint, tes, dan build di setiap PR dan push ke `main`, lalu memainkan satu permainan penuh di Chromium terhadap build produksi. Setiap run memakai permainan acak baru, jadi krisis dan tuas yang dibekukan ikut teruji dari waktu ke waktu. Dependabot mengusulkan pembaruan dependensi sebulan sekali.
 
 ## Struktur
 

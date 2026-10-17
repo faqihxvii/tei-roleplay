@@ -11,3 +11,4 @@ test-results/
 engine/print/out/
 data/
 web/dist/
+e2e-shots/
