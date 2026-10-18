@@ -1,9 +1,29 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { ROLE_CODE, ROLE_COLOR, ROLE_INK, ROLE_LABEL } from '../../engine/src/content/roles';
 import type { Role } from '../../engine/src/types';
 import type { PublicStats } from '../../room/src/views';
+import { avSettings, prefersReducedMotion } from './audio/settings';
 import { formatSeconds, useSecondsLeft } from './socket';
 import { INDICATOR_LABEL, INDICATOR_ORDER, signed, ZONES, zoneOf } from './text';
+
+function subscribeMotion(listener: () => void) {
+  const query = typeof matchMedia !== 'undefined' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+  query?.addEventListener('change', listener);
+  const off = avSettings.subscribe(listener);
+  return () => { query?.removeEventListener('change', listener); off(); };
+}
+
+/** Reduced motion from the OS setting or the console's "Kurangi gerak", updating when either changes. */
+export const useReducedMotion = () => useSyncExternalStore(subscribeMotion, prefersReducedMotion, () => false);
+
+/**
+ * Keeps the page title on where the class is and says each change once through a polite live region,
+ * so a screen reader hears "Tahun 2 · Rapat Tim" when the step moves on.
+ */
+export function StepAnnouncer({ label }: { label: string }) {
+  useEffect(() => { document.title = `${label} · TEI`; }, [label]);
+  return <p className="sr-only" aria-live="polite" aria-atomic="true">{label}</p>;
+}
 
 /** Spread on any element that draws a role: fill, text colour on the fill, and the role's pattern. */
 export const roleProps = (role: Role) => ({
@@ -127,7 +147,7 @@ export function HoldButton({ label, onConfirm, disabled = false, ms = 1000 }: { 
 
 /** Steps a list forward on a timer, for the dramatic reveal; reduced motion shows everything at once. */
 export function useSequence(length: number, intervalMs: number, key: unknown): number {
-  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = useReducedMotion();
   const [shown, setShown] = useState(reduced ? length : 0);
   useEffect(() => {
     if (reduced) { setShown(length); return; }

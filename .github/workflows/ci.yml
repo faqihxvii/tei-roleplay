@@ -25,6 +25,7 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - run: npm run budget
 
   # One host and four phones play a whole game in Chromium against the production build.
   # Each run gets a fresh random game, so different crises and frozen levers are covered over time.

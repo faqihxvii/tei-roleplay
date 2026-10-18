@@ -83,7 +83,7 @@ Ukuran display mengikuti lebar layar (`clamp`), supaya tetap terbaca dari bangku
 - **Tinggi baris:** `--leading-display` 1,04, `--leading-snug` 1,25, `--leading-body` 1,6.
 - **Sudut dan sentuhan:** kartu dan koran bersudut tegas; tombol, isian, dan pilihan memakai sudut 2 px (`--radius-control`). Target sentuh minimal 44 px (`--spacing-tap`), tombol 48 px (`--spacing-control`).
 
-Hanya subset latin yang diunduh browser. Muatan awal HP (JS, CSS, dan font) sekitar 180 KB (Radix Tabs menambah sekitar 10 KB), masih di dalam anggaran 300 KB.
+Hanya subset latin yang diunduh browser. Muatan awal HP (JS dan CSS dalam gzip, ditambah font latin) sekitar 196 KB, di dalam anggaran 300 KB. `npm run budget` menghitungnya setelah build, dan CI gagal bila melebihi anggaran.
 
 ### Warna peran
 

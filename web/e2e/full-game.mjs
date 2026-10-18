@@ -5,6 +5,7 @@
 //   TEI_BASE=http://<lan-ip>:5173 node web/e2e/full-game.mjs [screenshot-dir]
 // Open the host through a LAN address, not localhost, as a facilitator would.
 import { mkdirSync } from 'node:fs';
+import { AxeBuilder } from '@axe-core/playwright';
 import { chromium } from 'playwright';
 
 const OUT = process.argv[2];
@@ -14,7 +15,27 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
 const errors = [];
 // Settle finite animations (paper, stamp, ink) first so the picture shows the resting layout.
 const settle = page => page.evaluate(() => Promise.all(document.getAnimations().filter(a => a.effect?.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => null))));
-const shot = async (page, name, fullPage = false) => { if (!OUT) return; await settle(page); await page.screenshot({ path: `${OUT}/${name}`, fullPage }); };
+const shot = async (page, name, fullPage = false) => {
+  await audit(page, name);
+  if (!OUT) return;
+  await settle(page);
+  await page.screenshot({ path: `${OUT}/${name}`, fullPage });
+};
+// WCAG 2.1 AA through axe on every screen that gets a picture; serious and critical findings fail the run.
+const audited = new Set();
+const a11y = [];
+async function audit(page, name) {
+  await settle(page);
+  const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  for (const v of violations) {
+    const key = `${v.id} ${v.nodes.map(n => n.target.join(' ')).join(', ')}`;
+    if (audited.has(key)) continue;
+    audited.add(key);
+    const first = v.nodes[0];
+    a11y.push(`${name}: [${v.impact}] ${v.id}: ${v.help} → ${v.nodes.slice(0, 4).map(n => n.target.join(' ')).join(' | ')}\n    ${first.html.slice(0, 160)}\n    ${(first.failureSummary ?? '').split('\n').slice(1, 3).join(' ')}`);
+    if (v.impact === 'serious' || v.impact === 'critical') errors.push(`a11y ${name}: ${v.id} (${v.nodes.length}×) ${v.nodes[0].target.join(' ')}`);
+  }
+}
 const host = await (await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true })).newPage();
 host.on('pageerror', e => errors.push('host: ' + e.message));
 host.on('console', m => { if (m.type() === 'error') errors.push('host console: ' + m.text()); });
@@ -278,6 +299,7 @@ const played = new Set((await host.evaluate(() => window.__teiAudio ?? [])).filt
 for (const cue of ['fase.krisis', 'sah', 'fase.koran']) if (!played.has(cue)) errors.push(`cue ${cue} tidak diputar`);
 if ((await edisi.evaluate(() => window.__teiAudio ?? null)) !== null) errors.push('tab cetak memutar suara');
 await browser.close();
+if (a11y.length) console.log(`Aksesibilitas (axe), ${a11y.length} temuan:\n  ${a11y.join('\n  ')}`);
 // The only expected console error is the missing favicon.
 const real = errors.filter(e => !e.includes('404'));
 if (real.length) {

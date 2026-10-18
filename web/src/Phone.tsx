@@ -11,9 +11,9 @@ import { CrisisArt, Portrait } from './art';
 import { Concepts, Glossed } from './Glossary';
 import { SurveyForm, SurveyThanks } from './Survey';
 import { useHaptics } from './haptics';
-import { Board, HoldButton, RoleMark, RoleName, TeiLogo, Timer, roleProps } from './shared';
+import { Board, HoldButton, RoleMark, RoleName, StepAnnouncer, TeiLogo, Timer, roleProps } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
-import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, PRACTICE_COACH, STEP_LABEL, signed } from './text';
+import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, PRACTICE_COACH, STEP_LABEL, signed, whereLabel } from './text';
 
 const YEAR_STEPS = ['krisis', 'rapat', 'lobi', 'pengesahan', 'pengungkapan', 'koran'] as const;
 
@@ -104,6 +104,7 @@ export function Phone() {
     <main className="phone" {...(view.team ? roleProps(view.team.role) : {})}>
       {status !== 'terhubung' && <p className="banner" role="status">{status === 'terputus' ? 'Sinyal putus. Menyambung ulang…' : 'Menghubungkan…'}</p>}
       {notice && <p className="banner warn" role="alert">{notice}</p>}
+      <StepAnnouncer label={whereLabel(view)} />
       <PhoneShell view={view} send={send} now={clock.now} />
     </main>
   );
@@ -300,6 +301,14 @@ function Members({ view }: { view: PlayerView }) {
 
 /** One line on the task at hand, under the step's name (GDD, "Onboarding"). */
 function TaskHead({ view }: { view: PlayerView }) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  const where = whereLabel(view);
+  const first = useRef(true);
+  // A new step moves focus to its task, so a screen reader or keyboard starts there, not on a stale control.
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    heading.current?.focus({ preventScroll: true });
+  }, [where]);
   if (view.phase !== 'tahun' || !view.step) return null;
   const jubir = view.me.isSpokesperson;
   const locked = !!view.decision?.locked;
@@ -313,7 +322,7 @@ function TaskHead({ view }: { view: PlayerView }) {
   };
   return (
     <div className="flex flex-col gap-1">
-      <h2 className="text-lg">{STEP_LABEL[view.step]}</h2>
+      <h2 ref={heading} tabIndex={-1} className="text-lg focus:outline-none">{STEP_LABEL[view.step]}</h2>
       <p className="text-copy">{task[view.step]}</p>
     </div>
   );
