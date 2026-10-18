@@ -15,11 +15,11 @@ export function QuizForm({ quiz, send }: { quiz: NonNullable<PlayerView['myQuiz'
   const pick = (i: number, value: number) => setAnswers(answers.map((a, j) => (j === i ? value : a)));
 
   return (
-    <form className="stack quiz" onSubmit={e => { e.preventDefault(); if (ready) send({ t: 'quiz', stage, answers: answers as number[] }); }}>
+    <form className="flex flex-col gap-4 quiz" onSubmit={e => { e.preventDefault(); if (ready) send({ t: 'quiz', stage, answers: answers as number[] }); }}>
       <div>
         <p className="kicker">{stage === 'pra' ? 'Kuis awal · sebelum bermain' : 'Kuis akhir · sesudah bermain'}</p>
-        <h2 className="question-mini">{stage === 'pra' ? 'Lima soal singkat' : 'Lima soal yang sama'}</h2>
-        <p className="muted small">Jawaban pribadi, tidak dinilai. Layar utama hanya menampilkan persentase kelas. Pilih "Tidak tahu" kalau belum yakin.</p>
+        <h2 className="question-mini text-lg">{stage === 'pra' ? 'Lima soal singkat' : 'Lima soal yang sama'}</h2>
+        <p className="text-muted text-xs">Jawaban pribadi, tidak dinilai. Layar utama hanya menampilkan persentase kelas. Pilih "Tidak tahu" kalau belum yakin.</p>
       </div>
       {quiz.questions.map((q, i) => (
         <fieldset key={q.id} className="choice">
@@ -39,23 +39,23 @@ export function QuizForm({ quiz, send }: { quiz: NonNullable<PlayerView['myQuiz'
 
 /** The phone after the post quiz: own scores, then the key once the facilitator reveals it. */
 export function QuizMine({ quiz }: { quiz: NonNullable<PlayerView['myQuiz']> }) {
-  if (!quiz.scores) return <p className="muted">Jawabanmu terkirim. Tunggu teman-teman selesai.</p>;
+  if (!quiz.scores) return <p className="text-muted">Jawabanmu terkirim. Tunggu teman-teman selesai.</p>;
   return (
-    <section className="stack">
+    <section className="flex flex-col gap-4">
       <p className="kicker">Hasil kuismu</p>
       <p className="big-score">{quiz.scores.pra ?? '–'} → {quiz.scores.pasca} <small>dari 5 benar</small></p>
-      {quiz.scores.pra === null && <p className="muted small">Kamu tidak ikut kuis awal.</p>}
+      {quiz.scores.pra === null && <p className="text-muted text-xs">Kamu tidak ikut kuis awal.</p>}
       {quiz.review ? (
-        <ol className="review">
+        <ol className="review list flex flex-col gap-3">
           {quiz.review.map((r, i) => (
             <li key={i} className={r.pasca === r.right ? 'ok-item' : 'miss-item'}>
               <p><strong>{r.text}</strong></p>
               <p>Jawaban: {r.correct} {r.pasca === r.right ? '✓' : '✗'}</p>
-              <p className="muted small"><Glossed text={r.explanation} /></p>
+              <p className="text-muted text-xs"><Glossed text={r.explanation} /></p>
             </li>
           ))}
         </ol>
-      ) : <p className="muted small">Jawaban yang benar akan dibuka fasilitator di layar utama.</p>}
+      ) : <p className="text-muted text-xs">Jawaban yang benar akan dibuka fasilitator di layar utama.</p>}
     </section>
   );
 }
@@ -63,7 +63,7 @@ export function QuizMine({ quiz }: { quiz: NonNullable<PlayerView['myQuiz']> }) 
 export function QuizCount({ view, stage }: { view: HostView; stage: 'pra' | 'pasca' }) {
   if (!view.quiz) return null;
   const done = stage === 'pra' ? view.quiz.praDone : view.quiz.pascaDone;
-  return <p className="muted">{stage === 'pra' ? 'Kuis awal' : 'Kuis akhir'}: <strong>{done}</strong> dari {view.quiz.eligible} pemain selesai</p>;
+  return <p className="text-muted">{stage === 'pra' ? 'Kuis awal' : 'Kuis akhir'}: <strong>{done}</strong> dari {view.quiz.eligible} pemain selesai</p>;
 }
 
 /**
@@ -75,25 +75,25 @@ export function QuizSection({ view, send }: { view: HostView; send: Send }) {
   if (!results) return null;
   const reveal = results.questions.every(q => q.answer);
   return (
-    <section className="stack quiz-results">
-      <div className="row quiz-head">
+    <section className="flex flex-col gap-4 quiz-results">
+      <div className="quiz-head flex flex-wrap items-center justify-between gap-2">
         <QuizCount view={view} stage="pasca" />
-        <p className="legend" aria-hidden="true"><span className="mk pre" /> Sebelum bermain <span className="mk post" /> Sesudah bermain</p>
+        <p className="legend flex items-center gap-2 text-muted" aria-hidden="true"><span className="mk pre" /> Sebelum bermain <span className="mk post" /> Sesudah bermain</p>
       </div>
       {results.praMean !== null && results.pascaMean !== null && (
-        <p className="quiz-mean">
+        <p className="text-display-sm">
           Rata-rata jawaban benar: <strong>{results.praMean}%</strong> → <strong>{results.pascaMean}%</strong>
-          {results.gain !== null && <span className={results.gain >= 20 ? 'ok' : 'muted'}> ({results.gain >= 0 ? '+' : ''}{results.gain} poin untuk {results.paired} pemain yang ikut keduanya; target +20 poin)</span>}
+          {results.gain !== null && <span className={results.gain >= 20 ? 'text-success' : 'text-muted'}> ({results.gain >= 0 ? '+' : ''}{results.gain} poin untuk {results.paired} pemain yang ikut keduanya; target +20 poin)</span>}
         </p>
       )}
-      <ol className="dumbbells">
+      <ol className="dumbbells flex flex-col gap-3">
         {results.questions.map((q, i) => (
           <li key={q.id} className="dumbbell">
-            <div className="db-label">
+            <div className="flex items-start gap-3">
               <span className="db-num">{i + 1}</span>
               <div>
-                <p className="db-concept">{q.concept}</p>
-                {reveal && <p className="muted small">{q.text}</p>}
+                <p className="text-md font-bold">{q.concept}</p>
+                {reveal && <p className="text-muted text-xs">{q.text}</p>}
               </div>
             </div>
             <div className="db-track" role="img" aria-label={`${q.concept}: sebelum ${q.praPct ?? 'belum ada'} persen, sesudah ${q.pascaPct ?? 'belum ada'} persen benar`}>
@@ -110,7 +110,7 @@ export function QuizSection({ view, send }: { view: HostView; send: Send }) {
           </li>
         ))}
       </ol>
-      <div className="row">
+      <div className="flex flex-wrap items-center gap-2">
         <button className="btn primary" onClick={() => send({ t: 'debrief', patch: { quizReveal: !reveal } })}>{reveal ? 'Sembunyikan jawaban' : 'Tampilkan jawaban benar'}</button>
       </div>
     </section>

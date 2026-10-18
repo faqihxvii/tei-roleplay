@@ -45,5 +45,5 @@ GitHub Actions (`.github/workflows/ci.yml`) menjalankan lint, tes, dan build di 
 
 - `engine/`: aturan permainan murni dan konten (krisis, kebijakan, agenda, pakta). Dipakai server dan simulator.
 - `room/`: server ruangan otoritatif, dengan Express dan WebSocket.
-- `web/`: klien React untuk HP (`/`) dan layar utama (`/host`).
+- `web/`: klien React untuk HP (`/`) dan layar utama (`/host`). Sistem desain: Tailwind CSS v4 dengan tema TEI tertutup dan Radix UI untuk komponen interaktif (lihat `docs/art-audio.md`).
 - `docs/`: brief art dan audio.

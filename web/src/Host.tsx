@@ -4,15 +4,15 @@ import { ROLES, type Role } from '../../engine/src/types';
 import type { ClientMessage, ServerMessage } from '../../room/src/protocol';
 import type { HostView, PlayerSummary } from '../../room/src/views';
 import { useHostAudio } from './audio/useHostAudio';
-import { AvControls, ClockControls, Console, useConsoleToggle } from './Console';
+import { AvControls, Console, useConsoleToggle } from './Console';
 import { DebriefScreen } from './Debrief';
 import { QuizCount } from './Quiz';
 import { Portrait } from './art';
 import { Diorama } from './Diorama';
 import { RoleMark, roleProps, TeiLogo } from './shared';
 import { EdisiKhusus } from './EdisiKhusus';
-import { GuessScreen, YearScreen } from './MainScreens';
-import { formatSeconds, storage, useClockOffset, useRoomSocket, useSecondsLeft } from './socket';
+import { GuessScreen, TopBar, YearScreen } from './MainScreens';
+import { storage, useClockOffset, useRoomSocket } from './socket';
 
 // The projected main screen. Before the game it doubles as the team console (room code, QR,
 // drag-and-drop teams); once the game runs, facilitator controls live in the K overlay.
@@ -57,15 +57,16 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
   };
 
   return (
-    <main className="host center">
-      <header className="masthead">
+    <main className="host items-center">
+      <div className="flex w-full max-w-form flex-col items-center gap-6 py-10 text-center">
         <TeiLogo />
         <h1>Buka ruangan <span className="accent-serif">baru.</span></h1>
-      </header>
-      <div className="create-cast" aria-hidden="true">
-        {ROLES.map(role => <Portrait key={role} role={role} className="cast-face" />)}
+        <div className="create-cast" aria-hidden="true">
+          {ROLES.map(role => <Portrait key={role} role={role} className="cast-face" />)}
+        </div>
+        <p className="lead">Lima tim memerintah satu negara selama lima tahun. Siapkan proyektor, lalu pilih cara bermain kelas ini.</p>
       </div>
-      <p className="lead create-lead">Lima tim memerintah satu negara selama lima tahun. Siapkan proyektor, lalu pilih cara bermain kelas ini.</p>
+      <div className="flex w-full max-w-form flex-col gap-3">
       <label className="check">
         <input type="checkbox" checked={oknum} onChange={e => setOknum(e.target.checked)} />
         <span><strong>Mode Oknum.</strong> Satu tim diam-diam bermain untuk membuat negara kolaps.</span>
@@ -80,10 +81,11 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
       </label>
       <label className="check">
         <input type="checkbox" checked={santai} onChange={e => setSantai(e.target.checked)} />
-        <span><strong>Tempo Santai.</strong> Semua fase 50% lebih lama, untuk kelas yang butuh waktu baca lebih panjang.</span>
+        <span><strong>Tempo Santai.</strong> Rapat, Lobi dan Pengesahan 50% lebih lama, untuk kelas yang butuh waktu baca lebih panjang.</span>
       </label>
-      {error && <p className="error" role="alert">{error}</p>}
-      <button className="btn primary" onClick={create} disabled={busy}>{busy ? 'Membuka…' : 'Buka ruangan'}</button>
+        {error && <p className="text-danger" role="alert">{error}</p>}
+        <button className="btn primary big mt-3" onClick={create} disabled={busy}>{busy ? 'Membuka…' : 'Buka ruangan'}</button>
+      </div>
     </main>
   );
 }
@@ -114,7 +116,7 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
     return () => clearTimeout(id);
   }, [notice]);
 
-  if (!view) return <main className="host center">Menghubungkan ke ruangan {code}…</main>;
+  if (!view) return <main className="host items-center justify-center">Menghubungkan ke ruangan {code}…</main>;
   if (printing) return <EdisiKhusus view={view} />;
 
   return (
@@ -122,16 +124,16 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
       {status !== 'terhubung' && <p className="banner" role="status">Koneksi server putus. Menyambung ulang…</p>}
       {notice && <p className="banner warn" role="alert">{notice}</p>}
       {view.phase === 'gabung' && <Lobby view={view} send={send} />}
-      {view.phase === 'briefing' && <Briefing view={view} send={send} now={clock.now} />}
-      {view.phase === 'tahun' && <YearScreen view={view} now={clock.now} />}
-      {view.phase === 'tebak' && <GuessScreen view={view} now={clock.now} />}
+      {view.phase === 'briefing' && <Briefing view={view} send={send} />}
+      {view.phase === 'tahun' && <YearScreen view={view} now={clock.now} send={send} />}
+      {view.phase === 'tebak' && <GuessScreen view={view} now={clock.now} send={send} />}
       {view.phase === 'selesai' && view.debrief && <DebriefScreen view={view} send={send} consoleOpen={consoleOpen} />}
       {view.phase !== 'gabung' && (
         <button className="console-toggle" onClick={() => setConsoleOpen(!consoleOpen)} aria-expanded={consoleOpen}>
           Konsol <kbd>K</kbd>
         </button>
       )}
-      {consoleOpen && <Console view={view} send={send} onClose={() => setConsoleOpen(false)} />}
+      <Console view={view} send={send} open={consoleOpen} onOpenChange={setConsoleOpen} />
     </main>
   );
 }
@@ -150,13 +152,13 @@ function JoinPanel({ code }: { code: string }) {
   return (
     <section className="join-panel">
       <div className="qr" role="img" aria-label={`Kode QR menuju ${url}`} dangerouslySetInnerHTML={{ __html: svg }} />
-      <div>
+      <div className="flex flex-col gap-2">
         <p className="kicker">Pindai QR atau buka</p>
         <p className="join-url">{location.host}</p>
-        <p className="kicker">lalu masukkan kode</p>
+        <p className="kicker mt-3">lalu masukkan kode</p>
         <p className="room-code" aria-label={`Kode ruangan ${code.split('').join(' ')}`}>{code}</p>
         {localOnly && (
-          <p className="error small">Halaman ini dibuka lewat localhost, jadi HP tidak bisa menjangkaunya. Buka lewat alamat jaringan laptop (mis. http://192.168.1.10:5173/host).</p>
+          <p className="text-xs text-danger">Halaman ini dibuka lewat localhost, jadi HP tidak bisa menjangkaunya. Buka lewat alamat jaringan laptop (mis. http://192.168.1.10:5173/host).</p>
         )}
       </div>
     </section>
@@ -169,17 +171,17 @@ function Lobby({ view, send }: { view: HostView; send: (m: ClientMessage) => voi
     <>
       <div className="lobby-top">
         <JoinPanel code={view.code} />
-        <section className="console">
+        <section className="card gap-4 p-5">
           <p className="count"><strong>{view.players.length}</strong> pemain · {connected} terhubung</p>
           <QuizCount view={view} stage="pra" />
           {view.options.oknum && <p className="badge">Mode Oknum aktif</p>}
-          <div className="row">
+          <div className="flex flex-wrap gap-2">
             <button className="btn" onClick={() => send({ t: 'assign', mode: 'acak' })} disabled={!view.players.length}>Bagi acak</button>
             <button className="btn" onClick={() => send({ t: 'assign', mode: 'seimbang' })} disabled={!view.players.length}>Bagi seimbang</button>
           </div>
-          <p className="muted small">Seret nama ke tim lain, atau pakai menu di setiap nama. Bagi seimbang mempertahankan tim yang sudah diatur.</p>
+          <p className="text-xs text-muted">Seret nama ke tim lain, atau pakai menu di setiap nama. Bagi seimbang mempertahankan tim yang sudah diatur.</p>
           <button className="btn primary" onClick={() => send({ t: 'startBriefing' })} disabled={!view.players.length}>Mulai briefing peran</button>
-          <p className="muted small">Pemain tanpa tim akan dimasukkan ke tim terkecil. Tim tanpa anggota dimainkan lewat konsol fasilitator.</p>
+          <p className="text-xs text-muted">Pemain tanpa tim akan dimasukkan ke tim terkecil. Tim tanpa anggota dimainkan lewat konsol fasilitator.</p>
           <AvControls compact />
         </section>
       </div>
@@ -188,27 +190,28 @@ function Lobby({ view, send }: { view: HostView; send: (m: ClientMessage) => voi
   );
 }
 
-function Briefing({ view, send, now }: { view: HostView; send: (m: ClientMessage) => void; now: () => number }) {
-  const seconds = useSecondsLeft(view.phaseEndsAt, now);
+function Briefing({ view, send }: { view: HostView; send: (m: ClientMessage) => void }) {
   return (
     <>
-      <section className="center briefing">
-        <p className="kicker">Briefing peran</p>
-        <p className="big-timer" aria-live="off">{seconds !== null ? formatSeconds(seconds) : '–'}</p>
-        <p className="lead">Baca kartu peran dan agenda rahasia timmu di HP. Jangan perlihatkan ke tim lain.</p>
-        <QuizCount view={view} stage="pra" />
-        {view.stats && <Diorama stats={view.stats} />}
-        <div className="row">
-          <ClockControls view={view} send={send} />
-          {view.options.latihan ? (
-            <>
-              <button className="btn primary" onClick={() => send({ t: 'begin', practice: true })}>Mulai Tahun 0 (latihan)</button>
-              <button className="btn" onClick={() => send({ t: 'begin', practice: false })}>Lewati latihan</button>
-            </>
-          ) : (
-            <button className="btn primary" onClick={() => send({ t: 'begin', practice: false })}>Mulai Tahun 1</button>
-          )}
+      <TopBar view={view} now={Date.now} />
+      <section className="grid items-center gap-10 lg:grid-cols-2">
+        <div className="flex flex-col gap-5">
+          <p className="kicker">Sebelum Tahun 1</p>
+          <h1 className="chapter-question">Baca kartu peranmu.</h1>
+          <p className="chapter-hint">Kartu peran dan agenda rahasia timmu ada di HP. Jangan perlihatkan ke tim lain. Mulai kalau semua tim sudah membaca.</p>
+          <QuizCount view={view} stage="pra" />
+          <div className="flex flex-wrap gap-3">
+            {view.options.latihan ? (
+              <>
+                <button className="btn primary big" onClick={() => send({ t: 'begin', practice: true })}>Mulai Tahun 0 (latihan)</button>
+                <button className="btn big" onClick={() => send({ t: 'begin', practice: false })}>Lewati latihan</button>
+              </>
+            ) : (
+              <button className="btn primary big" onClick={() => send({ t: 'begin', practice: false })}>Mulai Tahun 1</button>
+            )}
+          </div>
         </div>
+        {view.stats && <Diorama stats={view.stats} />}
       </section>
       <Teams view={view} />
     </>
@@ -237,19 +240,19 @@ function Teams({ view, editable = false, send }: { view: HostView; editable?: bo
         return (
           <div
             key={key}
-            className={`team${dragOver === key ? ' drag-over' : ''}`}
+            className={`team${role ? ' role-card' : ''}${dragOver === key ? ' drag-over' : ''}`}
             {...(role ? roleProps(role) : {})}
             onDragOver={editable ? e => { e.preventDefault(); setDragOver(key); } : undefined}
             onDragLeave={editable ? () => setDragOver(null) : undefined}
             onDrop={editable ? drop(role) : undefined}
           >
             {role && <Portrait role={role} className="team-portrait" />}
-            <h2>
+            <h2 className="flex items-center gap-2 text-sm">
               {role && <RoleMark role={role} small />}
               {role ? ROLE_LABEL[role] : 'Belum dapat tim'}
-              <span className="muted"> · {members.length}</span>
+              <span className="font-regular text-muted">· {members.length}</span>
             </h2>
-            {role && view.offlineRoles.includes(role) && <p className="muted small">Dimainkan lewat konsol fasilitator</p>}
+            {role && view.offlineRoles.includes(role) && <p className="text-xs text-muted">Dimainkan lewat konsol fasilitator</p>}
             <ul className="chips">
               {members.map(p => (
                 <PlayerChip

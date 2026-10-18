@@ -1,20 +1,19 @@
 /*
- * TEI design tokens. The single source for colour, type, space, shape and motion.
+ * TEI design tokens: the single source for colour, type, space, shape and motion.
  *
- * Three layers, each only reading the one above it:
- *   1. Primitives: the raw brand palette (economic.co.id). Never used by components directly.
- *   2. Semantic tokens: what a value is for (background, text, brand, danger). Components use these.
- *   3. Component tokens: the few values that belong to one component (charts, diorama, roles).
+ * Written as a Tailwind v4 theme, so the same names drive utilities in the components
+ * (`bg-surface`, `text-display-lg`, `gap-6`) and plain var() calls in styles/components.css.
+ * The theme is closed: Tailwind's default palette, spacing multiplier and type scale are never
+ * loaded (styles/index.css imports only preflight and utilities), so `p-7` or `text-blue-500`
+ * produce nothing. Only the values below exist.
  *
- * Values follow economic.co.id's own stylesheet (its colour, type and spacing tokens), adapted where a
- * classroom projector needs more: no text under 12px, and fluid display sizes for the back row.
+ * Values follow economic.co.id's own stylesheet, adapted where a classroom projector needs more:
+ * no text under 12px, and fluid display sizes for the back row. web/test/tokens.test.ts fails on a
+ * raw size, weight, colour or spacing value outside this file, or a Tailwind arbitrary value.
  *
- * Typography is a closed set: seven sizes for UI text, four for the projector, three families, four
- * weights, five trackings and four line heights. web/test/tokens.test.ts fails if a stylesheet uses
- * a raw size, weight, tracking or line height instead of one of these.
+ * Layers: primitives (the raw palette, :root only) → semantic theme tokens → component tokens.
  */
 :root {
-  /* ---------- 1. Primitives ---------- */
   --tei-red-600: #c30700;
   --tei-red-800: #8d1b16;
   --tei-red-950: #5c120e;
@@ -23,10 +22,10 @@
   --neutral-0: #fffefa;     /* the site's surface: a warm white, never pure */
   --neutral-50: #fdfcf9;
   --neutral-100: #f7f6f2;   /* canvas */
-  --neutral-150: #f2eee7;   /* light action */
-  --neutral-175: #eeece6;   /* soft surface */
+  --neutral-150: #f2eee7;
+  --neutral-175: #eeece6;
   --neutral-200: #d9d7d0;   /* lines */
-  --neutral-300: #d7d4cc;   /* muted text on dark */
+  --neutral-300: #d7d4cc;
   --neutral-400: #b8b3a8;
   --neutral-600: #5c5b56;   /* muted text */
   --neutral-700: #4d4c47;   /* body copy */
@@ -35,100 +34,150 @@
   --neutral-inverse-text: #f8f7f3;
   --green-700: #166534;
   --amber-800: #8a4b0f;
+}
 
-  /* ---------- 2. Semantic colour ---------- */
-  --color-bg: var(--neutral-100);              /* page background, warm off-white */
+@theme static {
+  /* ---------- Colour (bg-*, text-*, border-*) ----------
+     Named for their job, so utilities read plainly: bg-surface, text-muted, border-line. */
+  --color-bg: var(--neutral-100);              /* page background */
   --color-surface: var(--neutral-0);           /* cards, inputs */
-  --color-surface-sunken: var(--neutral-150);  /* secondary buttons, gauge tracks, closed cards */
-  --color-surface-soft: var(--neutral-175);    /* callouts inside a card */
-  --color-surface-paper: var(--neutral-50);    /* Harian TEI pages */
+  --color-sunken: var(--neutral-150);          /* secondary fills, gauge tracks, closed cards */
+  --color-soft: var(--neutral-175);            /* callouts inside a card */
+  --color-paper: var(--neutral-50);            /* Harian TEI pages */
   --color-inverse: var(--neutral-950);         /* dark panels */
-  --color-text: var(--neutral-900);
-  --color-text-muted: var(--neutral-600);
-  --color-text-copy: var(--neutral-700);       /* running text under a heading: one step softer than ink */
-  --color-text-inverse: var(--neutral-inverse-text);
-  --color-text-inverse-muted: var(--neutral-300);
-  --color-text-placeholder: var(--neutral-400);
-  --color-border: var(--neutral-200);
+  --color-ink: var(--neutral-900);             /* text, strong lines, selected controls */
+  --color-copy: var(--neutral-700);            /* running text under a heading */
+  --color-muted: var(--neutral-600);           /* secondary text */
+  --color-placeholder: var(--neutral-400);
+  --color-line: var(--neutral-200);            /* hairlines */
+  --color-on-inverse: var(--neutral-inverse-text);
+  --color-on-inverse-muted: var(--neutral-300);
   --color-brand: var(--tei-red-600);           /* logo, primary action, headlines, danger */
-  --color-brand-strong: var(--tei-red-800);    /* kickers, hover, focus ring */
-  --color-brand-soft: var(--tei-pink-300);     /* accents on dark, decorative arcs */
+  --color-brand-strong: var(--tei-red-800);    /* kickers, hover */
+  --color-brand-soft: var(--tei-pink-300);     /* accents on dark */
   --color-highlight: var(--tei-pink-100);      /* team question, coach card */
   --color-on-highlight: var(--tei-red-950);
   --color-success: var(--green-700);
   --color-warning: var(--amber-800);
   --color-danger: var(--tei-red-600);
 
-  /* ---------- 2. Typography ---------- */
+  /* ---------- Type families (font-*) ---------- */
   --font-sans: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  /* The site's editorial serif is Georgia. Gelasio is drawn to Georgia's metrics and self-hosted, so
-     Android phones (which have no Georgia) see the same letters. */
-  --font-serif: 'Gelasio Variable', 'Gelasio', Georgia, 'Times New Roman', serif;   /* Harian TEI, quotes, one accent word */
-  --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;  /* numbers */
+  /* The site's editorial serif is Georgia; Gelasio is drawn to its metrics and self-hosted for Android. */
+  --font-serif: 'Gelasio Variable', 'Gelasio', Georgia, 'Times New Roman', serif;
+  --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-  /* UI sizes: phones, console, small print on the main screen. */
-  --text-2xs: 0.75rem;   /* 12px: kickers, labels, tags */
-  --text-xs: 0.875rem;   /* 14px: captions, meta, secondary lines */
-  --text-sm: 1rem;       /* 16px: body text */
-  --text-md: 1.25rem;    /* 20px: lead text, list items on the main screen */
-  --text-lg: 1.5rem;     /* 24px: card titles, phone headings */
-  --text-xl: 2rem;       /* 32px: big numbers in cards */
-  --text-2xl: 3.5rem;    /* 56px: the final score on a phone */
-  /* Projector sizes: fluid, readable from the back row. */
-  --display-sm: clamp(1.25rem, 2.2vw, 1.875rem);  /* narrative, prompts, hints */
-  --display-md: clamp(1.75rem, 3.4vw, 3rem);      /* screen and section titles */
-  --display-lg: clamp(2.25rem, 5vw, 4.5rem);      /* crisis title, headlines, questions */
-  --display-xl: clamp(3rem, 9vw, 7rem);           /* room code, briefing timer, masthead */
-  /* Relative sizes, for text set inside a heading. */
-  --text-rel-sm: 0.75em;
-  --text-rel-xs: 0.5em;
+  /*
+   * ---------- Type scale (text-*) ----------
+   * One hierarchy, two surfaces. Each size carries its own line height, so a size never needs a
+   * separate leading class.
+   *   Phone and console: 2xs kicker · xs meta · sm body · md lead · lg heading · xl number · 2xl score
+   *   Projector:         display-sm copy · display-md title · display-lg the one question · display-xl code
+   */
+  --text-2xs: 0.75rem;     --text-2xs--line-height: 1.25;
+  --text-xs: 0.875rem;     --text-xs--line-height: 1.45;
+  --text-sm: 1rem;         --text-sm--line-height: 1.6;
+  --text-md: 1.25rem;      --text-md--line-height: 1.45;
+  --text-lg: 1.5rem;       --text-lg--line-height: 1.2;
+  --text-xl: 2rem;         --text-xl--line-height: 1;
+  --text-2xl: 3.5rem;      --text-2xl--line-height: 1;
+  --text-display-sm: clamp(1.25rem, 2vw, 1.75rem);  --text-display-sm--line-height: 1.4;
+  --text-display-md: clamp(1.75rem, 3.2vw, 2.75rem); --text-display-md--line-height: 1.08;
+  --text-display-lg: clamp(2.25rem, 4.6vw, 4.25rem); --text-display-lg--line-height: 1.04;
+  --text-display-xl: clamp(3rem, 9vw, 7rem);         --text-display-xl--line-height: 1;
 
-  --weight-regular: 400;
-  --weight-semibold: 650;   /* labels, navigation, emphasis in running text (the site's UI weight) */
-  --weight-bold: 700;       /* buttons, names, numbers */
-  --weight-black: 760;      /* headings, as on the site (730 to 760) */
+  --font-weight-regular: 400;
+  --font-weight-semibold: 650;   /* labels, navigation (the site's UI weight) */
+  --font-weight-bold: 700;       /* buttons, names, numbers */
+  --font-weight-black: 760;      /* headings, as on the site */
 
-  --tracking-display: -0.055em;   /* headings, as on economic.co.id */
-  --tracking-tight: -0.02em;      /* large body text, card titles */
+  --tracking-display: -0.045em;  /* headings */
+  --tracking-tight: -0.02em;     /* large body text */
   --tracking-normal: 0;
-  --tracking-caps: 0.12em;        /* small capitals: labels, room code */
-  --tracking-code: 0.3em;         /* the room-code input */
+  --tracking-caps: 0.12em;       /* small capitals */
+  --tracking-code: 0.3em;        /* the room-code input */
 
   --leading-none: 1;
   --leading-display: 1.04;
   --leading-snug: 1.25;
   --leading-body: 1.6;
 
-  /* ---------- 2. Space, shape, motion ---------- */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --radius: 0;            /* editorial surfaces are square */
-  --radius-control: 2px;  /* buttons, inputs and toggles get the site's 2px */
-  --tap-target: 44px;     /* the smallest thing a finger presses */
-  --border-hairline: 1px solid var(--color-border);
-  --border-strong: 1px solid var(--color-text);
-  --rule-brand: 3px;      /* the short red rule on top of cards */
+  /*
+   * ---------- Space (p-*, m-*, gap-*, inset-*) ----------
+   * A 4px base, with named steps for the rhythm:
+   *   1–2  inside a control (icon to label, label to value)
+   *   3–4  inside a card (its padding on a phone, the gap between its lines)
+   *   5–6  between cards; a card's padding on the projector
+   *   8–10 between sections
+   *   12–16 the projector's large breathing room
+   */
+  --spacing-0: 0;
+  --spacing-px: 1px;
+  --spacing-0_5: 0.125rem;
+  --spacing-1: 0.25rem;
+  --spacing-1_5: 0.375rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-gutter: clamp(1rem, 3vw, 2.5rem);   /* the projector's side margin */
+  --spacing-tap: 2.75rem;                        /* 44px: the smallest thing a finger presses */
+  --spacing-control: 3rem;                       /* 48px: buttons and inputs */
+
+  /* Widths (max-w-*) */
+  --container-measure: 60ch;    /* running text */
+  --container-question: 22ch;   /* the one question on the projector */
+  --container-phone: 30rem;     /* the phone column */
+  --container-form: 32.5rem;
+  --container-panel: 32.5rem;   /* the console drawer */
+  --container-page: 87.5rem;    /* the widest projector card */
+
+  /* Breakpoints (sm:, lg:, xl:) */
+  --breakpoint-sm: 40rem;
+  --breakpoint-lg: 56.25rem;
+  --breakpoint-xl: 68.75rem;
+
+  /* ---------- Shape and depth ---------- */
+  --radius-none: 0;           /* editorial surfaces are square */
+  --radius-control: 2px;      /* buttons, inputs and toggles get the site's 2px */
+  --radius-full: 9999px;
+  --shadow-panel: 0 1rem 2rem rgba(0, 0, 0, 0.1);   /* the console drawer, the only raised surface */
+
+  /* ---------- Motion ---------- */
+  --ease-standard: cubic-bezier(0.2, 0.65, 0.3, 1);
+  --ease-paper: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-slam: cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+:root {
+  --border-hairline: 1px solid var(--color-line);
+  --border-strong: 1px solid var(--color-ink);
+  --rule-brand: 3px;            /* the short red rule on top of cards */
+  --rule-role: 7px;             /* the role-coloured band on team cards */
   --focus-ring: 3px solid var(--color-brand);
   --focus-offset: 4px;
-  --shadow-panel: 0 1rem 2rem rgba(0, 0, 0, 0.1);   /* the console drawer, the only raised surface (the site's menu shadow) */
-  --overlay-press: rgba(0, 0, 0, 0.28);              /* hold-to-confirm fill */
-  --duration-fast: 180ms;   /* hover, press */
-  --duration-base: 520ms;   /* entrances */
+  --overlay-press: rgba(0, 0, 0, 0.28);
+  --scrim: color-mix(in srgb, var(--color-ink) 45%, transparent);
+  --glass: color-mix(in srgb, var(--color-bg) 94%, transparent);
+  --duration-fast: 180ms;
+  --duration-base: 520ms;
   --duration-slow: 700ms;
-  --ease-standard: cubic-bezier(0.2, 0.65, 0.3, 1);
+  --unit-size: 0.75em;           /* a number's unit or change, set inside the number */
+  --descender-room: 0.08em;     /* under big headlines, so descenders are not clipped */
+  --topbar-height: 4.5rem;      /* the main screen's one-line header */
+  --console-toggle-room: 9rem;  /* kept clear at the bottom right for the Konsol button */
+  --phone-nav-height: calc(var(--spacing-tap) + var(--spacing-4));
 
-  /* ---------- 3. Component tokens ---------- */
+  /* ---------- Component tokens ---------- */
   /* SVG text is in drawing units, so it has its own small scale. */
   --svg-text-sm: 12px;
   --svg-text-md: 17px;
   --svg-text-lg: 20px;
-  /* Textures */
   --halftone-red: radial-gradient(circle at center, rgba(195, 7, 0, 0.2) 1.2px, transparent 1.6px) 0 0 / 7px 7px;
   --halftone-ink: radial-gradient(circle at center, rgba(23, 23, 23, 0.12) 1.1px, transparent 1.5px) 0 0 / 6px 6px;
   /* Role colours come from engine/src/content/roles.ts, set per element as --role and --role-ink. */

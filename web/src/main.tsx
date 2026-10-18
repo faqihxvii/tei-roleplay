@@ -5,8 +5,7 @@ import '@fontsource-variable/geist/wght.css';
 import '@fontsource-variable/geist-mono/wght.css';
 import '@fontsource-variable/gelasio/wght.css';
 import '@fontsource-variable/gelasio/wght-italic.css';
-import './styles/tokens.css';
-import './styles.css';
+import './styles/index.css';
 
 // The host screen pulls in the QR encoder; phones never download it (GDD: phone payload ≤ 300 KB).
 const Host = lazy(() => import('./Host').then(m => ({ default: m.Host })));
@@ -16,7 +15,7 @@ const isHost = location.pathname.replace(/\/+$/, '') === '/host';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {isHost ? (
-      <Suspense fallback={<main className="center">Memuat…</main>}>
+      <Suspense fallback={<main className="flex min-h-dvh items-center justify-center">Memuat…</main>}>
         <Host />
       </Suspense>
     ) : (

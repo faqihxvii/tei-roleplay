@@ -56,18 +56,22 @@ TEI_BASE=http://<alamat-jaringan>:5173 npm run room:e2e -- <folder-tangkapan-lay
 
 | Fase | Durasi bawaan | Yang terjadi |
 | --- | --- | --- |
-| Krisis | 45 detik | Kartu krisis di layar utama: judul, narasi (≤ 60 kata), efek, aturan tahun ini, pertanyaan tim, dan tag konsep. HP menampilkan hal yang sama plus "Tahukah Anda" (peristiwa nyata serupa, hanya judul dan sumber). Tahun 5 dibuka dengan survei Kepercayaan. |
-| Rapat Tim | 75 detik | Pertanyaan tim kartu krisis tampil besar di layar utama dan di atas formulir HP. Setiap anggota memilih kartu dan tuas; jumlah suara tampil di semua HP tim. |
-| Lobi Terbuka | 120 detik | Juru Bicara mengajukan dan menjawab pakta. Pakta yang disepakati tampil di Meja Lobi. Tawaran yang belum dijawab kedaluwarsa. |
+| Krisis | tanpa timer | Kartu krisis di layar utama: judul, narasi (≤ 60 kata), efek, aturan tahun ini, pertanyaan tim, dan tag konsep. HP menampilkan hal yang sama plus "Tahukah Anda" (peristiwa nyata serupa, hanya judul dan sumber). Tahun 5 dibuka dengan survei Kepercayaan. |
+| Rapat Tim | 75 detik | Pertanyaan tim kartu krisis tampil besar di layar utama dan di atas formulir HP. Setiap anggota memilih kartu dan tuas; jumlah suara tampil di semua HP tim. Juru Bicara menekan **Tim kami selesai** bila sudah sepakat. |
+| Lobi Terbuka | 120 detik | Juru Bicara mengajukan dan menjawab pakta, lalu menekan **Tim kami selesai**. Pakta yang disepakati tampil di Meja Lobi. Tawaran yang belum dijawab kedaluwarsa. |
 | Pengesahan | 45 detik | Juru Bicara menahan SAH 1 detik. Jika waktu habis, pilihan terbanyak per bagian yang dipakai (seri: pilihan yang masuk lebih dulu). Fase berakhir begitu kelima tim sah. |
-| Pengungkapan | 60 detik | Keputusan dibuka satu per satu (dampak terbesar terakhir), lalu setiap perubahan indikator dengan penyebabnya, lalu pakta ditepati atau robek. |
-| Halaman Depan | 45 detik | Harian TEI tahun itu. |
+| Pengungkapan | tanpa timer | Keputusan dibuka satu per satu (dampak terbesar terakhir), lalu setiap perubahan indikator dengan penyebabnya, lalu pakta ditepati atau robek. |
+| Halaman Depan | tanpa timer | Harian TEI tahun itu. |
 
-**Layar utama** menceritakan tahun sebagai enam babak. Rel di bawah judul menandai babak yang sedang berjalan, dan setiap babak punya satu fokus: kartu krisis, pertanyaan rapat, Meja Lobi, hitungan tim yang sudah sah, pengungkapan di samping papan, lalu Harian TEI. Angka negara tampil sebagai strip tipis di kaki layar, dan semuanya muat dalam satu layar proyektor tanpa digulir.
+Hanya tiga fase bicara yang berwaktu. Fase tanpa timer (juga briefing peran dan tebak agenda) menunggu fasilitator menekan **Lanjut →** di kanan atas layar utama atau di konsol.
+
+Rapat Tim dan Lobi Terbuka berakhir lebih cepat kalau semua tim sudah selesai: Juru Bicara setiap tim menekan **Tim kami selesai** di HP (bisa dibatalkan), atau fasilitator menandai tim dari konsol. Tim tanpa HP dan tim yang keputusannya sudah disahkan dihitung selesai. Layar utama menampilkan lima titik, satu per tim.
+
+**Layar utama** menceritakan tahun sebagai enam babak. Header satu baris memuat tahun, rel enam babak (babak berjalan merah, babak berikutnya disebut pelan), lalu timer atau tombol Lanjut, dan setiap babak punya satu fokus: kartu krisis, pertanyaan rapat, Meja Lobi, hitungan tim yang sudah sah, pengungkapan di samping papan, lalu Harian TEI. Angka negara tampil sebagai strip tipis di kaki layar, dan semuanya muat dalam satu layar proyektor tanpa digulir.
 
 **HP pemain** punya tiga tab di bawah: *Sekarang* (tugas fase ini, dengan satu kalimat tentang apa yang harus dilakukan), *Timku* (sumber daya pribadi, agenda rahasia, kartu peran, anggota), dan *Negara* (papan, krisis tahun ini, pakta yang disepakati). Setiap fase baru membawa pemain kembali ke *Sekarang*. Header menunjukkan peran, fase, penanda Jubir, dan enam garis kemajuan tahun. Tombol SAH menempel di atas tab agar selalu terjangkau.
 
-Total 6,5 menit per tahun. Tempo Santai menambah 50%. Fasilitator bisa menjeda, menambah 30 detik, atau melewati fase dari konsol (tombol K di layar utama). Setelah tahun 5 atau kolaps: tebak agenda dan tunjuk Oknum (120 detik), lalu hasil akhir dengan skor dari engine, garis waktu, dan daftar headline.
+Fase berwaktu total 4 menit per tahun. Tempo Santai menambah 50%. Fasilitator bisa menjeda, menambah 30 detik, atau melewati fase dari konsol (tombol K di layar utama). Detak jam 10 detik terakhir berhenti seketika saat dijeda, dan saat dilanjutkan mulai lagi di titik yang sesuai dengan sisa waktu. Setelah tahun 5 atau kolaps: tebak agenda dan tunjuk Oknum (tanpa timer; lanjut otomatis setelah semua tim menebak), lalu hasil akhir dengan skor dari engine, garis waktu, dan daftar headline.
 
 Konsol fasilitator juga mengisi keputusan dan tebakan tim tanpa HP, atau mengambil alih tim yang macet.
 
