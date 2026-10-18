@@ -6,13 +6,15 @@ import type { SessionReport } from './report';
 // stops halfway still leaves its timings behind. On hosts whose disk does not survive a restart
 // (Render's free plan), set TELEMETRY_WEBHOOK_URL so each report is also posted somewhere durable.
 
+let writes = 0;
+
 export class FileReportStore {
   constructor(private dir: string) {}
 
   async save(report: SessionReport): Promise<void> {
     await mkdir(this.dir, { recursive: true });
     const file = path.join(this.dir, `${report.id}.json`);
-    const tmp = `${file}.tmp`;
+    const tmp = `${file}.${++writes}.tmp`; // saves can overlap; each needs its own temp file
     await writeFile(tmp, JSON.stringify(report));
     await rename(tmp, file);
   }

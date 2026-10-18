@@ -470,12 +470,20 @@ export function hostView(room: Room): HostView {
   };
 }
 
-export function playerView(room: Room, playerId: string): PlayerView {
+/** Parts every phone shares, built once per broadcast instead of once per phone. */
+export interface ViewCache {
+  common?: Common;
+  decisions: Map<Role, DecisionContext>;
+}
+
+export const newViewCache = (): ViewCache => ({ decisions: new Map() });
+
+export function playerView(room: Room, playerId: string, cache: ViewCache = newViewCache()): PlayerView {
   const s = room.state;
   const player = room.player(playerId);
   const role = player.role;
   const game = s.game;
-  const base = common(room);
+  const base = (cache.common ??= common(room));
   const spokesperson = role ? room.spokesperson(role) : undefined;
 
   let team: PlayerView['team'] = null;
@@ -501,7 +509,12 @@ export function playerView(room: Room, playerId: string): PlayerView {
     };
   }
 
-  const decision = role && deciding(room) ? { ...decisionContext(room, role), myProposal: s.proposals[playerId]?.decision ?? null } : null;
+  let decision: PlayerView['decision'] = null;
+  if (role && deciding(room)) {
+    let context = cache.decisions.get(role);
+    if (!context) cache.decisions.set(role, (context = decisionContext(room, role)));
+    decision = { ...context, myProposal: s.proposals[playerId]?.decision ?? null };
+  }
 
   let lobby: PlayerView['lobby'] = null;
   if (role && s.phase === 'tahun' && s.step === 'lobi') {

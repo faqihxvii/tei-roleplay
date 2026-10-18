@@ -10,7 +10,7 @@ import { sessionReport } from './report';
 import { postReport, type FileReportStore } from './reportStore';
 import { Room, RoomError } from './room';
 import type { SnapshotStore } from './store';
-import { hostView, playerView } from './views';
+import { hostView, newViewCache, playerView } from './views';
 
 export interface RoomServerOptions {
   store: SnapshotStore;
@@ -24,6 +24,10 @@ export interface RoomServerOptions {
   roomTtlMs?: number;
   /** Anonymous session reports (report.ts): saved to files, optionally posted to a webhook, downloadable with a token. */
   reports?: { store?: FileReportStore; webhookUrl?: string; token?: string; webhookEveryMs?: number };
+  /** Multiplies the per-IP limits, for a load test that sends a whole class from one machine. */
+  rateLimitScale?: number;
+  /** Changes inside this window go out as one broadcast. */
+  broadcastMs?: number;
   now?: () => number;
 }
 
@@ -35,6 +39,8 @@ interface Conn {
   playerId?: string;
   windowStart: number;
   messages: number;
+  /** The last view sent, so an unchanged one is not sent again. */
+  lastView?: string;
 }
 
 interface LiveRoom {
@@ -45,6 +51,7 @@ interface LiveRoom {
   hostSeen?: boolean;
   lastPosted?: number;
   postTimer?: NodeJS.Timeout;
+  broadcastTimer?: NodeJS.Timeout;
 }
 
 const MAX_MESSAGES_PER_SECOND = 20;
@@ -52,15 +59,19 @@ const HEARTBEAT_MS = 15_000;
 const SAVE_DEBOUNCE_MS = 500;
 const DEFAULT_TTL_MS = 12 * 60 * 60 * 1000;
 const WEBHOOK_EVERY_MS = 60_000;
+// A class acts in bursts (40 phones proposing within seconds). Gathering changes for a moment turns a
+// burst into a few broadcasts instead of one per phone per action; 50 ms is below what anyone notices.
+const BROADCAST_MS = 50;
 
 export async function createRoomServer(options: RoomServerOptions) {
   const now = options.now ?? Date.now;
   const store = options.store;
   const rooms = new Map<string, LiveRoom>();
-  const createLimit = new RateLimiter(10, 60_000);
+  const scale = Math.max(1, options.rateLimitScale ?? 1);
+  const createLimit = new RateLimiter(10 * scale, 60_000);
   // A whole class often shares one school IP, so these stay generous.
-  const joinLimit = new RateLimiter(120, 60_000);
-  const lookupLimit = new RateLimiter(120, 60_000);
+  const joinLimit = new RateLimiter(120 * scale, 60_000);
+  const lookupLimit = new RateLimiter(120 * scale, 60_000);
 
   for (const snapshot of await store.loadAll()) rooms.set(snapshot.code, { room: Room.restore(snapshot), conns: new Set() });
 
@@ -76,7 +87,9 @@ export async function createRoomServer(options: RoomServerOptions) {
   });
   app.use(express.json({ limit: '2kb' }));
 
-  app.get('/healthz', (_req, res) => { res.json({ ok: true, rooms: rooms.size }); });
+  app.get('/healthz', (_req, res) => {
+    res.json({ ok: true, rooms: rooms.size, connections: wss.clients.size, rssMb: Math.round(process.memoryUsage().rss / 1048576) });
+  });
 
   // Session reports for the team, behind a bearer token; off unless TELEMETRY_TOKEN is set.
   app.get('/api/telemetry', async (req, res) => {
@@ -272,6 +285,7 @@ export async function createRoomServer(options: RoomServerOptions) {
     conn.code = live.room.code;
     conn.kind = kind;
     conn.playerId = playerId;
+    conn.lastView = undefined;
     live.conns.add(conn);
     if (playerId) live.room.connect(playerId);
   }
@@ -282,14 +296,14 @@ export async function createRoomServer(options: RoomServerOptions) {
     live.conns.delete(conn);
     if (conn.playerId) {
       live.room.disconnect(conn.playerId);
-      broadcast(live);
+      scheduleBroadcast(live);
     }
     conn.code = conn.kind = conn.playerId = undefined;
   }
 
   /** Broadcasts fresh views and saves: right away on a phase change or join, debounced otherwise. */
   function changed(live: LiveRoom, saveNow: boolean): void {
-    broadcast(live);
+    scheduleBroadcast(live);
     if (saveNow) {
       clearTimeout(live.saveTimer);
       void persist(live.room.code);
@@ -301,13 +315,29 @@ export async function createRoomServer(options: RoomServerOptions) {
     live.saveTimer = setTimeout(() => void persist(live.room.code), SAVE_DEBOUNCE_MS);
   }
 
+  function scheduleBroadcast(live: LiveRoom): void {
+    if (live.broadcastTimer) return;
+    live.broadcastTimer = setTimeout(() => {
+      live.broadcastTimer = undefined;
+      if (rooms.get(live.room.code) === live) broadcast(live);
+    }, options.broadcastMs ?? BROADCAST_MS);
+  }
+
+  /** Sends each client its view, skipping clients whose view has not changed since the last one. */
   function broadcast(live: LiveRoom): void {
     const t = now();
-    const host = hostView(live.room);
+    const cache = newViewCache();
+    let host: string | undefined;
     for (const conn of live.conns) {
-      if (conn.kind === 'host') send(conn.ws, { t: 'host-state', now: t, view: host });
-      else if (conn.playerId) send(conn.ws, { t: 'player-state', now: t, view: playerView(live.room, conn.playerId) });
+      if (conn.kind === 'host') sendView(conn, 'host-state', t, (host ??= JSON.stringify(hostView(live.room))));
+      else if (conn.playerId) sendView(conn, 'player-state', t, JSON.stringify(playerView(live.room, conn.playerId, cache)));
     }
+  }
+
+  function sendView(conn: Conn, t: 'host-state' | 'player-state', at: number, view: string): void {
+    if (conn.lastView === view || conn.ws.readyState !== WebSocket.OPEN) return;
+    conn.lastView = view;
+    conn.ws.send(`{"t":"${t}","now":${at},"view":${view}}`);
   }
 
   async function persist(code: string, postNow?: boolean): Promise<void> {
@@ -355,6 +385,7 @@ export async function createRoomServer(options: RoomServerOptions) {
         rooms.delete(code);
         void store.remove(code);
         clearTimeout(live.postTimer);
+        clearTimeout(live.broadcastTimer);
         void saveReport(live, true); // the last word on an abandoned or finished session
       }
     }
@@ -391,6 +422,7 @@ export async function createRoomServer(options: RoomServerOptions) {
       await Promise.all([...rooms.values()].map(async live => {
         clearTimeout(live.saveTimer);
         clearTimeout(live.postTimer);
+        clearTimeout(live.broadcastTimer);
         await persist(live.room.code, true);
         for (const conn of live.conns) conn.ws.terminate();
       }));

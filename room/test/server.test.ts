@@ -47,6 +47,11 @@ class Client {
     });
   }
 
+  /** How many messages of a kind arrived and were not taken by next(). */
+  pending(t: Msg['t']): number {
+    return this.queue.filter(m => m.t === t).length;
+  }
+
   close(): void {
     this.ws.close();
   }
@@ -164,4 +169,29 @@ test('sockets from a foreign origin are refused', async () => {
     process.env.NODE_ENV = previous;
     await srv.close();
   }
+});
+
+test('a burst of changes goes out as one broadcast, and an unchanged view is not sent again', async () => {
+  const srv = await start();
+  const { code, hostToken } = (await (await fetch(`${srv.http}/api/rooms`, { method: 'POST' })).json()) as { code: string; hostToken: string };
+  const host = await connect(srv.ws);
+  host.send({ t: 'host', code, token: hostToken });
+  await host.next('host-state');
+  const phones = await Promise.all(Array.from({ length: 8 }, () => connect(srv.ws)));
+  phones.forEach((phone, i) => phone.send({ t: 'join', code, nickname: `P${i}` }));
+  await host.next('host-state', m => m.view.players.length === 8);
+  assert.ok(host.pending('host-state') <= 2, `host got ${host.pending('host-state') + 1} states for 8 joins`);
+
+  // A rejected action changes nothing, so nobody is sent the same view again.
+  phones[0]!.send({ t: 'ready', on: true });
+  assert.equal((await phones[0]!.next('error')).code, 'tanpa-tim');
+  await new Promise(resolve => setTimeout(resolve, 150));
+  const before = host.pending('host-state');
+  host.send({ t: 'pause' }); // nothing to pause: an error, no new state
+  await host.next('error');
+  await new Promise(resolve => setTimeout(resolve, 150));
+  assert.equal(host.pending('host-state'), before);
+
+  for (const client of [host, ...phones]) client.close();
+  await srv.close();
 });
