@@ -4,13 +4,19 @@ import { fileURLToPath } from 'node:url';
 import { ROLES } from '../../engine/src/types';
 import { CRISIS_ART, crisisArt } from './crises';
 import { EXPRESSIONS, portrait } from './people';
+import { PHOTOS, photoFile } from './photos';
 
 // Writes every illustration and the manifest the client reads (web/src/art.tsx).
 // Run with `npm run art:build`; a test fails when the committed files drift from this source.
 
 export function artFiles(): Map<string, string> {
   const files = new Map<string, string>();
-  const manifest = { crisis: {} as Record<string, string>, peran: {} as Record<string, Record<string, string>>, diorama: null };
+  const manifest = {
+    crisis: {} as Record<string, string>,
+    peran: {} as Record<string, Record<string, string>>,
+    diorama: null,
+    foto: {} as Record<string, { file: string; alt: string; credit: string; source: string }>,
+  };
   for (const id of Object.keys(CRISIS_ART)) {
     const file = `crisis/${id}.svg`;
     files.set(file, crisisArt(id));
@@ -24,6 +30,8 @@ export function artFiles(): Map<string, string> {
       manifest.peran[role]![expr] = file;
     }
   }
+  // Photos are binary and made by photos.ts; only their manifest entries are written here.
+  for (const [id, p] of Object.entries(PHOTOS)) manifest.foto[id] = { file: photoFile(id), alt: p.alt, credit: `${p.photographer} / Unsplash`, source: p.page };
   files.set('manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);
   return files;
 }

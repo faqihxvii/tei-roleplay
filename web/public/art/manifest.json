@@ -46,5 +46,85 @@
       "marah": "peran/masyarakat-marah.svg"
     }
   },
-  "diorama": null
+  "diorama": null,
+  "foto": {
+    "c_beras": {
+      "file": "foto/c_beras.webp",
+      "alt": "Karung-karung beras terbuka dengan label harga di pasar",
+      "credit": "Leonie Clough / Unsplash",
+      "source": "https://unsplash.com/photos/a-bunch-of-bags-filled-with-different-types-of-rice-rg6JWlyTsrw"
+    },
+    "c_pupuk": {
+      "file": "foto/c_pupuk.webp",
+      "alt": "Petani berjalan pulang di tengah sawah hijau",
+      "credit": "Amperiano Yuniawan / Unsplash",
+      "source": "https://unsplash.com/photos/a-farmer-works-in-a-lush-green-rice-field-976s86Ck5RQ"
+    },
+    "c_minyak": {
+      "file": "foto/c_minyak.webp",
+      "alt": "Siluet pompa angguk minyak saat matahari terbenam",
+      "credit": "Zbynek Burival / Unsplash",
+      "source": "https://unsplash.com/photos/oil-pump-jack-silhouette-against-red-sunset-GrmwVnVSSdU"
+    },
+    "c_listrik": {
+      "file": "foto/c_listrik.webp",
+      "alt": "Menara listrik dan kabel tegangan tinggi",
+      "credit": "Thilina Alagiyawanna / Unsplash",
+      "source": "https://unsplash.com/photos/electricity-pylon-and-power-lines-silhouetted-against-the-sky-JjrHs-pbGHk"
+    },
+    "c_asuransi": {
+      "file": "foto/c_asuransi.webp",
+      "alt": "Tangan menandatangani dokumen di meja penuh uang dan kalkulator",
+      "credit": "Jakub Żerdzicki / Unsplash",
+      "source": "https://unsplash.com/photos/hands-signing-a-document-on-a-desk-WTgGFO_gGW8"
+    },
+    "c_pinjol": {
+      "file": "foto/c_pinjol.webp",
+      "alt": "Tangan memegang ponsel dan lembaran uang",
+      "credit": "Jakub Żerdzicki / Unsplash",
+      "source": "https://unsplash.com/photos/hands-holding-money-and-using-calculator-on-phone-9JxJ3QdsA-I"
+    },
+    "c_phk": {
+      "file": "foto/c_phk.webp",
+      "alt": "Deretan mesin jahit tua yang menganggur di rak",
+      "credit": "Mark Claus / Unsplash",
+      "source": "https://unsplash.com/photos/black-sewing-machine-on-rack-bGz82E8FKKk"
+    },
+    "c_ojol": {
+      "file": "foto/c_ojol.webp",
+      "alt": "Pengemudi ojek daring berjaket hijau melaju di jalan kota",
+      "credit": "Grab / Unsplash",
+      "source": "https://unsplash.com/photos/a-person-riding-a-motorcycle-on-a-city-street-cR5Zo75Phqc"
+    },
+    "c_data": {
+      "file": "foto/c_data.webp",
+      "alt": "Kipas pendingin server di pusat data",
+      "credit": "Winston Chen / Unsplash",
+      "source": "https://unsplash.com/photos/close-up-of-server-cooling-fans-in-a-vibrant-data-center-iZe21DzHnUg"
+    },
+    "c_judol": {
+      "file": "foto/c_judol.webp",
+      "alt": "Mesin slot dengan lampu neon",
+      "credit": "Gabriel Santos / Unsplash",
+      "source": "https://unsplash.com/photos/two-slot-machines-with-neon-lights-in-a-casino-FqsD_IzPUCA"
+    },
+    "c_rupiah": {
+      "file": "foto/c_rupiah.webp",
+      "alt": "Tangan menggenggam segepok uang rupiah",
+      "credit": "Defrino Maasy / Unsplash",
+      "source": "https://unsplash.com/photos/hands-are-holding-a-bundle-of-indonesian-banknotes-llemJ9uYRTk"
+    },
+    "c_resesi": {
+      "file": "foto/c_resesi.webp",
+      "alt": "Peti kemas menumpuk di pelabuhan dengan derek",
+      "credit": "PortCalls Asia / Unsplash",
+      "source": "https://unsplash.com/photos/shipping-containers-stacked-at-a-port-with-cranes-mk8iOzSn2eI"
+    },
+    "c_latihan": {
+      "file": "foto/c_latihan.webp",
+      "alt": "Tangan memegang ponsel yang membuka aplikasi pesan",
+      "credit": "Andrey Matveev / Unsplash",
+      "source": "https://unsplash.com/photos/a-hand-holds-a-phone-with-a-whatsapp-screen-9S2AIYY-1Ik"
+    }
+  }
 }

@@ -1,20 +1,11 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ROLE_CODE, ROLE_COLOR, ROLE_INK, ROLE_LABEL } from '../../engine/src/content/roles';
 import type { Role } from '../../engine/src/types';
 import type { PublicStats } from '../../room/src/views';
-import { avSettings, prefersReducedMotion } from './audio/settings';
+import { AnimatedNumber, m, useReducedMotion } from './motion';
 import { formatSeconds, useSecondsLeft } from './socket';
 import { INDICATOR_LABEL, INDICATOR_ORDER, signed, ZONES, zoneOf } from './text';
 
-function subscribeMotion(listener: () => void) {
-  const query = typeof matchMedia !== 'undefined' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
-  query?.addEventListener('change', listener);
-  const off = avSettings.subscribe(listener);
-  return () => { query?.removeEventListener('change', listener); off(); };
-}
-
-/** Reduced motion from the OS setting or the console's "Kurangi gerak", updating when either changes. */
-export const useReducedMotion = () => useSyncExternalStore(subscribeMotion, prefersReducedMotion, () => false);
 
 /**
  * Keeps the page title on where the class is and says each change once through a polite live region,
@@ -67,12 +58,12 @@ export function Board({ stats, compact = false, strip = false, changes }: { stat
             <div className="gauge-head">
               <span className="gauge-label">{INDICATOR_LABEL[stat]}</span>
               <span className="gauge-value">
-                {value}
+                <AnimatedNumber value={value} />
                 {change ? <span className={`delta ${(z.worseWhen === 'tinggi') === change < 0 ? 'up' : 'down'}`}>{signed(change)}</span> : null}
               </span>
             </div>
             <div className="gauge-track" role="meter" aria-valuemin={0} aria-valuemax={10} aria-valuenow={value} aria-label={`${INDICATOR_LABEL[stat]} ${value} dari 10${zone !== 'aman' ? `, ${zone}` : ''}`}>
-              <div className="gauge-fill" style={{ width: `${value * 10}%` }} />
+              <m.div className="gauge-fill" initial={false} animate={{ width: `${value * 10}%` }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} />
               <div className={`gauge-danger ${z.worseWhen}`} style={z.worseWhen === 'tinggi' ? { left: `${(z.danger - 1) * 10}%` } : { width: `${z.danger * 10}%` }} />
             </div>
             {!compact && zone !== 'aman' && <span className="gauge-zone">{zone === 'kolaps' ? 'KOLAPS' : 'Bahaya'}</span>}

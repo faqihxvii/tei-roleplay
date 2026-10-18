@@ -1,5 +1,6 @@
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
+import { MotionRoot } from './motion';
 import { Phone } from './Phone';
 import '@fontsource-variable/geist/wght.css';
 import '@fontsource-variable/geist-mono/wght.css';
@@ -14,6 +15,7 @@ const isHost = location.pathname.replace(/\/+$/, '') === '/host';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <MotionRoot>
     {isHost ? (
       <Suspense fallback={<main className="flex min-h-dvh items-center justify-center">Memuat…</main>}>
         <Host />
@@ -21,5 +23,6 @@ createRoot(document.getElementById('root')!).render(
     ) : (
       <Phone />
     )}
+    </MotionRoot>
   </StrictMode>,
 );

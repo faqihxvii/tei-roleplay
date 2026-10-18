@@ -8,7 +8,7 @@ Untuk ilustrator, animator, sound designer, dan engineer yang memasang aset mere
 
 **Merek TEI**, dengan sumber economic.co.id dan feed Instagram @theeconomicinfluence: tata letak editorial yang lapang di atas putih gading, merah TEI untuk penekanan, judul Geist yang rapat, sudut tegas, dan garis tipis. Dari sampul feed kita ambil rumus judulnya: klaim ditulis tebal merah, lalu penjelasannya langsung menyusul dalam warna hitam. Koran satir *Harian TEI* tetap ada sebagai cerita di dalam permainan, ditata seperti sampul postingan TEI. Ilustrasi tetap bergaya cetak risograph dengan tinta merah dan pink TEI.
 
-Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon, ikon generik sebagai visual utama, dan gambar stok (GDD). Target audio rilis tetap foley rekaman asli. Suara sintesis hanya dipakai sementara untuk playtest; lihat bagian audio.
+Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon, ikon generik sebagai visual utama, dan gambar stok (GDD), kecuali foto halaman depan Harian TEI (lihat Keputusan 18 Oktober 2026 di bagian Ilustrasi). Target audio rilis tetap foley rekaman asli. Suara sintesis hanya dipakai sementara untuk playtest; lihat bagian audio.
 
 ## Yang sudah ada di kode
 
@@ -83,7 +83,7 @@ Ukuran display mengikuti lebar layar (`clamp`), supaya tetap terbaca dari bangku
 - **Tinggi baris:** `--leading-display` 1,04, `--leading-snug` 1,25, `--leading-body` 1,6.
 - **Sudut dan sentuhan:** kartu dan koran bersudut tegas; tombol, isian, dan pilihan memakai sudut 2 px (`--radius-control`). Target sentuh minimal 44 px (`--spacing-tap`), tombol 48 px (`--spacing-control`).
 
-Hanya subset latin yang diunduh browser. Muatan awal HP (JS dan CSS dalam gzip, ditambah font latin) sekitar 196 KB, di dalam anggaran 300 KB. `npm run budget` menghitungnya setelah build, dan CI gagal bila melebihi anggaran.
+Hanya subset latin yang diunduh browser. Muatan awal HP (JS dan CSS dalam gzip, ditambah font latin) sekitar 225 KB (Motion menambah sekitar 29 KB), di dalam anggaran 300 KB. `npm run budget` menghitungnya setelah build, dan CI gagal bila melebihi anggaran.
 
 ### Warna peran
 
@@ -146,12 +146,18 @@ Sumbernya ada di `web/art/`:
 - `crises.ts`: 13 kartun editorial kartu krisis, termasuk Tahun 0.
 - `build.ts`: menulis file ke `web/public/art/` beserta `manifest.json`.
 
+**Keputusan (18 Oktober 2026):** larangan gambar stok di GDD dicabut khusus untuk foto halaman depan Harian TEI. Setiap kartu krisis punya satu foto Unsplash (Lisensi Unsplash: boleh dipakai gratis, termasuk diubah, tanpa izin). Foto tanpa wajah yang bisa dikenali, karena korannya satir. Unsplash+ tidak dipakai. Nama fotografer tetap dicantumkan di bawah foto, meskipun lisensinya tidak mewajibkan.
+
+- `photos.json`: sumber, fotografer, teks alternatif, dan titik potong setiap foto.
+- `photos.ts` (`npm run art:photos`): mengunduh sekali, memotong 3:2 ukuran 960 × 640, lalu mencetaknya dalam dua tinta (hitam riso di atas kertas putih) supaya menyatu dengan ilustrasi. Hasilnya `web/public/art/foto/<kartu>.webp`, masing-masing di bawah 80 KB, dan hanya dimuat layar utama. Daftar lengkap ada di `docs/credits.md`.
+
 Setelah mengubah sumber, jalankan `npm run art:build`. Tes menolak file yang tertinggal dari sumbernya, file yang lebih dari 12 KB, file tanpa judul aksesibel, dan warna di luar empat warna palet.
 
 | Aset | Jumlah | Dipakai di |
 | --- | --- | --- |
 | Karikatur: Menteri berdasi, Gubernur Bank Sentral dengan kalkulator, Bos Pabrik berhelm proyek, Ketua Serikat dengan toa, Ibu warga dengan tas belanja | 5 × 4 (tenang, senang, panik, marah) | Kolom tim di lobi, HP saat briefing, kartu status tim di layar utama, tabel skor akhir |
-| Ilustrasi kartu krisis | 13 | Kartu krisis di layar utama dan di HP, serta foto di halaman depan Harian TEI |
+| Ilustrasi kartu krisis | 13 | Kartu krisis di layar utama dan di HP |
+| Foto halaman depan (Unsplash, dua tinta) | 13 | Halaman depan Harian TEI di layar utama dan Edisi Khusus; ilustrasi krisis menjadi cadangan bila foto tidak ada |
 | Diorama kota | 6 distrik × 3 keadaan | Layar utama saat briefing, Rapat Tim, Lobi, dan Pengesahan (`web/src/Diorama.tsx`) |
 
 **Gender dan identitas:** pemerannya tiga perempuan (Gubernur Bank Sentral, Ketua Serikat, Ibu warga) dan dua laki-laki (Menteri, Bos Pabrik). Tidak ada penanda suku atau agama. Wajah memakai warna kertas.
@@ -292,5 +298,4 @@ Lalu jalankan `npm test`. Tes menolak manifest yang memuat nama cue atau loop ya
 ## Belum dibuat
 
 - Rekaman foley dan musik final dari sound designer (GDD, "Tim inti"). Suara yang terpasang sekarang adalah sintesis sementara.
-- Karikatur untuk halaman depan Harian TEI (GDD: 6 karikatur). Untuk sementara, foto halaman depan memakai ilustrasi krisis tahun itu.
-- Kit cetak masih memakai huruf lamanya. Palet perannya sudah mengikuti palet baru.
+- Karikatur untuk halaman depan Harian TEI (GDD: 6 karikatur). Untuk sementara, halaman depan memakai foto Unsplash krisis tahun itu.

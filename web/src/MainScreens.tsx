@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import type { ClientMessage } from '../../room/src/protocol';
 import type { HostView, PublicStats, RevealView } from '../../room/src/views';
-import { CrisisArt, endExpression, Portrait } from './art';
+import { CrisisArt, CrisisPhoto, endExpression, Portrait } from './art';
 import { Concepts, Glossed } from './Glossary';
 import { cueBus } from './audio/bus';
 import { revealCue } from './audio/derive';
+import { DUR, EASE, m } from './motion';
 import { Board, RoleMark, RoleName, TeiLogo, Timer, roleProps, useSequence } from './shared';
 import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL, INDICATOR_ORDER, PRACTICE_COACH, signed, STEP_HINT, STEP_LABEL } from './text';
 
@@ -51,6 +52,7 @@ function StoryRail({ step }: { step: NonNullable<HostView['step']> }) {
     <ol className="story-rail" aria-label={`Babak ${at + 1} dari ${CHAPTERS.length}: ${STEP_LABEL[step]}`}>
       {CHAPTERS.map((chapter, i) => (
         <li key={chapter} className={i < at ? 'done' : i === at ? 'now' : i === at + 1 ? 'next' : ''} aria-current={i === at ? 'step' : undefined}>
+          {i === at && <m.span key={step} className="story-fill" aria-hidden="true" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: DUR.slow, ease: EASE.paper }} />}
           <span className="story-name">{STEP_LABEL[chapter]}</span>
         </li>
       ))}
@@ -78,13 +80,19 @@ export function YearScreen({ view, now, send }: { view: HostView; now: () => num
   return (
     <>
       <TopBar view={view} now={now} send={send} />
-      <div className={`chapter chapter-${step}`}>
+      <m.div
+        key={`${view.practice ? 0 : view.year}-${step}`}
+        className={`chapter chapter-${step}`}
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: DUR.base, ease: EASE.paper }}
+      >
         {step === 'krisis' && <CrisisStage view={view} />}
         {step === 'rapat' && <TeamsStage view={view} />}
         {step === 'lobi' && <LobbyTable view={view} />}
         {step === 'pengesahan' && <TeamsStage view={view} />}
         {step === 'koran' && <FrontPageStage view={view} />}
-      </div>
+      </m.div>
       {step !== 'koran' && view.stats && <div className="country-strip"><Board stats={view.stats} strip /></div>}
     </>
   );
@@ -128,7 +136,9 @@ function ReadyMeter({ view }: { view: HostView }) {
   const done = view.teams.filter(t => t.ready).length;
   return (
     <p className="ready-meter" role="status">
-      <span className="dots" aria-hidden="true">{view.teams.map(t => <span key={t.role} className={`dot${t.ready ? ' on' : ''}`} />)}</span>
+      <span className="dots" aria-hidden="true">
+        {view.teams.map(t => <m.span key={t.role} className={`dot${t.ready ? ' on' : ''}`} animate={{ scale: t.ready ? [1, 1.6, 1] : 1 }} transition={{ duration: DUR.base, ease: EASE.slam }} />)}
+      </span>
       {done === view.teams.length ? 'Semua tim selesai.' : `${done} dari ${view.teams.length} tim selesai`}
     </p>
   );
@@ -185,11 +195,17 @@ function LobbyTable({ view }: { view: HostView }) {
       <ReadyMeter view={view} />
       <ul className="flex max-w-page flex-col gap-3">
         {view.pacts.map(p => (
-          <li key={p.id} className="pact-card">
+          <m.li
+            key={p.id}
+            className="pact-card"
+            initial={{ opacity: 0, scale: 0.9, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: DUR.base, ease: EASE.slam }}
+          >
             <div><RoleName role={p.from} /><p>{p.fromText}</p></div>
             <span className="handshake" aria-label="bersalaman">⇄</span>
             <div><RoleName role={p.to} /><p>{p.toText}</p></div>
-          </li>
+          </m.li>
         ))}
       </ul>
     </section>
@@ -283,7 +299,12 @@ function FrontPageStage({ view }: { view: HostView }) {
   const page = view.frontPage;
   if (!page) return null;
   return (
-    <article className="frontpage">
+    <m.article
+      className="frontpage"
+      initial={{ opacity: 0, y: -56, rotate: -2 }}
+      animate={{ opacity: 1, y: 0, rotate: 0 }}
+      transition={{ duration: DUR.slow, ease: EASE.paper }}
+    >
       <header className="fp-mast">
         <TeiLogo />
         <h1>Harian TEI</h1>
@@ -291,10 +312,14 @@ function FrontPageStage({ view }: { view: HostView }) {
       </header>
       <div className={`fp-lead${page.crisisId ? ' with-photo' : ''}`}>
         <div>
-          <h2 className="fp-headline">{page.headline}</h2>
-          <p className="fp-sub">{page.subheadline}</p>
+          <m.h2 className="fp-headline" initial={{ opacity: 0, scale: 1.15 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.45, duration: DUR.base, ease: EASE.slam }}>{page.headline}</m.h2>
+          <m.p className="fp-sub" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: DUR.base }}>{page.subheadline}</m.p>
         </div>
-        {page.crisisId && <CrisisArt id={page.crisisId} className="fp-photo" caption={`Ilustrasi: krisis tahun ${page.year}`} />}
+        {page.crisisId && (
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: DUR.slow }}>
+            <CrisisPhoto id={page.crisisId} year={page.year} />
+          </m.div>
+        )}
       </div>
       <div className="fp-body">
         <section className="fp-chart" aria-label="Indikator tahun ini">
@@ -322,7 +347,7 @@ function FrontPageStage({ view }: { view: HostView }) {
         </section>
         <aside className="fp-ad"><span className="kicker">Iklan</span><p>{page.ad}</p></aside>
       </div>
-    </article>
+    </m.article>
   );
 }
 

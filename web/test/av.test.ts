@@ -179,7 +179,7 @@ test('the delivered audio and art manifests only name known cues and moods', () 
   for (const id of Object.keys(audio.sfx)) assert.ok(CUE_IDS.includes(id as never), `unknown cue ${id}`);
   for (const mood of Object.keys(audio.music)) assert.ok(['tenang', 'tegang', 'krisis'].includes(mood), `unknown mood ${mood}`);
   const art = JSON.parse(readFileSync(new URL('../public/art/manifest.json', import.meta.url), 'utf8')) as Record<string, unknown>;
-  assert.deepEqual(Object.keys(art).sort(), ['crisis', 'diorama', 'peran']);
+  assert.deepEqual(Object.keys(art).sort(), ['crisis', 'diorama', 'foto', 'peran']);
 });
 
 // WCAG relative luminance, for the role palette.

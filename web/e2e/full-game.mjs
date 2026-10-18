@@ -26,6 +26,7 @@ const audited = new Set();
 const a11y = [];
 async function audit(page, name) {
   await settle(page);
+  await page.waitForTimeout(800); // Motion's JS-driven entrances (up to ~0.8 s) are not in getAnimations()
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   for (const v of violations) {
     const key = `${v.id} ${v.nodes.map(n => n.target.join(' ')).join(', ')}`;
@@ -287,6 +288,9 @@ for (const name of ['Garis waktu (CSV)', 'Keputusan per tim (CSV)', 'Log pakta (
 }
 const [edisi] = await Promise.all([host.context().waitForEvent('page'), host.getByRole('link', { name: /Edisi Khusus/ }).click()]);
 await edisi.locator('.edisi .frontpage').first().waitFor();
+// Every year's photo is self-hosted and must load before printing.
+if (await edisi.locator('.fp-photo img').count() < 1) errors.push('Edisi Khusus tanpa foto');
+await edisi.waitForFunction(() => [...document.images].every(i => i.complete && i.naturalWidth > 0), null, { timeout: 10_000 }).catch(() => errors.push('foto Edisi Khusus tidak termuat'));
 await shot(edisi, 'edisi-khusus.png', true);
 // Every cue the main screen asked for, file or not. The print tab stays silent.
 const heard = new Set((await host.evaluate(() => window.__teiAudio ?? [])).map(c => c.cue));

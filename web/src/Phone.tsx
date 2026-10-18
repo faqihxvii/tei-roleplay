@@ -1,5 +1,5 @@
 import { Tabs } from 'radix-ui';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { forwardRef, useEffect, useRef, useState, type ComponentPropsWithoutRef, type FormEvent } from 'react';
 import { ROLE_LABEL } from '../../engine/src/content/roles';
 import { ROLES, type AgendaId, type Decision, type Role } from '../../engine/src/types';
 import type { ClientMessage, ServerMessage } from '../../room/src/protocol';
@@ -11,6 +11,7 @@ import { CrisisArt, Portrait } from './art';
 import { Concepts, Glossed } from './Glossary';
 import { SurveyForm, SurveyThanks } from './Survey';
 import { useHaptics } from './haptics';
+import { AnimatedNumber, DUR, EASE, m } from './motion';
 import { Board, HoldButton, RoleMark, RoleName, StepAnnouncer, TeiLogo, Timer, roleProps } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
 import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, PRACTICE_COACH, STEP_LABEL, signed, whereLabel } from './text';
@@ -184,9 +185,9 @@ function PhoneShell({ view, send, now }: { view: PlayerView; send: Send; now: ()
     <Tabs.Root value={tab} onValueChange={setTab} className="contents">
       <PhoneHeader view={view} now={now} />
       <div className="phone-page with-nav">
-        <Tabs.Content value="sekarang" className="flex flex-col gap-5"><PhoneBody view={view} send={send} /></Tabs.Content>
-        <Tabs.Content value="tim"><TeamTab view={view} /></Tabs.Content>
-        <Tabs.Content value="negara"><CountryTab view={view} /></Tabs.Content>
+        <Tabs.Content value="sekarang" asChild><Fade className="flex flex-col gap-5"><PhoneBody view={view} send={send} /></Fade></Tabs.Content>
+        <Tabs.Content value="tim" asChild><Fade><TeamTab view={view} /></Fade></Tabs.Content>
+        <Tabs.Content value="negara" asChild><Fade><CountryTab view={view} /></Fade></Tabs.Content>
       </div>
       <Tabs.List className="phone-nav" aria-label="Bagian layar">
         {PHONE_TABS.map(t => <Tabs.Trigger key={t.id} value={t.id}>{t.label}</Tabs.Trigger>)}
@@ -196,6 +197,12 @@ function PhoneShell({ view, send, now }: { view: PlayerView; send: Send; now: ()
 }
 
 /** Where the year stands: six steps, the current one marked, so a phone always says "you are here". */
+/** Tab content fades in when it opens; Radix keeps only the open tab mounted. */
+const Fade = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<'div'>>(function Fade({ children, className, ...rest }, ref) {
+  const { onAnimationStart: _a, onDrag: _b, onDragStart: _c, onDragEnd: _d, ...props } = rest;
+  return <m.div ref={ref} className={className} {...props} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: DUR.fast }}>{children}</m.div>;
+});
+
 function StepRail({ view }: { view: PlayerView }) {
   if (view.phase !== 'tahun' || !view.step) return null;
   const at = YEAR_STEPS.indexOf(view.step);
@@ -530,9 +537,11 @@ function ReadyBox({ view, send }: { view: PlayerView; send: Send }) {
   return (
     <div className="action-dock" role="group" aria-label="Konfirmasi tim">
       <p className="text-xs text-copy" role="status">{ready ? 'Timmu sudah selesai. ' : 'Sudah sepakat? '}{count}. Fase lanjut begitu semua tim selesai.</p>
-      {ready
-        ? <button type="button" className="btn" onClick={() => send({ t: 'ready', on: false })}>Batal, masih diskusi</button>
-        : <button type="button" className="btn primary" onClick={() => send({ t: 'ready', on: true })}>Tim kami selesai</button>}
+      <m.div key={ready ? 'ready' : 'open'} className="flex" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: DUR.fast, ease: EASE.slam }}>
+        {ready
+          ? <button type="button" className="btn grow" onClick={() => send({ t: 'ready', on: false })}>Batal, masih diskusi</button>
+          : <button type="button" className="btn primary grow" onClick={() => send({ t: 'ready', on: true })}>Tim kami selesai</button>}
+      </m.div>
     </div>
   );
 }
@@ -776,7 +785,7 @@ function ResultsScreen({ view, send }: { view: PlayerView; send: Send }) {
     <section className="flex flex-col gap-4">
       <p className="kicker">{ENDING_LABEL[results.ending]}</p>
       {results.collapses.map(c => <p key={c} className="text-danger">{COLLAPSE_LABEL[c]}</p>)}
-      <p className="big-score">{mine.score} <small>poin</small></p>
+      <p className="big-score"><AnimatedNumber value={mine.score} /> <small>poin</small></p>
       <p className="text-muted">Peringkat {rank} dari 5</p>
       {myTitles.map(t => <p key={t.title} className="badge">{t.title}: {t.reason}</p>)}
       <ul className="list flex flex-col gap-1">

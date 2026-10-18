@@ -1,4 +1,5 @@
 import type { HostView } from '../../room/src/views';
+import { CrisisPhoto } from './art';
 import { ResultsBody, TimelineTable } from './MainScreens';
 import { RoleName, TeiLogo } from './shared';
 import { INDICATOR_LABEL, INDICATOR_ORDER } from './text';
@@ -32,8 +33,13 @@ export function EdisiKhusus({ view }: { view: HostView }) {
             <h1>Harian TEI</h1>
             <span>Edisi Tahun {year.year}<br />Krisis: {year.crisis}</span>
           </header>
-          <h2 className="fp-headline">{year.headline}</h2>
-          <p className="fp-sub">{year.subheadline}</p>
+          <div className="fp-lead with-photo">
+            <div>
+              <h2 className="fp-headline">{year.headline}</h2>
+              <p className="fp-sub">{year.subheadline}</p>
+            </div>
+            <CrisisPhoto id={year.crisisId} year={year.year} />
+          </div>
           <div className="fp-body">
             <section>
               <h3>Keputusan tim</h3>

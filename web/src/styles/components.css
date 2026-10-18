@@ -172,7 +172,7 @@
   .board.compact .gauge-value { font-size: var(--text-md); }
   .gauge-value small { font-size: var(--unit-size); color: var(--color-muted); }
   .gauge-track { position: relative; height: 14px; overflow: hidden; background: var(--color-sunken); }
-  .gauge-fill { position: absolute; inset: 0 auto 0 0; background: var(--color-ink); transition: width 600ms ease; }
+  .gauge-fill { position: absolute; inset: 0 auto 0 0; background: var(--color-ink); }
   .gauge-danger { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--color-brand) 28%, transparent) 0 4px, transparent 4px 8px); }
   .gauge-danger.tinggi { right: 0; }
   .gauge-danger.rendah { left: 0; }
@@ -252,7 +252,10 @@
   .story-rail li::before { content: ''; height: 3px; background: var(--color-line); }
   .story-rail li.done::before { background: var(--color-ink); }
   .story-rail li.now { color: var(--color-ink); }
-  .story-rail li.now::before { background: var(--color-brand); height: 5px; margin-top: calc(-1 * var(--spacing-0_5)); }
+  .story-rail li.now { position: relative; }
+  .story-rail li.now::before { height: 5px; margin-top: calc(-1 * var(--spacing-0_5)); }
+  /* The current chapter's bar fills from the left as the chapter opens (Motion, MainScreens.tsx). */
+  .story-fill { position: absolute; top: calc(-1 * var(--spacing-0_5)); left: 0; right: 0; height: 5px; background: var(--color-brand); transform-origin: left center; }
   .story-rail .story-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .story-rail li:not(.now):not(.next) .story-name { opacity: 0; }
   .story-rail li.next .story-name { color: var(--color-muted); }
@@ -303,7 +306,7 @@
   .pact-card.torn .handshake { color: var(--color-danger); }
 
   /* ---------- Harian TEI: the satirical paper ---------- */
-  .frontpage { display: flex; flex-direction: column; padding: var(--spacing-8); background: var(--color-paper); border: var(--border-hairline); transform-origin: 30% 100%; animation: paper-in 700ms var(--ease-paper) both; }
+  .frontpage { display: flex; flex-direction: column; padding: var(--spacing-8); background: var(--color-paper); border: var(--border-hairline); transform-origin: 30% 100%; }
   .fp-mast { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--spacing-4); padding-bottom: var(--spacing-3); border-bottom: 1px solid var(--color-ink); font-size: var(--text-xs); color: var(--color-muted); }
   .fp-mast .tei-logo { font-size: var(--text-md); }
   .fp-mast > span:last-child { text-align: right; }
@@ -314,7 +317,7 @@
   @media (max-width: 56.25rem) { .fp-lead.with-photo { grid-template-columns: 1fr; } }
   .fp-sub { padding-bottom: var(--spacing-4); border-bottom: var(--border-hairline); font-size: var(--text-display-sm); letter-spacing: var(--tracking-tight); }
   .fp-photo { margin-top: var(--spacing-5); padding: var(--spacing-1_5); background: var(--color-surface); border: var(--border-hairline); }
-  .fp-photo img { display: block; max-height: 26vh; width: auto; margin-inline: auto; mix-blend-mode: multiply; }
+  .fp-photo img { display: block; width: 100%; height: auto; max-height: 26vh; object-fit: cover; mix-blend-mode: multiply; }
   .fp-photo figcaption { padding-top: var(--spacing-1); font-size: var(--text-2xs); color: var(--color-muted); }
   .fp-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 0.8fr); gap: var(--spacing-6); margin-top: var(--spacing-4); }
   @media (max-width: 56.25rem) { .fp-body { grid-template-columns: 1fr; } }
