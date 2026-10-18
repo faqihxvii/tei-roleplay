@@ -29,6 +29,10 @@ declare global { interface Window { __teiAudio?: { cue: CueId; at: number; playe
 
 export interface AudioEngine {
   play(cues: CueId[]): void;
+  /** Starts a cue part-way through, so a ten-second tick ends exactly when the clock does. */
+  playFrom(cue: CueId, offsetSec: number): void;
+  /** Cuts every playing copy of a cue: the tick stops the moment the clock pauses or changes. */
+  stop(cue: CueId): void;
   music(state: { mood: Mood | null; duck: boolean }): void;
   apply(settings: AvSettings): void;
   dispose(): void;
@@ -42,6 +46,7 @@ export function createAudio(initial: AvSettings): AudioEngine {
   const sfx = new Map<CueId, { howls: HowlType[]; gain: number }>();
   const tracks = new Map<Mood, { howl: HowlType; gain: number }>();
   const lastPlayed = new Map<CueId, number>();
+  const playing = new Map<CueId, { howl: HowlType; id: number }[]>();
   let mood: Mood | null = null;
   let duck = false;
   let wanted: { mood: Mood | null; duck: boolean } = { mood: null, duck: false };
@@ -115,7 +120,31 @@ export function createAudio(initial: AvSettings): AudioEngine {
     track.howl.fade(track.howl.volume(), trackVolume(mood), previous === mood ? 400 : FADE_MS);
   }
 
+  /** Plays one variant of a cue and remembers it until it ends, so stop() can cut it. */
+  function start(cue: CueId, entry: { howls: HowlType[]; gain: number }, offsetSec = 0): number {
+    const howl = entry.howls[Math.floor(Math.random() * entry.howls.length)]!;
+    const id = howl.play();
+    howl.volume(entry.gain, id);
+    if (offsetSec > 0) howl.seek(offsetSec, id);
+    const list = playing.get(cue) ?? [];
+    list.push({ howl, id });
+    playing.set(cue, list);
+    howl.once('end', () => playing.set(cue, (playing.get(cue) ?? []).filter(p => p.id !== id || p.howl !== howl)), id);
+    return id;
+  }
+
   return {
+    playFrom(cue, offsetSec) {
+      const entry = sfx.get(cue);
+      const played = !!entry && settings.sfx && !settings.muted;
+      window.__teiAudio?.push({ cue, at: Date.now(), played });
+      if (!entry || !settings.sfx || disposed) return;
+      start(cue, entry, offsetSec);
+    },
+    stop(cue) {
+      for (const { howl, id } of playing.get(cue) ?? []) howl.stop(id);
+      playing.delete(cue);
+    },
     play(cues) {
       const now = Date.now();
       cues.forEach((cue, i) => {
@@ -127,12 +156,11 @@ export function createAudio(initial: AvSettings): AudioEngine {
         const played = !!entry && settings.sfx && !settings.muted;
         window.__teiAudio?.push({ cue, at: now, played });
         if (!entry || !settings.sfx) return;
-        const howl = entry.howls[Math.floor(Math.random() * entry.howls.length)]!;
         // Several stamps in one update land a beat apart instead of on top of each other.
         setTimeout(() => {
           if (disposed) return;
-          const id = howl.play();
-          howl.volume(entry.gain, id);
+          const id = start(cue, entry);
+          const howl = playing.get(cue)!.at(-1)!.howl;
           if (spec.duck && mood) {
             const track = tracks.get(mood);
             if (track && settings.music) {

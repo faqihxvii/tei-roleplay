@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { HostView } from '../../../room/src/views';
 import { cueBus } from './bus';
 import { cuesFor, musicFor } from './derive';
 import { createAudio, type AudioEngine } from './player';
 import { avSettings, useAvSettings } from './settings';
+import { createTick } from './tick';
 
 /** Sound for the main screen: state changes, the paced reveal, the last ten seconds, and the loops. */
 export function useHostAudio(view: HostView | null, now: () => number, enabled = true) {
@@ -29,20 +30,15 @@ export function useHostAudio(view: HostView | null, now: () => number, enabled =
     prev.current = view;
   }, [view]);
 
-  // One ticking clock per phase, from ten seconds left; never while paused.
-  const endsAt = view?.phaseEndsAt ?? null;
+  // The ticking clock under the last ten seconds; a pause, a resume, extra time or the next step
+  // changes phaseEndsAt, which cuts it at once (tick.ts).
   const clock = useRef(now);
   clock.current = now;
-  const tickedFor = useRef<number | null>(null);
+  const [tick] = useState(() => createTick(() => engine.current, () => clock.current()));
+  const endsAt = view?.phaseEndsAt ?? null;
+  useEffect(() => { tick.set(endsAt); }, [tick, endsAt]);
   useEffect(() => {
-    if (endsAt === null) return;
-    const id = setInterval(() => {
-      const left = Math.ceil((endsAt - clock.current()) / 1000);
-      if (tickedFor.current !== endsAt && left <= 10 && left > 0) {
-        tickedFor.current = endsAt;
-        engine.current?.play(['waktu.hampir']);
-      }
-    }, 250);
-    return () => clearInterval(id);
-  }, [endsAt]);
+    const id = setInterval(() => tick.poll(), 250);
+    return () => { clearInterval(id); tick.dispose(); };
+  }, [tick]);
 }
