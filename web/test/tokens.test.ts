@@ -86,3 +86,56 @@ test('every token the stylesheets use is defined', () => {
   const used = new Set([...styles.matchAll(/var\((--[a-z0-9_-]+)/g)].map(m => m[1]!));
   assert.deepEqual([...used].filter(u => !defined.has(u)), []);
 });
+
+// ---------- contrast (WCAG 2.1 AA) ----------
+
+/** A colour token's hex value, following var() references through the primitives. */
+function colour(name: string): string {
+  const value = new RegExp(`--${name}:\\s*([^;]+);`).exec(tokens)?.[1]?.trim();
+  assert.ok(value, `--${name} is not defined`);
+  const ref = /^var\(--([a-z0-9-]+)\)$/.exec(value);
+  return ref ? colour(ref[1]!) : value;
+}
+const lum = (hex: string) => {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+};
+const ratio = (a: string, b: string) => {
+  const [hi, lo] = [lum(colour(a)), lum(colour(b))].sort((x, y) => y - x);
+  return (hi! + 0.05) / (lo! + 0.05);
+};
+
+test('every text colour meets 4.5:1 on the surfaces it is used on', () => {
+  const light = ['color-bg', 'color-surface', 'color-sunken', 'color-soft', 'color-paper'];
+  const pairs: [string, string[]][] = [
+    ['color-ink', light],
+    ['color-copy', light],
+    ['color-muted', light],
+    ['color-brand', light],
+    ['color-brand-strong', light],
+    ['color-success', ['color-bg', 'color-surface', 'color-sunken']],
+    ['color-warning', ['color-bg', 'color-surface']],
+    ['color-placeholder', ['color-surface']],
+    ['color-on-inverse', ['color-inverse', 'color-brand', 'color-ink']],
+    ['color-on-inverse-muted', ['color-inverse']],
+    ['color-brand-soft', ['color-inverse']],
+    ['color-on-highlight', ['color-highlight']],
+  ];
+  const failing = pairs.flatMap(([fg, bgs]) => bgs.filter(bg => ratio(fg, bg) < 4.5).map(bg => `${fg} on ${bg}: ${ratio(fg, bg).toFixed(2)}`));
+  assert.deepEqual(failing, []);
+});
+
+test('controls are outlined at 3:1 or more, so their edges show', () => {
+  // Inputs, segments and buttons draw --border-strong (ink); hairlines are only for decoration.
+  assert.match(tokens, /--border-strong: 1px solid var\(--color-ink\)/);
+  for (const bg of ['color-bg', 'color-surface']) assert.ok(ratio('color-ink', bg) >= 3);
+  for (const selector of ['.field input', '.seg {', '.btn {']) {
+    const rule = styles.slice(styles.indexOf(selector)).split('}')[0]!;
+    assert.ok(!/border: var\(--border-hairline\)/.test(rule), `${selector} uses a hairline border`);
+  }
+});
+
+test('nothing on a translucent layer: opacity is never used to quieten text', () => {
+  const bad = decls.filter(([selector, prop, value]) => prop === 'opacity' && /^0\.[3-9]/.test(value) && !/(off|disabled|:disabled|seg input|hit|hatch|dio-)/.test(selector));
+  assert.deepEqual(bad, []);
+});

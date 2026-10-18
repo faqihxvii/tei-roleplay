@@ -45,6 +45,12 @@ export const STEP_HINT: Record<YearStep, string> = {
   koran: 'Harian TEI melaporkan tahun ini.',
 };
 
+/** Where the class is, in a few words: the page title and what a screen reader announces on each change. */
+export function whereLabel(v: { phase: RoomPhase; step: YearStep | null; year: number; practice: boolean }): string {
+  if (v.phase === 'tahun' && v.step) return `${v.practice ? 'Tahun 0 (latihan)' : `Tahun ${v.year}`} · ${STEP_LABEL[v.step]}`;
+  return PHASE_LABEL[v.phase];
+}
+
 export const PHASE_LABEL: Record<RoomPhase, string> = {
   gabung: 'Bergabung',
   briefing: 'Briefing peran',

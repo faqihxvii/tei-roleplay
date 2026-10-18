@@ -305,18 +305,28 @@ function coverPage(): string {
 
 // ---------- assemble ----------
 
+// The app's own faces (web/src/styles/tokens.css), loaded from the npm packages so the PDF embeds them.
+const FONT_DIR = path.resolve('node_modules/@fontsource-variable');
+const face = (family: string, pkg: string, style: 'normal' | 'italic') =>
+  `@font-face { font-family: '${family}'; font-style: ${style}; font-weight: 100 900; src: url('file://${FONT_DIR}/${pkg}/files/${pkg}-latin-wght-${style}.woff2') format('woff2'); }`;
+const FONTS = [face('Geist', 'geist', 'normal'), face('Geist', 'geist', 'italic'), face('Gelasio', 'gelasio', 'normal'), face('Gelasio', 'gelasio', 'italic'), face('Geist Mono', 'geist-mono', 'normal')].join('\n');
+const SANS = "Geist, system-ui, sans-serif";
+const SERIF = "Gelasio, Georgia, serif";
+
 const CSS = `
+${FONTS}
+:root { --sans: ${SANS}; --serif: ${SERIF}; }
 @page { size: A4; margin: 10mm; }
 @page landscape { size: A4 landscape; margin: 10mm; }
 * { box-sizing: border-box; }
-body { margin: 0; font-family: Inter, sans-serif; color: #111; font-size: 9.5pt; line-height: 1.35; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin: 0; font-family: var(--sans); color: #111; font-size: 9.5pt; line-height: 1.35; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .page { page-break-after: always; break-after: page; }
 .page:last-child { page-break-after: auto; }
 .landscape { page: landscape; }
-h1, h2, h3, .title { font-family: 'Bitstream Charter', 'DejaVu Serif', serif; margin: 0; }
+h1, h2, h3, .title { font-family: var(--serif); margin: 0; }
 h1 { font-size: 20pt; margin-bottom: 4mm; }
 h2 { font-size: 12pt; margin: 4mm 0 1.5mm; }
-h2 small { font-family: Inter, sans-serif; font-weight: 400; font-size: 8pt; color: #555; margin-left: 2mm; }
+h2 small { font-family: var(--sans); font-weight: 400; font-size: 8pt; color: #555; margin-left: 2mm; }
 p { margin: 0 0 2mm; }
 ol, ul { margin: 0 0 2mm; padding-left: 5mm; }
 li { margin-bottom: 1mm; }
@@ -324,43 +334,43 @@ li { margin-bottom: 1mm; }
 .small { font-size: 8pt; color: #444; }
 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
 table { border-collapse: collapse; width: 100%; }
-.mark { display: inline-block; font: 700 6.5pt Inter, sans-serif; border: 1px solid currentColor; border-radius: 2px; padding: 0 1mm; margin-right: 1.5mm; letter-spacing: .04em; }
+.mark { display: inline-block; font: 700 6.5pt var(--sans); border: 1px solid currentColor; border-radius: 2px; padding: 0 1mm; margin-right: 1.5mm; letter-spacing: .04em; }
 
 /* cover */
-.cover .kicker { font: 700 9pt Inter; letter-spacing: .2em; color: #c30700; margin-top: 20mm; }
+.cover .kicker { font: 700 9pt var(--sans); letter-spacing: .2em; color: #c30700; margin-top: 20mm; }
 .cover .title { font-size: 40pt; line-height: 1; margin: 3mm 0; border-bottom: 3px solid #111; padding-bottom: 3mm; }
 .cover .sub { font-size: 13pt; margin-bottom: 8mm; }
 .contents th, .contents td { text-align: left; border-bottom: 1px solid #ccc; padding: 1.5mm 2mm; }
 .contents th { font-size: 8pt; text-transform: uppercase; letter-spacing: .06em; color: #555; }
 
 /* card grid */
-.sheet-title { font: 700 9pt Inter; margin-bottom: 2mm; }
+.sheet-title { font: 700 9pt var(--sans); margin-bottom: 2mm; }
 .sheet-title span { font-weight: 400; color: #666; }
 .grid { display: grid; grid-template-columns: repeat(3, 63mm); grid-auto-rows: 88mm; gap: 0; }
 .card { width: 63mm; height: 88mm; border: 0.3mm dashed #999; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
-.card .band { background: var(--c, #111); color: var(--ci, #fff); font: 700 7.5pt Inter; letter-spacing: .03em; padding: 2mm 3mm; display: flex; align-items: center; text-transform: uppercase; }
+.card .band { background: var(--c, #111); color: var(--ci, #fff); font: 700 7.5pt var(--sans); letter-spacing: .03em; padding: 2mm 3mm; display: flex; align-items: center; text-transform: uppercase; }
 .card .band .code { margin-left: auto; font-weight: 400; opacity: .85; }
 .card .body { padding: 2.5mm 3mm; display: flex; flex-direction: column; flex: 1; }
 .card h3 { font-size: 13pt; line-height: 1.1; margin-bottom: 1.5mm; }
 .card .desc { font-style: italic; font-size: 8pt; color: #333; margin-bottom: 2mm; }
-.card .now, .card .later { font: 700 6.5pt Inter; text-transform: uppercase; letter-spacing: .08em; color: #666; margin-top: 1mm; }
+.card .now, .card .later { font: 700 6.5pt var(--sans); text-transform: uppercase; letter-spacing: .08em; color: #666; margin-top: 1mm; }
 .card ul.fx { list-style: none; padding: 0; margin: 0.5mm 0 1mm; }
 .card ul.fx li { display: flex; justify-content: space-between; border-bottom: 0.2mm solid #e5e5e5; padding: 0.6mm 0; margin: 0; font-size: 8.5pt; }
 .card ul.fx b { font-size: 8pt; letter-spacing: .05em; }
 .card .req { font-size: 7.5pt; font-weight: 700; margin-top: 1mm; }
 .card .note { font-size: 7pt; color: #333; background: #f3f3f3; padding: 1mm 1.5mm; margin-top: 1.5mm; border-radius: 1mm; }
 .card .tags { margin-top: auto; display: flex; flex-wrap: wrap; gap: 1mm; }
-.card .tag { font: 600 6.5pt Inter; border: 0.2mm solid #999; border-radius: 1mm; padding: 0.2mm 1mm; color: #444; }
+.card .tag { font: 600 6.5pt var(--sans); border: 0.2mm solid #999; border-radius: 1mm; padding: 0.2mm 1mm; color: #444; }
 .card.crisis .band { background: #111; }
 .card.crisis h3 { font-size: 14pt; }
-.card .esc { font: 700 7pt Inter; color: #c30700; margin: 1mm 0; }
+.card .esc { font: 700 7pt var(--sans); color: #c30700; margin: 1mm 0; }
 .card .rule { font-size: 8pt; border-top: 0.6mm solid #111; padding-top: 1.5mm; margin-top: auto; }
 .card .question { font-size: 7.5pt; margin-top: 1.5mm; padding-top: 1.2mm; border-top: 0.3mm dashed #999; }
 .card .question b { display: block; font-size: 6.5pt; text-transform: uppercase; letter-spacing: .08em; color: #666; }
 .narrative { font-size: 8pt; color: #333; }
 .card .rule b { display: block; font-size: 6.5pt; text-transform: uppercase; letter-spacing: .08em; color: #666; }
 .card.agenda .body { align-items: center; text-align: center; justify-content: center; }
-.card.agenda .seal { width: 14mm; height: 14mm; border-radius: 50%; border: 0.6mm solid #111; background: var(--c); color: var(--ci, #fff); font: 700 18pt 'Bitstream Charter', serif; display: flex; align-items: center; justify-content: center; margin-bottom: 3mm; }
+.card.agenda .seal { width: 14mm; height: 14mm; border-radius: 50%; border: 0.6mm solid #111; background: var(--c); color: var(--ci, #fff); font: 700 18pt var(--serif); display: flex; align-items: center; justify-content: center; margin-bottom: 3mm; }
 .card.agenda h3 { font-size: 15pt; }
 .card.agenda .goal { font-size: 10pt; margin: 2mm 0 4mm; }
 .card.agenda .foot { font-size: 7pt; color: #555; margin-top: auto; }
@@ -369,10 +379,10 @@ table { border-collapse: collapse; width: 100%; }
 .board-head { display: flex; align-items: baseline; gap: 5mm; border-bottom: 2px solid #111; margin-bottom: 4mm; }
 .board-head h1 { margin: 0; }
 .board-head span { color: #666; }
-.tracks th { text-align: left; width: 42mm; font: 700 10pt Inter; padding: 1mm 2mm; }
+.tracks th { text-align: left; width: 42mm; font: 700 10pt var(--sans); padding: 1mm 2mm; }
 .tracks th small { display: block; font-weight: 400; font-size: 7pt; color: #555; }
-.tracks td { border: 0.4mm solid #111; width: 18mm; height: 14mm; text-align: center; font: 700 12pt 'Bitstream Charter', serif; position: relative; }
-.tracks td small { position: absolute; left: 0; right: 0; bottom: 0.6mm; font: 600 5.5pt Inter; letter-spacing: .05em; }
+.tracks td { border: 0.4mm solid #111; width: 18mm; height: 14mm; text-align: center; font: 700 12pt var(--serif); position: relative; }
+.tracks td small { position: absolute; left: 0; right: 0; bottom: 0.6mm; font: 600 5.5pt var(--sans); letter-spacing: .05em; }
 .tracks td.danger { background: repeating-linear-gradient(45deg, #fff, #fff 1.4mm, #e6e6e6 1.4mm, #e6e6e6 2.8mm); }
 .tracks td.collapse { background: #111; color: #fff; }
 .tracks td.start { box-shadow: inset 0 0 0 0.8mm #c30700; }
@@ -385,7 +395,7 @@ table { border-collapse: collapse; width: 100%; }
 .years { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3mm; margin-top: 4mm; }
 .year { border: 0.4mm solid #111; height: 22mm; padding: 1.5mm 2mm; display: flex; flex-direction: column; }
 .year span { font-size: 7.5pt; color: #555; }
-.year em { margin-top: auto; font: 700 7.5pt Inter; color: #c30700; font-style: normal; }
+.year em { margin-top: auto; font: 700 7.5pt var(--sans); color: #c30700; font-style: normal; }
 .year.esc { border-color: #c30700; }
 .pipe-title { margin-top: 4mm; }
 .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; }
@@ -396,7 +406,7 @@ table { border-collapse: collapse; width: 100%; }
 .role-band { background: var(--c); color: var(--ci, #fff); padding: 4mm 5mm; display: flex; align-items: center; margin-bottom: 3mm; }
 .role-band h1 { color: var(--ci, #fff); margin: 0; font-size: 26pt; }
 .role-band .mark { font-size: 9pt; }
-.focus { font-size: 12pt; font-family: 'Bitstream Charter', serif; font-style: italic; }
+.focus { font-size: 12pt; font-family: var(--serif); font-style: italic; }
 .lever th { width: 30mm; text-align: left; vertical-align: top; padding: 1.5mm 2mm; border-bottom: 0.3mm solid #ccc; }
 .lever td { padding: 1.5mm 2mm; border-bottom: 0.3mm solid #ccc; }
 .res td { border: 0.4mm solid #111; height: 10mm; text-align: center; font-weight: 700; }
@@ -443,6 +453,7 @@ async function main() {
   const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
   const tab = await browser.newPage();
   await tab.goto(`file://${htmlPath}`);
+  await tab.evaluate(() => document.fonts.ready);
   await tab.pdf({ path: pdfPath, preferCSSPageSize: true, printBackground: true });
   await browser.close();
   console.log(`Kit cetak: ${pdfPath}`);

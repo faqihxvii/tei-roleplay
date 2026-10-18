@@ -172,7 +172,7 @@
   .board.compact .gauge-value { font-size: var(--text-md); }
   .gauge-value small { font-size: var(--unit-size); color: var(--color-muted); }
   .gauge-track { position: relative; height: 14px; overflow: hidden; background: var(--color-sunken); }
-  .gauge-fill { position: absolute; inset: 0 auto 0 0; background: var(--color-ink); transition: width 600ms ease; }
+  .gauge-fill { position: absolute; inset: 0 auto 0 0; background: var(--color-ink); }
   .gauge-danger { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--color-brand) 28%, transparent) 0 4px, transparent 4px 8px); }
   .gauge-danger.tinggi { right: 0; }
   .gauge-danger.rendah { left: 0; }
@@ -215,7 +215,7 @@
   .cast figcaption { grid-column: 1 / -1; text-align: center; }
   .pact { display: flex; flex-direction: column; gap: var(--spacing-1_5); padding: var(--spacing-3); background: var(--color-surface); border: var(--border-hairline); }
   .pact.disepakati { border-color: var(--color-success); }
-  .pact.ditolak, .pact.ditarik, .pact.kedaluwarsa { opacity: 0.6; }
+  .pact.ditolak, .pact.ditarik, .pact.kedaluwarsa { color: var(--color-muted); background: var(--color-sunken); }
   .pact-form { padding: var(--spacing-3); border: 1px dashed var(--color-ink); }
   .big-score { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--text-2xl); font-weight: var(--font-weight-black); line-height: var(--leading-none); }
   .big-score small { font-family: var(--font-sans); font-size: var(--text-sm); color: var(--color-muted); }
@@ -252,7 +252,10 @@
   .story-rail li::before { content: ''; height: 3px; background: var(--color-line); }
   .story-rail li.done::before { background: var(--color-ink); }
   .story-rail li.now { color: var(--color-ink); }
-  .story-rail li.now::before { background: var(--color-brand); height: 5px; margin-top: calc(-1 * var(--spacing-0_5)); }
+  .story-rail li.now { position: relative; }
+  .story-rail li.now::before { height: 5px; margin-top: calc(-1 * var(--spacing-0_5)); }
+  /* The current chapter's bar fills from the left as the chapter opens (Motion, MainScreens.tsx). */
+  .story-fill { position: absolute; top: calc(-1 * var(--spacing-0_5)); left: 0; right: 0; height: 5px; background: var(--color-brand); transform-origin: left center; }
   .story-rail .story-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .story-rail li:not(.now):not(.next) .story-name { opacity: 0; }
   .story-rail li.next .story-name { color: var(--color-muted); }
@@ -303,7 +306,7 @@
   .pact-card.torn .handshake { color: var(--color-danger); }
 
   /* ---------- Harian TEI: the satirical paper ---------- */
-  .frontpage { display: flex; flex-direction: column; padding: var(--spacing-8); background: var(--color-paper); border: var(--border-hairline); transform-origin: 30% 100%; animation: paper-in 700ms var(--ease-paper) both; }
+  .frontpage { display: flex; flex-direction: column; padding: var(--spacing-8); background: var(--color-paper); border: var(--border-hairline); transform-origin: 30% 100%; }
   .fp-mast { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--spacing-4); padding-bottom: var(--spacing-3); border-bottom: 1px solid var(--color-ink); font-size: var(--text-xs); color: var(--color-muted); }
   .fp-mast .tei-logo { font-size: var(--text-md); }
   .fp-mast > span:last-child { text-align: right; }
@@ -314,11 +317,13 @@
   @media (max-width: 56.25rem) { .fp-lead.with-photo { grid-template-columns: 1fr; } }
   .fp-sub { padding-bottom: var(--spacing-4); border-bottom: var(--border-hairline); font-size: var(--text-display-sm); letter-spacing: var(--tracking-tight); }
   .fp-photo { margin-top: var(--spacing-5); padding: var(--spacing-1_5); background: var(--color-surface); border: var(--border-hairline); }
-  .fp-photo img { display: block; max-height: 26vh; width: auto; margin-inline: auto; mix-blend-mode: multiply; }
+  .fp-photo img { display: block; width: 100%; height: auto; max-height: 26vh; object-fit: cover; mix-blend-mode: multiply; }
   .fp-photo figcaption { padding-top: var(--spacing-1); font-size: var(--text-2xs); color: var(--color-muted); }
   .fp-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 0.8fr); gap: var(--spacing-6); margin-top: var(--spacing-4); }
   @media (max-width: 56.25rem) { .fp-body { grid-template-columns: 1fr; } }
   .fp-body h3 { margin-bottom: var(--spacing-2); font-size: var(--text-2xs); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--color-muted); }
+  /* The projector is read from the back row: nothing on it is smaller than text-xs. */
+  .host :is(.kicker, .tag, .fp-photo figcaption, .fp-body h3, .role-mark.small, .gauge-zone) { font-size: var(--text-xs); }
   .fp-chart table { font-size: var(--text-md); }
   .fp-chart th { padding: var(--spacing-1) 0; text-align: left; font-weight: var(--font-weight-regular); }
   .fp-chart td { padding: var(--spacing-1) 0 var(--spacing-1) var(--spacing-2); text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
@@ -337,7 +342,7 @@
   .causes .chip-effect { padding: var(--spacing-0_5) var(--spacing-2); font-size: var(--text-sm); border-width: 1px; }
   .chapter-pengungkapan .pact-card { padding: var(--spacing-3) var(--spacing-4); font-size: var(--text-sm); }
   .collapse-banner { padding: var(--spacing-6); background: var(--color-brand); color: var(--color-on-inverse); text-align: center; animation: stamp-in 500ms var(--ease-slam) both; }
-  .collapse-banner .kicker { color: var(--color-brand-soft); }
+  .collapse-banner .kicker { color: var(--color-on-inverse); }
   .collapse-line { font-size: var(--text-display-md); font-weight: var(--font-weight-black); }
 
   /* ---------- debrief ---------- */
@@ -383,7 +388,7 @@
   .panel .hit { fill: transparent; cursor: pointer; }
   .panel .hit:focus-visible { outline: none; stroke: var(--color-brand-strong); stroke-width: 2; }
   .tip { position: absolute; z-index: 2; display: flex; flex-direction: column; padding: var(--spacing-1_5) var(--spacing-3); background: var(--color-ink); color: var(--color-bg); font-size: var(--text-xs); white-space: nowrap; pointer-events: none; transform: translate(-50%, calc(-100% - 12px)); }
-  .tip-hint { font-size: var(--text-2xs); opacity: 0.75; }
+  .tip-hint { font-size: var(--text-2xs); }
 
   /* ---------- quiz and survey results ---------- */
   .dumbbell { display: grid; grid-template-columns: minmax(200px, 1.1fr) minmax(200px, 2fr) 130px; gap: var(--spacing-1_5) var(--spacing-5); align-items: center; padding: var(--spacing-3) var(--spacing-4); background: var(--color-surface); }
@@ -402,8 +407,8 @@
   .review .ok-item { border-top: 2px solid var(--color-success); }
 
   /* ---------- facilitator console (Radix Dialog) ---------- */
-  .console-toggle { position: fixed; right: var(--spacing-4); bottom: var(--spacing-4); z-index: 40; display: inline-flex; align-items: center; gap: var(--spacing-2); padding: var(--spacing-2) var(--spacing-3); border: var(--border-strong); border-radius: var(--radius-control); background: var(--color-surface); font-weight: var(--font-weight-semibold); cursor: pointer; opacity: 0.55; }
-  .console-toggle:hover, .console-toggle:focus-visible { opacity: 1; }
+  .console-toggle { position: fixed; right: var(--spacing-4); bottom: var(--spacing-4); z-index: 40; display: inline-flex; align-items: center; gap: var(--spacing-2); padding: var(--spacing-2) var(--spacing-3); border: var(--border-strong); border-radius: var(--radius-control); background: var(--color-surface); color: var(--color-muted); font-weight: var(--font-weight-semibold); cursor: pointer; }
+  .console-toggle:hover, .console-toggle:focus-visible { color: var(--color-ink); }
   .console-overlay { position: fixed; inset: 0; z-index: 60; background: var(--scrim); }
   .console-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 61; display: flex; flex-direction: column; gap: var(--spacing-6); width: min(var(--container-panel), 100%); overflow-y: auto; padding: var(--spacing-5); background: var(--color-bg); box-shadow: var(--shadow-panel); }
   .console-panel:focus { outline: none; }
@@ -432,7 +437,7 @@
   .chip.offline .dot { background: transparent; border: 2px solid var(--color-muted); }
   .chip.offline .name { color: var(--color-muted); }
   .chip .controls { display: flex; align-items: center; gap: var(--spacing-1); margin-left: auto; }
-  .chip select { max-width: 120px; min-height: 36px; border: var(--border-hairline); border-radius: var(--radius-control); background: var(--color-surface); font-size: var(--text-2xs); }
+  .chip select { max-width: 120px; min-height: var(--spacing-tap); border: var(--border-hairline); border-radius: var(--radius-control); background: var(--color-surface); font-size: var(--text-2xs); }
   .briefing-timer { font-family: var(--font-mono); font-size: var(--text-display-xl); font-weight: var(--font-weight-black); line-height: var(--leading-none); }
 
   /* ---------- Edisi Khusus (print) ---------- */

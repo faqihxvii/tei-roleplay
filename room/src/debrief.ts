@@ -74,6 +74,7 @@ export interface AgendaRevealView {
 export interface YearHistory {
   year: number;
   crisis: string;
+  crisisId: string;
   stats: Record<Indicator, number> & { bunga: number };
   decisions: { role: Role; lines: string[]; cancelled: boolean }[];
   events: string[];
@@ -331,6 +332,7 @@ export function history(s: RoomSnapshot): YearHistory[] {
     return {
       year: log.year,
       crisis: getCrisis(log.crisisId).title,
+      crisisId: log.crisisId,
       stats: { ...publicOf(log.statsAfter), bunga: log.bungaAfter },
       decisions: ROLES.map(role => ({
         role,

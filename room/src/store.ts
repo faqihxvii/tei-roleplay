@@ -18,15 +18,19 @@ export class MemoryStore implements SnapshotStore {
   async remove(code: string) { this.rooms.delete(code); }
 }
 
+let writes = 0;
+
 export class FileStore implements SnapshotStore {
   constructor(private readonly dir: string) {}
 
   async save(snapshot: RoomSnapshot): Promise<void> {
     await mkdir(this.dir, { recursive: true });
     const file = this.file(snapshot.code);
-    // Write then rename, so a crash mid-write never leaves a half-written snapshot behind.
-    await writeFile(`${file}.tmp`, JSON.stringify(snapshot));
-    await rename(`${file}.tmp`, file);
+    // Write then rename, so a crash mid-write never leaves a half-written snapshot behind. Each write
+    // gets its own temp file: two saves of one room can overlap, and a shared name loses the rename.
+    const tmp = `${file}.${++writes}.tmp`;
+    await writeFile(tmp, JSON.stringify(snapshot));
+    await rename(tmp, file);
   }
 
   async loadAll(): Promise<RoomSnapshot[]> {

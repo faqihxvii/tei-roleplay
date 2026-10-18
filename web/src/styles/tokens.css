@@ -27,6 +27,7 @@
   --neutral-200: #d9d7d0;   /* lines */
   --neutral-300: #d7d4cc;
   --neutral-400: #b8b3a8;
+  --neutral-500: #6f6d66;   /* placeholder: 5:1 on surface, still lighter than typed text */
   --neutral-600: #5c5b56;   /* muted text */
   --neutral-700: #4d4c47;   /* body copy */
   --neutral-900: #171717;   /* ink */
@@ -48,7 +49,7 @@
   --color-ink: var(--neutral-900);             /* text, strong lines, selected controls */
   --color-copy: var(--neutral-700);            /* running text under a heading */
   --color-muted: var(--neutral-600);           /* secondary text */
-  --color-placeholder: var(--neutral-400);
+  --color-placeholder: var(--neutral-500);
   --color-line: var(--neutral-200);            /* hairlines */
   --color-on-inverse: var(--neutral-inverse-text);
   --color-on-inverse-muted: var(--neutral-300);

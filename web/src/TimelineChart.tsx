@@ -44,7 +44,8 @@ function Panel({ stat, timeline, focus, onPick }: Props & { stat: Indicator }) {
     <figure className="panel">
       <figcaption>{INDICATOR_LABEL[stat]}</figcaption>
       <div className="panel-plot">
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${INDICATOR_LABEL[stat]}: ${points.map(p => `${p.year === 0 ? 'awal' : `tahun ${p.year}`} ${p.value}`).join(', ')}`}>
+        {/* With tappable years the chart is a group of buttons; without, one image. */}
+        <svg viewBox={`0 0 ${W} ${H}`} role={onPick ? 'group' : 'img'} aria-label={`${INDICATOR_LABEL[stat]}: ${points.map(p => `${p.year === 0 ? 'awal' : `tahun ${p.year}`} ${p.value}`).join(', ')}`}>
           <defs>
             <pattern id={`hatch-${stat}`} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
               <line x1="0" y1="0" x2="0" y2="6" className="hatch-line" />
@@ -74,7 +75,7 @@ function Panel({ stat, timeline, focus, onPick }: Props & { stat: Indicator }) {
               cy={y(p.value)}
               r={14}
               className="hit"
-              tabIndex={onPick ? 0 : -1}
+              tabIndex={onPick ? 0 : undefined}
               role={onPick ? 'button' : undefined}
               aria-label={`${INDICATOR_LABEL[stat]} tahun ${p.year}: ${p.value}. Telusuri penyebabnya.`}
               onMouseEnter={() => setHover(p.i)}

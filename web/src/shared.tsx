@@ -2,8 +2,19 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ROLE_CODE, ROLE_COLOR, ROLE_INK, ROLE_LABEL } from '../../engine/src/content/roles';
 import type { Role } from '../../engine/src/types';
 import type { PublicStats } from '../../room/src/views';
+import { AnimatedNumber, m, useReducedMotion } from './motion';
 import { formatSeconds, useSecondsLeft } from './socket';
 import { INDICATOR_LABEL, INDICATOR_ORDER, signed, ZONES, zoneOf } from './text';
+
+
+/**
+ * Keeps the page title on where the class is and says each change once through a polite live region,
+ * so a screen reader hears "Tahun 2 · Rapat Tim" when the step moves on.
+ */
+export function StepAnnouncer({ label }: { label: string }) {
+  useEffect(() => { document.title = `${label} · TEI`; }, [label]);
+  return <p className="sr-only" aria-live="polite" aria-atomic="true">{label}</p>;
+}
 
 /** Spread on any element that draws a role: fill, text colour on the fill, and the role's pattern. */
 export const roleProps = (role: Role) => ({
@@ -47,12 +58,12 @@ export function Board({ stats, compact = false, strip = false, changes }: { stat
             <div className="gauge-head">
               <span className="gauge-label">{INDICATOR_LABEL[stat]}</span>
               <span className="gauge-value">
-                {value}
+                <AnimatedNumber value={value} />
                 {change ? <span className={`delta ${(z.worseWhen === 'tinggi') === change < 0 ? 'up' : 'down'}`}>{signed(change)}</span> : null}
               </span>
             </div>
             <div className="gauge-track" role="meter" aria-valuemin={0} aria-valuemax={10} aria-valuenow={value} aria-label={`${INDICATOR_LABEL[stat]} ${value} dari 10${zone !== 'aman' ? `, ${zone}` : ''}`}>
-              <div className="gauge-fill" style={{ width: `${value * 10}%` }} />
+              <m.div className="gauge-fill" initial={false} animate={{ width: `${value * 10}%` }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} />
               <div className={`gauge-danger ${z.worseWhen}`} style={z.worseWhen === 'tinggi' ? { left: `${(z.danger - 1) * 10}%` } : { width: `${z.danger * 10}%` }} />
             </div>
             {!compact && zone !== 'aman' && <span className="gauge-zone">{zone === 'kolaps' ? 'KOLAPS' : 'Bahaya'}</span>}
@@ -127,7 +138,7 @@ export function HoldButton({ label, onConfirm, disabled = false, ms = 1000 }: { 
 
 /** Steps a list forward on a timer, for the dramatic reveal; reduced motion shows everything at once. */
 export function useSequence(length: number, intervalMs: number, key: unknown): number {
-  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = useReducedMotion();
   const [shown, setShown] = useState(reduced ? length : 0);
   useEffect(() => {
     if (reduced) { setShown(length); return; }

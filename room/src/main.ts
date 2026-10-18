@@ -11,6 +11,7 @@ const { server, close } = await createRoomServer({
   publicDir: process.env.NODE_ENV === 'production' ? path.join(root, 'web', 'dist') : undefined,
   allowedOrigins: (process.env.CORS_ORIGIN ?? '').split(',').map(s => s.trim()).filter(Boolean),
   trustProxy: Number(process.env.TRUST_PROXY ?? 0),
+  rateLimitScale: Number(process.env.RATE_LIMIT_SCALE ?? 1),
   reports: {
     store: new FileReportStore(process.env.TELEMETRY_DIR ?? path.join(root, 'data', 'telemetry')),
     webhookUrl: process.env.TELEMETRY_WEBHOOK_URL || undefined,

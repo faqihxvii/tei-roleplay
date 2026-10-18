@@ -9,7 +9,8 @@ import { DebriefScreen } from './Debrief';
 import { QuizCount } from './Quiz';
 import { Portrait } from './art';
 import { Diorama } from './Diorama';
-import { RoleMark, roleProps, TeiLogo } from './shared';
+import { RoleMark, roleProps, StepAnnouncer, TeiLogo } from './shared';
+import { whereLabel } from './text';
 import { EdisiKhusus } from './EdisiKhusus';
 import { GuessScreen, TopBar, YearScreen } from './MainScreens';
 import { storage, useClockOffset, useRoomSocket } from './socket';
@@ -123,6 +124,7 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
     <main className="host">
       {status !== 'terhubung' && <p className="banner" role="status">Koneksi server putus. Menyambung ulang…</p>}
       {notice && <p className="banner warn" role="alert">{notice}</p>}
+      <StepAnnouncer label={whereLabel(view)} />
       {view.phase === 'gabung' && <Lobby view={view} send={send} />}
       {view.phase === 'briefing' && <Briefing view={view} send={send} />}
       {view.phase === 'tahun' && <YearScreen view={view} now={clock.now} send={send} />}
