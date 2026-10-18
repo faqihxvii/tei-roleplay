@@ -11,6 +11,7 @@ export const BUZZ = {
   jubir: [60, 40, 60],
   tawaran: [100, 50, 100],
   sah: [120],
+  selesai: [40, 30, 40],
 } as const;
 
 export function buzzFor(prev: PlayerView | null, next: PlayerView): readonly number[] | null {
@@ -28,6 +29,10 @@ export function buzzFor(prev: PlayerView | null, next: PlayerView): readonly num
   const lockedNow = next.teams.find(t => t.role === next.team!.role)?.locked;
   const lockedBefore = prev.teams.find(t => t.role === next.team!.role)?.locked;
   if (!newStep && lockedNow && !lockedBefore && !spokesperson) return BUZZ.sah;
+  // The same for "Tim kami selesai" in Rapat and Lobi.
+  const readyNow = next.teams.find(t => t.role === next.team!.role)?.ready;
+  const readyBefore = prev.teams.find(t => t.role === next.team!.role)?.ready;
+  if (!newStep && readyNow && !readyBefore && !lockedNow && !spokesperson) return BUZZ.selesai;
   if (next.phase !== prev.phase || next.step !== prev.step) return BUZZ.fase;
   return null;
 }

@@ -144,7 +144,8 @@ interface Common extends Clock {
   practice: boolean;
   /** Year 5 opens with Kepercayaan read out as an election poll (GDD, "Busur cerita lima tahun"). */
   pemilu: boolean;
-  teams: { role: Role; label: string; offline: boolean; locked: boolean; proposers: number; members: number; finalDone: boolean }[];
+  /** `ready`: done talking in Rapat or Lobi (said so, sealed, or played without phones). */
+  teams: { role: Role; label: string; offline: boolean; locked: boolean; ready: boolean; proposers: number; members: number; finalDone: boolean }[];
   pacts: PactView[];
   reveal: RevealView | null;
   frontPage: FrontPage | null;
@@ -383,6 +384,7 @@ function common(room: Room): Common {
       label: ROLE_LABEL[role],
       offline: s.offlineRoles.includes(role),
       locked: !!s.locked[role],
+      ready: room.isReady(role),
       proposers: room.members(role).filter(p => s.proposals[p.id]).length,
       members: room.members(role).length,
       finalDone: !!s.finals[role],

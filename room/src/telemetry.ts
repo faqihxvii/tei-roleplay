@@ -11,7 +11,8 @@ export interface StepTiming {
   /** 0 for the Year 0 practice. */
   year: number;
   step: string | null;
-  plannedMs: number;
+  /** Null for steps without a clock, which the facilitator moves on by hand. */
+  plannedMs: number | null;
   actualMs: number;
   pausedMs: number;
   addedMs: number;
@@ -43,7 +44,7 @@ export const emptyTelemetry = (): Telemetry => ({
   current: null, steps: [], pauses: 0, addTimes: 0, skips: 0, tempoChanges: 0, reconnects: 0, hostReconnects: 0, kicks: 0, errors: {}, clientErrors: [],
 });
 
-export function openTiming(t: Telemetry, info: { phase: TimedPhase; year: number; step: string | null; plannedMs: number }, now: number): void {
+export function openTiming(t: Telemetry, info: { phase: TimedPhase; year: number; step: string | null; plannedMs: number | null }, now: number): void {
   t.current = { ...info, startedAt: now, pausedAt: null, pausedMs: 0, addedMs: 0 };
 }
 

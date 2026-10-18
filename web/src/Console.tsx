@@ -37,7 +37,7 @@ export function ClockControls({ view, send }: { view: HostView; send: Send }) {
       {paused && <button className="btn primary" onClick={() => send({ t: 'resume-clock' })}>Lanjutkan</button>}
       {(running || paused) && <button className="btn" onClick={() => send({ t: 'addTime' })}>+30 detik</button>}
       {(view.phase === 'briefing' || view.phase === 'tahun' || view.phase === 'tebak') && (
-        <button className="btn" onClick={() => send({ t: 'next' })}>Lewati fase →</button>
+        <button className="btn" onClick={() => send({ t: 'next' })}>{running || paused ? 'Lewati fase →' : 'Lanjut →'}</button>
       )}
     </div>
   );
@@ -76,6 +76,7 @@ export function AvControls({ compact = false }: { compact?: boolean }) {
 
 export function Console({ view, send, onClose }: { view: HostView; send: Send; onClose: () => void }) {
   const [deciding, setDeciding] = useState<Role | null>(null);
+  const readyStep = view.phase === 'tahun' && (view.step === 'rapat' || view.step === 'lobi');
 
   return (
     <div className="console-overlay" role="dialog" aria-label="Konsol fasilitator">
@@ -110,7 +111,12 @@ export function Console({ view, send, onClose }: { view: HostView; send: Send; o
               {view.teams.map(team => (
                 <li key={team.role}>
                   <RoleName role={team.role} />
-                  <span className="muted small">{team.locked ? 'Sah' : team.offline ? 'Tanpa HP' : `${team.proposers}/${team.members} memilih`}</span>
+                  <span className="muted small">{team.locked ? 'Sah' : team.offline ? 'Tanpa HP' : `${team.proposers}/${team.members} memilih${readyStep && team.ready ? ' · selesai' : ''}`}</span>
+                  {readyStep && !team.locked && !team.offline && (
+                    <button className="btn" onClick={() => send({ t: 'hostReady', role: team.role, on: !team.ready })}>
+                      {team.ready ? 'Batal selesai' : 'Tandai selesai'}
+                    </button>
+                  )}
                   {!team.locked && (
                     <button className={`btn${team.offline ? ' primary' : ''}`} onClick={() => setDeciding(deciding === team.role ? null : team.role)}>
                       {deciding === team.role ? 'Batal' : team.offline ? 'Isi keputusan' : 'Ambil alih'}

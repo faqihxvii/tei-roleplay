@@ -303,8 +303,8 @@ function TaskHead({ view }: { view: PlayerView }) {
   const locked = !!view.decision?.locked;
   const task: Record<string, string> = {
     krisis: 'Baca krisisnya. Apa dampaknya bagi timmu?',
-    rapat: 'Pilih satu kartu dan atur tuas timmu. Suara terbanyak yang dipakai.',
-    lobi: jubir ? 'Kamu Juru Bicara: buat dan jawab pakta dengan tim lain.' : 'Bantu Juru Bicara bernegosiasi. Kamu masih bisa mengubah pilihan.',
+    rapat: jubir ? 'Pilih kartu dan tuas bersama tim. Kalau sudah sepakat, tekan Tim kami selesai.' : 'Pilih satu kartu dan atur tuas timmu. Suara terbanyak yang dipakai.',
+    lobi: jubir ? 'Kamu Juru Bicara: buat dan jawab pakta, lalu tekan Tim kami selesai.' : 'Bantu Juru Bicara bernegosiasi. Kamu masih bisa mengubah pilihan.',
     pengesahan: locked ? 'Keputusan timmu sudah sah.' : jubir ? 'Kamu Juru Bicara: tahan tombol SAH untuk mengesahkan keputusan tim.' : `Tunggu Juru Bicara (${view.team?.spokesperson ?? '-'}) mengesahkan.`,
     pengungkapan: 'Lihat layar utama: keputusan semua tim dibuka.',
     koran: 'Harian TEI terbit. Lihat layar utama.',
@@ -473,6 +473,7 @@ function DecideScreen({ view, send }: { view: PlayerView; send: Send }) {
 
   return (
     <section className="stack">
+      <ReadyBox view={view} send={send} />
       {view.step === 'lobi' && (
         <div className="tabs" role="tablist">
           <button role="tab" aria-selected={tab === 'keputusan'} className={tab === 'keputusan' ? 'on' : ''} onClick={() => setTab('keputusan')}>Keputusan</button>
@@ -498,6 +499,26 @@ function DecideScreen({ view, send }: { view: PlayerView; send: Send }) {
         </>
       )}
     </section>
+  );
+}
+
+/** Rapat and Lobi end early once every team's spokesperson says the team is done talking. */
+function ReadyBox({ view, send }: { view: PlayerView; send: Send }) {
+  if (view.step !== 'rapat' && view.step !== 'lobi') return null;
+  const mine = view.teams.find(t => t.role === view.me.role);
+  const done = view.teams.filter(t => t.ready).length;
+  const ready = !!mine?.ready;
+  const count = <strong>{done} dari {view.teams.length} tim selesai</strong>;
+  if (!view.me.isSpokesperson) {
+    return <p className="ready-line small" role="status">{ready ? 'Juru Bicara bilang timmu selesai. ' : ''}{count}</p>;
+  }
+  return (
+    <div className="ready-box" role="group" aria-label="Konfirmasi tim">
+      <p className="small" role="status">{ready ? 'Timmu sudah selesai. ' : 'Sudah sepakat? '}{count}. Fase lanjut begitu semua tim selesai.</p>
+      {ready
+        ? <button type="button" className="btn" onClick={() => send({ t: 'ready', on: false })}>Batal, masih diskusi</button>
+        : <button type="button" className="btn primary" onClick={() => send({ t: 'ready', on: true })}>Tim kami selesai</button>}
+    </div>
   );
 }
 

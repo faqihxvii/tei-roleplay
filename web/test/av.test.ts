@@ -7,7 +7,8 @@ import { neutralDecision, Room } from '../../room/src/room';
 import { hostView, playerView, type HostView } from '../../room/src/views';
 import { endExpression } from '../src/art';
 import { CUE_IDS, CUES } from '../src/audio/cues';
-import { cuesFor, musicFor, revealCue } from '../src/audio/derive';
+import { cuesFor, musicFor, revealCue, tickOffset } from '../src/audio/derive';
+import { createTick } from '../src/audio/tick';
 import { BUZZ, buzzFor } from '../src/haptics';
 
 const T0 = 1_000_000;
@@ -69,6 +70,36 @@ test('a year sounds like a newsroom: phase cues, one stamp per team, pacts, paus
   assert.deepEqual(rec.heard, ['fase.pengungkapan']);
 });
 
+test('the ticking clock follows the real clock: cut on pause, resumed in step, restarted after extra time', () => {
+  assert.equal(tickOffset(10_001), null);
+  assert.equal(tickOffset(10_000), 0);
+  assert.equal(tickOffset(4_000), 6);
+  assert.equal(tickOffset(0), null);
+  let t = 0;
+  const log: string[] = [];
+  const engine = { playFrom: (cue: string, at: number) => log.push(`play ${cue} @${at}`), stop: (cue: string) => log.push(`stop ${cue}`) };
+  const tick = createTick(() => engine, () => t);
+  tick.set(60_000);
+  t = 49_000; tick.poll();
+  assert.deepEqual(log, []);
+  t = 52_000; tick.poll(); tick.poll();
+  assert.deepEqual(log, ['play waktu.hampir @2'], 'one tick per clock, started part-way');
+  tick.set(null); // Jeda
+  assert.deepEqual(log.at(-1), 'stop waktu.hampir');
+  t = 90_000; tick.poll();
+  tick.set(t + 8_000); // Lanjutkan with eight seconds left
+  tick.poll();
+  assert.deepEqual(log.at(-1), 'play waktu.hampir @2');
+  tick.set(t + 38_000); // +30 detik
+  tick.poll();
+  assert.deepEqual(log.slice(-1), ['stop waktu.hampir'], 'extra time cuts the tick until the last ten seconds');
+  t += 30_000; tick.poll();
+  tick.set(null); // every team done: the step moves on
+  assert.deepEqual(log.slice(-2), ['play waktu.hampir @2', 'stop waktu.hampir']);
+  tick.set(null);
+  assert.equal(log.length, 6, 'nothing to stop twice');
+});
+
 test('the paced reveal plays cards, then causes by direction, then pacts, then the verdict', () => {
   const r = room();
   r.startBriefing(T0);
@@ -123,6 +154,7 @@ test('phones buzz on every phase change, with distinct patterns when the player 
     return out;
   };
   assert.deepEqual(advance(() => r.next(T0)), [BUZZ.giliran, BUZZ.giliran]); // rapat
+  assert.deepEqual(advance(() => r.setReady(spokes, true, T0)), [null, BUZZ.selesai]);
   assert.deepEqual(advance(() => r.next(T0)), [BUZZ.jubir, BUZZ.fase]); // lobi
   assert.deepEqual(advance(() => r.proposePact(jubir(r, 'pengusaha'), 'buruh', 'usahaTidakPhk', 'buruhTidakMogok', 'p1', T0)), [BUZZ.tawaran, null]);
   assert.deepEqual(advance(() => r.next(T0)), [BUZZ.jubir, BUZZ.fase]); // pengesahan
