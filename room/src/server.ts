@@ -244,10 +244,12 @@ export async function createRoomServer(options: RoomServerOptions) {
         case 'addTime': room.addTime(t); break;
         case 'tempo': room.setTempo(message.tempo, t); break;
         case 'hostDecide': room.hostDecide(message.role, message.decision, t); break;
+        case 'hostReady': room.hostReady(message.role, message.on, t); break;
         case 'hostFinal': room.hostFinal(message.role, message.vote, t); break;
         case 'debrief': room.setDebrief(message.patch, t); break;
         case 'propose': room.propose(playerId, message.decision, t); break;
         case 'lock': room.lock(playerId, message.decision, t); break;
+        case 'ready': room.setReady(playerId, message.on, t); break;
         case 'pactPropose': room.proposePact(playerId, message.to, message.fromTerm, message.toTerm, newId(), t); break;
         case 'pactRespond': room.respondPact(playerId, message.pactId, message.accept, t); break;
         case 'final': room.submitFinal(playerId, message.vote, t); break;

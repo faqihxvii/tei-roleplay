@@ -106,7 +106,7 @@ function sessionRow(r) {
 
 function timingRows(r) {
   return (r.timings || []).map(function (t) {
-    return [r.id, t.phase, t.year, t.step || '', seconds(t.plannedMs), seconds(t.actualMs), seconds(t.pausedMs), seconds(t.addedMs), t.endedBy];
+    return [r.id, t.phase, t.year, t.step || '', t.plannedMs === null || t.plannedMs === undefined ? '' : seconds(t.plannedMs), seconds(t.actualMs), seconds(t.pausedMs), seconds(t.addedMs), t.endedBy];
   });
 }
 

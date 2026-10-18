@@ -9,7 +9,7 @@ import { ROLES, type Role } from '../../engine/src/types';
 import { parseClientMessage } from '../src/protocol';
 import { sessionReport, type SessionReport } from '../src/report';
 import { FileReportStore } from '../src/reportStore';
-import { ADD_TIME_MS, BRIEFING_MS, neutralDecision, Room, RoomError, STEP_MS } from '../src/room';
+import { ADD_TIME_MS, neutralDecision, Room, RoomError, STEP_MS } from '../src/room';
 import { createRoomServer } from '../src/server';
 import { MemoryStore } from '../src/store';
 import { MAX_CLIENT_ERRORS } from '../src/telemetry';
@@ -37,15 +37,15 @@ function finish(r: Room, at: number): void {
 test('each phase records its planned and real length, pauses, added time and how it ended', () => {
   const r = room();
   r.startBriefing(T0);
-  r.next(T0 + 20_000); // the facilitator cuts the briefing short
-  // Krisis: paused for 10 s, 30 s added, then the clock runs out.
+  r.next(T0 + 20_000); // the facilitator moves the untimed briefing on
+  r.next(T0 + 24_000); // and the untimed krisis
+  // Rapat: paused for 10 s, 30 s added, then the clock runs out.
   r.pause(T0 + 25_000);
   r.resume(T0 + 35_000);
   r.addTime(T0 + 36_000);
   const ends = r.state.phaseEndsAt!;
   assert.equal(r.tick(ends), true);
-  // Rapat, lobi by the clock; pengesahan ends early when every team has locked.
-  r.tick(r.state.phaseEndsAt!);
+  // Lobi by the clock; pengesahan ends early when every team has locked.
   r.tick(r.state.phaseEndsAt!);
   const lockAt = r.state.phaseEndsAt! - 1000;
   for (const role of ROLES) r.lock(jubir(r, role), neutralDecision(role), lockAt);
@@ -53,20 +53,21 @@ test('each phase records its planned and real length, pauses, added time and how
   const steps = r.state.telemetry.steps;
   assert.deepEqual(steps.map(s => [s.phase, s.step, s.endedBy]), [
     ['briefing', null, 'fasilitator'],
-    ['tahun', 'krisis', 'waktu'],
+    ['tahun', 'krisis', 'fasilitator'],
     ['tahun', 'rapat', 'waktu'],
     ['tahun', 'lobi', 'waktu'],
     ['tahun', 'pengesahan', 'otomatis'],
   ]);
-  assert.equal(steps[0]!.plannedMs, BRIEFING_MS);
+  assert.equal(steps[0]!.plannedMs, null);
   assert.equal(steps[0]!.actualMs, 20_000);
-  assert.equal(steps[1]!.plannedMs, STEP_MS.krisis);
-  assert.equal(steps[1]!.pausedMs, 10_000);
-  assert.equal(steps[1]!.addedMs, ADD_TIME_MS);
-  assert.equal(steps[1]!.actualMs, STEP_MS.krisis + 10_000 + ADD_TIME_MS - 1000 + 1000);
-  assert.equal(steps[1]!.year, 1);
+  assert.equal(steps[1]!.plannedMs, null);
+  assert.equal(steps[2]!.plannedMs, STEP_MS.rapat);
+  assert.equal(steps[2]!.pausedMs, 10_000);
+  assert.equal(steps[2]!.addedMs, ADD_TIME_MS);
+  assert.equal(steps[2]!.actualMs, STEP_MS.rapat! + 10_000 + ADD_TIME_MS);
+  assert.equal(steps[2]!.year, 1);
   const t = r.state.telemetry;
-  assert.deepEqual([t.pauses, t.addTimes, t.skips], [1, 1, 1]);
+  assert.deepEqual([t.pauses, t.addTimes, t.skips], [1, 1, 2]);
   assert.equal(t.current?.step, 'pengungkapan');
 });
 

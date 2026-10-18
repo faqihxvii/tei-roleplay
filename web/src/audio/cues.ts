@@ -53,7 +53,7 @@ export const CUES: Record<CueId, CueSpec> = {
   'pakta.robek': { trigger: 'Pakta dilanggar', sound: 'Kertas dirobek dua', visual: 'Pakta bergaris merah dan bergetar', gain: 0.8 },
   bahaya: { trigger: 'Indikator masuk zona bahaya', sound: 'Peluit demo dari kejauhan', visual: 'Label Bahaya dan arsir merah di papan', gain: 0.7 },
   kolaps: { trigger: 'Negara kolaps', sound: 'Kerumunan meledak, peluit panjang, toa', visual: 'Spanduk merah "Negara kolaps"', gain: 1, duck: true },
-  'waktu.hampir': { trigger: '10 detik terakhir sebuah fase', sound: 'Jam meja berdetak 10 detik', visual: 'Timer berubah merah', gain: 0.5 },
+  'waktu.hampir': { trigger: '10 detik terakhir fase berwaktu; berhenti saat jeda, dilanjutkan sesuai sisa waktu', sound: 'Jam meja berdetak 10 detik', visual: 'Timer berubah merah', gain: 0.5 },
   jeda: { trigger: 'Fasilitator menjeda', sound: 'Peluit wasit pendek', visual: 'Timer bertuliskan Jeda', gain: 0.6, duck: true },
   lanjut: { trigger: 'Fasilitator melanjutkan', sound: 'Peluit wasit dua kali', visual: 'Timer berjalan lagi', gain: 0.6 },
   tebak: { trigger: 'Fase tebak agenda', sound: 'Laci arsip dibuka, map dibalik-balik', visual: 'Layar tebak agenda', gain: 0.7 },

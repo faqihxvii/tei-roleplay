@@ -62,7 +62,7 @@ function CardOption({ card, checked, onChange, disabled, count }: { card: CardVi
         )}
         {card && card.delayed.length > 0 && (
           <span className="effects later">
-            <span className="later-label">Tahun depan:</span>
+            <span className="font-semibold">Tahun depan:</span>
             {card.delayed.map(e => <span key={e.stat} className={`effect ${e.good ? 'up' : 'down'}`}>{e.label} {e.arrows}</span>)}
           </span>
         )}
@@ -85,8 +85,8 @@ export function DecisionForm({ ctx, value, onChange, disabled = false, showVotes
   const set = (patch: Partial<Decision>) => onChange({ ...value, ...patch } as Decision);
 
   return (
-    <div className="decision-form">
-      <fieldset className="cards" disabled={disabled}>
+    <div className="flex flex-col gap-5">
+      <fieldset className="flex flex-col gap-2" disabled={disabled}>
         <legend>Kartu kebijakan</legend>
         {ctx.hand.map(card => (
           <CardOption key={card.id} card={card} checked={value.cardId === card.id} onChange={() => set({ cardId: card.id })} disabled={disabled} count={votes(tally, 'cardId', card.id)} />
@@ -125,7 +125,7 @@ export function DecisionForm({ ctx, value, onChange, disabled = false, showVotes
           <Choice legend="Kekuatan: Mogok" field="mogok" value={value.mogok} tally={tally} disabled={disabled}
             options={[{ value: false, label: 'Tidak mogok' }, { value: true, label: 'Mogok', disabled: !ctx.canMogok, hint: ctx.canMogok ? undefined : 'Butuh Solidaritas ≥ 2' }]}
             onChange={mogok => set({ mogok })} />
-          {!ctx.canMogok && <p className="muted small">Mogok butuh Solidaritas minimal 2.</p>}
+          {!ctx.canMogok && <p className="text-muted text-xs">Mogok butuh Solidaritas minimal 2.</p>}
         </>
       )}
 
@@ -135,7 +135,7 @@ export function DecisionForm({ ctx, value, onChange, disabled = false, showVotes
             options={[{ value: 'hemat', label: 'Hemat' }, { value: 'biasa', label: 'Biasa' }, { value: 'belanja', label: 'Belanja', disabled: !ctx.canBelanja, hint: ctx.canBelanja ? undefined : 'Butuh Tabungan ≥ 1' }]}
             onChange={konsumsi => set({ konsumsi })} />
           <label className="field compact">
-            <span>Kekuatan: Suara Publik <small className="muted">(efek Kepercayaan kartu tim itu jadi dua kali lipat)</small></span>
+            <span>Kekuatan: Suara Publik <small className="text-muted">(efek Kepercayaan kartu tim itu jadi dua kali lipat)</small></span>
             <select value={value.viral ?? ''} disabled={disabled} onChange={e => set({ viral: (e.target.value || null) as Role | null })}>
               <option value="">Tidak memviralkan siapa pun</option>
               {ctx.viralTargets.map(role => <option key={role} value={role}>Viralkan {ROLE_LABEL[role]}{votes(tally, 'viral', role) ? ` (${votes(tally, 'viral', role)} suara)` : ''}</option>)}

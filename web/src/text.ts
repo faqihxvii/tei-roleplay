@@ -38,8 +38,8 @@ export const STEP_LABEL: Record<YearStep, string> = {
 /** One sentence on what teams should do now, always on the main screen (GDD, "Onboarding"). */
 export const STEP_HINT: Record<YearStep, string> = {
   krisis: 'Baca krisis tahun ini. Apa dampaknya bagi timmu?',
-  rapat: 'Diskusikan di dalam tim. Setiap anggota memilih di HP-nya.',
-  lobi: 'Datangi tim lain. Buat pakta lewat HP Juru Bicara.',
+  rapat: 'Diskusikan di dalam tim. Setiap anggota memilih di HP-nya. Juru Bicara menekan Tim kami selesai bila sudah sepakat.',
+  lobi: 'Datangi tim lain. Buat pakta lewat HP Juru Bicara, lalu tekan Tim kami selesai.',
   pengesahan: 'Juru Bicara menahan tombol SAH untuk mengunci keputusan tim.',
   pengungkapan: 'Semua keputusan dibuka. Lihat siapa menyebabkan apa.',
   koran: 'Harian TEI melaporkan tahun ini.',

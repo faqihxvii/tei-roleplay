@@ -70,6 +70,18 @@ export function enteredDanger(before: PublicStats, after: PublicStats): boolean 
   return INDICATORS.some(stat => zoneOf(stat, before[stat]) === 'aman' && zoneOf(stat, after[stat]) !== 'aman');
 }
 
+/** Length of the ticking-clock recording: it covers the last ten seconds of a timed step. */
+export const TICK_SECONDS = 10;
+
+/**
+ * Where to start the ticking clock for the time left, in seconds into the recording, or null outside
+ * the last ten seconds. Starting part-way keeps it in step with the clock after a resume or extra time.
+ */
+export function tickOffset(msLeft: number): number | null {
+  if (msLeft <= 0 || msLeft > TICK_SECONDS * 1000) return null;
+  return Math.max(0, TICK_SECONDS - msLeft / 1000);
+}
+
 /** Which loop plays, and whether it sits under the action. Silence for the debrief discussion. */
 export function musicFor(view: HostView): { mood: Mood | null; duck: boolean } {
   const paused = view.pausedMs !== null;

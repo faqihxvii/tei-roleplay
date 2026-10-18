@@ -8,12 +8,12 @@ import { INDICATOR_LABEL, INDICATOR_ORDER } from './text';
 
 export function EdisiKhusus({ view }: { view: HostView }) {
   const history = view.history ?? [];
-  if (!view.results) return <main className="host center">Edisi Khusus tersedia setelah permainan selesai.</main>;
+  if (!view.results) return <main className="host flex flex-col items-center justify-center gap-4 text-center">Edisi Khusus tersedia setelah permainan selesai.</main>;
   return (
     <main className="edisi">
-      <div className="no-print row">
+      <div className="no-print flex flex-wrap items-center gap-2">
         <button className="btn primary" onClick={() => print()}>Cetak atau simpan PDF</button>
-        <span className="muted small">Pilih "Simpan sebagai PDF" di jendela cetak.</span>
+        <span className="text-muted text-xs">Pilih "Simpan sebagai PDF" di jendela cetak.</span>
       </div>
       <header className="fp-mast edisi-mast">
         <TeiLogo />
@@ -37,7 +37,7 @@ export function EdisiKhusus({ view }: { view: HostView }) {
           <div className="fp-body">
             <section>
               <h3>Keputusan tim</h3>
-              <ul className="edisi-decisions">
+              <ul className="mb-3 flex flex-col gap-1.5 text-xs">
                 {year.decisions.map(d => (
                   <li key={d.role}><RoleName role={d.role} /> {d.lines.join(' · ')}{d.cancelled ? ' (kartu dibatalkan)' : ''}</li>
                 ))}
@@ -45,7 +45,7 @@ export function EdisiKhusus({ view }: { view: HostView }) {
               {year.pacts.length > 0 && (
                 <>
                   <h3>Pakta</h3>
-                  <ul className="edisi-decisions">
+                  <ul className="mb-3 flex flex-col gap-1.5 text-xs">
                     {year.pacts.map((p, i) => (
                       <li key={i}>{p.fromText} ({p.keptFrom ? 'ditepati' : 'dilanggar'}) ⇄ {p.toText} ({p.keptTo ? 'ditepati' : 'dilanggar'})</li>
                     ))}
@@ -61,7 +61,7 @@ export function EdisiKhusus({ view }: { view: HostView }) {
             </section>
             <aside>
               <h3>Akhir tahun</h3>
-              <table className="edisi-stats">
+              <table className="data-table small mb-3">
                 <tbody>
                   {INDICATOR_ORDER.map(stat => <tr key={stat}><th scope="row">{INDICATOR_LABEL[stat]}</th><td>{year.stats[stat]}</td></tr>)}
                   <tr><th scope="row">Suku bunga</th><td>{year.stats.bunga}</td></tr>

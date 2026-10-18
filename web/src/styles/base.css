@@ -1,0 +1,41 @@
+/* Element defaults on top of Tailwind's preflight. Type sizes and colours come from the theme. */
+@layer base {
+  :root {
+    color-scheme: light;
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background: var(--color-bg);
+    caret-color: var(--color-brand);
+    accent-color: var(--color-brand);
+    scrollbar-color: var(--color-line) transparent;
+  }
+  body {
+    background: var(--color-bg);
+    font-size: var(--text-sm);
+    line-height: var(--leading-body);
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Headings: black weight and display tracking, as on economic.co.id. Sizes are set where used. */
+  h1, h2, h3 {
+    font-weight: var(--font-weight-black);
+    letter-spacing: var(--tracking-display);
+    line-height: var(--leading-snug);
+    text-wrap: balance;
+  }
+  h1 { font-size: var(--text-display-md); line-height: var(--leading-display); }
+  h2 { font-size: var(--text-lg); }
+  h3 { font-size: var(--text-md); }
+  strong, b { font-weight: var(--font-weight-bold); }
+  a { color: inherit; text-decoration: underline; text-underline-offset: var(--spacing-1); text-decoration-thickness: 1px; }
+  a:hover { color: var(--color-brand-strong); }
+  :focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  ::selection { background: var(--color-highlight); color: var(--color-on-highlight); }
+  ::placeholder { color: var(--color-placeholder); }
+  ol.list, ul.list { padding-left: var(--spacing-5); list-style: revert; }
+  kbd { font: inherit; font-size: var(--text-2xs); padding: 0 var(--spacing-1_5); border: 1px solid currentColor; border-radius: var(--radius-control); }
+  summary { cursor: pointer; font-weight: var(--font-weight-bold); min-height: var(--spacing-8); }
+  fieldset { min-width: 0; }
+  legend { font-weight: var(--font-weight-bold); margin-bottom: var(--spacing-2); }
+  table { width: 100%; border-collapse: collapse; }
+  [hidden] { display: none !important; }
+}

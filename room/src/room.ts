@@ -17,9 +17,7 @@ import { buildFrontPage, type FrontPage } from './koran';
 
 export const MAX_PLAYERS = 40;
 export const NICKNAME_MAX = 16;
-export const BRIEFING_MS = 90_000;
 export const ADD_TIME_MS = 30_000;
-export const GUESS_MS = 120_000;
 export const MAX_PACTS_PER_TEAM = 3;
 
 export type RoomPhase = 'gabung' | 'briefing' | 'tahun' | 'tebak' | 'selesai';
@@ -27,13 +25,15 @@ export type YearStep = 'krisis' | 'rapat' | 'lobi' | 'pengesahan' | 'pengungkapa
 export type AssignMode = 'acak' | 'seimbang';
 export type Tempo = 'normal' | 'santai';
 
-/** One year is about 6.5 minutes (GDD, "Struktur sesi & core loop"). */
 export const STEP_ORDER: YearStep[] = ['krisis', 'rapat', 'lobi', 'pengesahan', 'pengungkapan', 'koran'];
-export const STEP_MS: Record<YearStep, number> = { krisis: 45_000, rapat: 75_000, lobi: 120_000, pengesahan: 45_000, pengungkapan: 60_000, koran: 45_000 };
+/** Only the three talking steps run on a clock; the facilitator moves the story steps on by hand. */
+export const STEP_MS: Partial<Record<YearStep, number>> = { rapat: 75_000, lobi: 120_000, pengesahan: 45_000 };
 /** Santai gives classes that read slowly 50% more time (GDD, "Waktu dan gerak"). */
 export const TEMPO_FACTOR: Record<Tempo, number> = { normal: 1, santai: 1.5 };
-/** Year 0 practice: the same six steps squeezed into three minutes (GDD, "Onboarding"). */
-export const PRACTICE_MS: Record<YearStep, number> = { krisis: 20_000, rapat: 45_000, lobi: 40_000, pengesahan: 25_000, pengungkapan: 35_000, koran: 15_000 };
+/** Year 0 practice: the same talking steps on shorter clocks (GDD, "Onboarding"). */
+export const PRACTICE_MS: Partial<Record<YearStep, number>> = { rapat: 45_000, lobi: 40_000, pengesahan: 25_000 };
+/** Steps that end early once every team's spokesperson says the team is done. */
+export const READY_STEPS: YearStep[] = ['rapat', 'lobi'];
 /** Steps in which members may still change their proposal. */
 export const DECIDING_STEPS: YearStep[] = ['rapat', 'lobi', 'pengesahan'];
 
@@ -131,6 +131,8 @@ export interface RoomSnapshot {
   seq: number;
   proposals: Record<string, Proposal>;
   locked: Partial<Record<Role, { decision: Decision; source: LockSource }>>;
+  /** Teams whose spokesperson (or the facilitator) said they are done talking in this step. */
+  ready: Partial<Record<Role, true>>;
   pacts: PactRecord[];
   years: YearRecord[];
   finals: Partial<Record<Role, FinalVote>>;
@@ -227,6 +229,7 @@ export class Room {
       seq: 0,
       proposals: {},
       locked: {},
+      ready: {},
       pacts: [],
       years: [],
       finals: {},
@@ -247,7 +250,7 @@ export class Room {
     // Snapshots from the join-flow release predate the year loop: fill in what they lack.
     const legacyPhase: string = snapshot.phase;
     const defaults: Partial<RoomSnapshot> = {
-      step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, pacts: [], years: [], finals: {}, results: null, debrief: null, practice: null, quiz: {}, quizPostOpen: false, usedVariants: [], telemetry: emptyTelemetry(), survey: {}, surveyOpen: false,
+      step: null, tempo: 'normal', pausedMs: null, seq: 0, proposals: {}, locked: {}, ready: {}, pacts: [], years: [], finals: {}, results: null, debrief: null, practice: null, quiz: {}, quizPostOpen: false, usedVariants: [], telemetry: emptyTelemetry(), survey: {}, surveyOpen: false,
     };
     const s: RoomSnapshot = {
       ...defaults,
@@ -371,7 +374,7 @@ export class Room {
     this.markEmptyTeamsOffline();
     this.s.game = createGame({ seed: this.s.seed, oknum: this.s.options.oknum });
     this.s.phase = 'briefing';
-    this.setTimer(BRIEFING_MS, now);
+    this.setTimer(null, now);
     this.touch(now);
   }
 
@@ -442,7 +445,7 @@ export class Room {
           } else if (s.game!.ended) {
             s.phase = 'tebak';
             s.step = null;
-            this.setTimer(GUESS_MS, now);
+            this.setTimer(null, now);
           } else {
             this.enterStep('krisis', now);
           }
@@ -498,14 +501,16 @@ export class Room {
       this.s.proposals = {};
       this.s.locked = {};
     }
-    this.setTimer((this.s.practice ? PRACTICE_MS : STEP_MS)[step], now);
+    this.s.ready = {};
+    this.setTimer((this.s.practice ? PRACTICE_MS : STEP_MS)[step] ?? null, now);
   }
 
-  private setTimer(ms: number, now: number): void {
+  /** Starts the clock for a new phase or step; null leaves it untimed, waiting for the facilitator. */
+  private setTimer(ms: number | null, now: number): void {
     const s = this.s;
-    const plannedMs = Math.round(ms * TEMPO_FACTOR[s.tempo]);
+    const plannedMs = ms === null ? null : Math.round(ms * TEMPO_FACTOR[s.tempo]);
     s.pausedMs = null;
-    s.phaseEndsAt = now + plannedMs;
+    s.phaseEndsAt = plannedMs === null ? null : now + plannedMs;
     closeTiming(s.telemetry, 'fasilitator', now); // only if a caller forgot; normally already closed
     const phase = s.phase as 'briefing' | 'tahun' | 'tebak';
     openTiming(s.telemetry, { phase, year: phase === 'briefing' || s.practice ? 0 : this.year, step: s.step, plannedMs }, now);
@@ -552,7 +557,38 @@ export class Room {
     if (!this.validDecision(role, decision)) throw new RoomError('keputusan-salah');
     this.s.locked[role] = { decision, source };
     this.touch(now);
-    if (this.s.step === 'pengesahan' && ROLES.every(r => this.s.locked[r])) {
+    const allDone = this.s.step === 'pengesahan' ? ROLES.every(r => this.s.locked[r]) : ROLES.every(r => this.isReady(r));
+    if (allDone) {
+      this.next(now, 'otomatis');
+      return true;
+    }
+    return false;
+  }
+
+  /** The spokesperson says the team is done talking (or takes it back); returns true when that moved the step on. */
+  setReady(playerId: string, on: boolean, now: number): boolean {
+    const role = this.requireDeciding(playerId);
+    if (!READY_STEPS.includes(this.s.step!)) throw new RoomError('fase-salah');
+    if (this.spokesperson(role)?.id !== playerId) throw new RoomError('bukan-jubir');
+    return this.markReady(role, on, now);
+  }
+
+  /** The facilitator marks a team done, for example when its spokesperson's phone died. */
+  hostReady(role: Role, on: boolean, now: number): boolean {
+    if (this.s.phase !== 'tahun' || !this.s.step || !READY_STEPS.includes(this.s.step)) throw new RoomError('fase-salah');
+    return this.markReady(role, on, now);
+  }
+
+  /** A team counts as done when it said so, when its decision is already sealed, or when nobody plays it on a phone. */
+  isReady(role: Role): boolean {
+    return !!this.s.ready[role] || !!this.s.locked[role] || this.s.offlineRoles.includes(role);
+  }
+
+  private markReady(role: Role, on: boolean, now: number): boolean {
+    if (on) this.s.ready[role] = true;
+    else delete this.s.ready[role];
+    this.touch(now);
+    if (on && ROLES.every(r => this.isReady(r))) {
       this.next(now, 'otomatis');
       return true;
     }

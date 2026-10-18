@@ -48,7 +48,12 @@ for (const [i, p] of Object.values(phones).entries()) {
 }
 await host.getByText('dari 4 pemain selesai').waitFor();
 await host.getByRole('button', { name: 'Bagi seimbang' }).click();
+await shot(host, 'lobi.png', true);
 await host.getByRole('button', { name: 'Mulai briefing peran' }).click();
+await host.getByRole('button', { name: 'Mulai Tahun 0 (latihan)' }).waitFor();
+if (await host.locator('.timer').count()) errors.push('briefing masih berwaktu');
+await shot(host, 'briefing.png', true);
+await shot(Object.values(phones)[0], 'phone-briefing.png', true);
 await host.getByRole('button', { name: 'Mulai Tahun 0 (latihan)' }).click();
 await host.locator('.practice-tag').waitFor();
 
@@ -56,15 +61,19 @@ await host.locator('.practice-tag').waitFor();
 const roleOf = {};
 for (const p of Object.values(phones)) roleOf[(await p.textContent('.phone-head strong')).trim()] = p;
 console.log('teams', Object.keys(roleOf));
+// Moves on from the console: "Lewati fase" on a running clock, "Lanjut" on a step without one.
 const next = async () => {
   await host.keyboard.press('k');
-  await host.getByRole('button', { name: 'Lewati fase →' }).click();
+  await host.getByRole('dialog').getByRole('button', { name: /^(Lewati fase|Lanjut) →$/ }).click();
   await host.keyboard.press('k');
+  await host.getByRole('dialog').waitFor({ state: 'detached' });
 };
 
-// Year 0: a guided practice on a throwaway country.
+// Year 0: a guided practice on a throwaway country. Krisis has no clock: the main screen offers "Lanjut".
 await shot(host, 'y0-krisis.png');
-await next(); // rapat
+if (await host.locator('.topbar .timer').count()) errors.push('krisis masih berwaktu');
+await host.locator('.topbar').getByRole('button', { name: 'Lanjut →' }).click(); // rapat
+await host.locator('.topbar .timer').waitFor();
 await roleOf['Pemerintah'].locator('.coach').waitFor();
 await roleOf['Pemerintah'].locator('.policy:not(.off)').first().click();
 await shot(roleOf['Pemerintah'], 'y0-phone-rapat.png', true);
@@ -91,17 +100,28 @@ await shot(roleOf['Pemerintah'], 'y1-phone-rapat.png', true);
 // The bottom tabs: the team's own cards and the country, then back to the task.
 {
   const p = roleOf['Pemerintah'];
-  await p.getByRole('navigation', { name: 'Bagian layar' }).getByRole('button', { name: 'Timku' }).click();
+  await p.getByRole('tab', { name: 'Timku' }).click();
   await p.locator('.agenda').waitFor();
   await shot(p, 'y1-phone-timku.png', true);
-  await p.getByRole('navigation', { name: 'Bagian layar' }).getByRole('button', { name: 'Negara' }).click();
+  await p.getByRole('tab', { name: 'Negara' }).click();
   await p.locator('.board').waitFor();
   await shot(p, 'y1-phone-negara.png', true);
-  await p.getByRole('navigation', { name: 'Bagian layar' }).getByRole('button', { name: 'Sekarang' }).click();
+  await p.getByRole('tab', { name: 'Sekarang' }).click();
   await p.locator('.policy').first().waitFor();
 }
 await shot(host, 'y1-rapat.png');
-await next(); // lobi
+// Every Juru Bicara says the team is done (the fifth team has no phone and counts as done): Rapat
+// ends without waiting for its clock.
+const phonesList = Object.values(roleOf);
+for (const [i, p] of phonesList.entries()) {
+  await p.getByRole('button', { name: 'Tim kami selesai' }).click();
+  if (i === 0) {
+    await p.getByRole('button', { name: 'Batal, masih diskusi' }).waitFor();
+    await shot(p, 'y1-phone-selesai.png', true);
+    await shot(host, 'y1-rapat-selesai.png');
+  }
+}
+await host.locator('.chapter-lobi').waitFor({ timeout: 5000 });
 const usaha = roleOf['Pengusaha'], buruh = roleOf['Serikat Buruh'];
 await usaha.getByRole('tab', { name: 'Pakta' }).click();
 await usaha.getByLabel('Dengan tim').selectOption('buruh');

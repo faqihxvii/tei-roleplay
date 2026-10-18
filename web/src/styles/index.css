@@ -1,0 +1,17 @@
+/*
+ * Stylesheet entry. Tailwind v4 without its default theme: preflight and the utility engine only,
+ * fed by the closed TEI theme in tokens.css. Cascade order, lowest first:
+ *   theme      tokens.css       design tokens as CSS variables
+ *   base       preflight, then base.css: element defaults (type, links, focus, selection)
+ *   components components.css   the TEI parts: buttons, cards, the topbar, the paper…
+ *   utilities  Tailwind classes in the JSX, for layout and spacing between parts
+ * Utilities win over components, so a component can always be placed and spaced in the JSX.
+ */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/preflight.css' layer(base);
+@import 'tailwindcss/utilities.css' layer(utilities);
+@import './tokens.css';
+@import './base.css';
+@import './components.css';
+
+@source '../';

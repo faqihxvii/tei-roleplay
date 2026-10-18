@@ -26,11 +26,13 @@ export type ClientMessage =
   | { t: 'addTime' }
   | { t: 'tempo'; tempo: Tempo }
   | { t: 'hostDecide'; role: Role; decision: Decision }
+  | { t: 'hostReady'; role: Role; on: boolean }
   | { t: 'hostFinal'; role: Role; vote: FinalVote }
   | { t: 'debrief'; patch: Partial<DebriefState> }
   // players
   | { t: 'propose'; decision: Decision }
   | { t: 'lock'; decision: Decision }
+  | { t: 'ready'; on: boolean }
   | { t: 'pactPropose'; to: Role; fromTerm: PactTermId; toTerm: PactTermId }
   | { t: 'pactRespond'; pactId: string; accept: boolean }
   | { t: 'final'; vote: FinalVote }
@@ -48,9 +50,9 @@ export type ServerMessage =
   | { t: 'kicked' };
 
 export const HOST_ONLY = new Set<ClientMessage['t']>([
-  'assign', 'move', 'kick', 'startBriefing', 'next', 'begin', 'endPractice', 'pause', 'resume-clock', 'addTime', 'tempo', 'hostDecide', 'hostFinal', 'debrief',
+  'assign', 'move', 'kick', 'startBriefing', 'next', 'begin', 'endPractice', 'pause', 'resume-clock', 'addTime', 'tempo', 'hostDecide', 'hostReady', 'hostFinal', 'debrief',
 ]);
-export const PLAYER_ONLY = new Set<ClientMessage['t']>(['propose', 'lock', 'pactPropose', 'pactRespond', 'final', 'quiz', 'survey']);
+export const PLAYER_ONLY = new Set<ClientMessage['t']>(['propose', 'lock', 'ready', 'pactPropose', 'pactRespond', 'final', 'quiz', 'survey']);
 
 const CODE_RE = /^[A-Z]{4}$/;
 const TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;
@@ -162,6 +164,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       const decision = parseDecision(m.decision);
       return isRole(m.role) && decision ? { t: 'hostDecide', role: m.role, decision } : null;
     }
+    case 'hostReady':
+      return isRole(m.role) && typeof m.on === 'boolean' ? { t: 'hostReady', role: m.role, on: m.on } : null;
+    case 'ready':
+      return typeof m.on === 'boolean' ? { t: 'ready', on: m.on } : null;
     case 'hostFinal': {
       const vote = parseFinal(m.vote);
       return isRole(m.role) && vote ? { t: 'hostFinal', role: m.role, vote } : null;

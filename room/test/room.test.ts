@@ -3,7 +3,7 @@ import test from 'node:test';
 import { canPlay } from '../../engine/src/game';
 import { ROLES, type Decision, type Role } from '../../engine/src/types';
 import { parseClientMessage } from '../src/protocol';
-import { BRIEFING_MS, cleanNickname, GUESS_MS, MAX_PLAYERS, neutralDecision, Room, RoomError, STEP_MS } from '../src/room';
+import { cleanNickname, MAX_PLAYERS, neutralDecision, Room, RoomError, STEP_MS } from '../src/room';
 import { hostView, playerView } from '../src/views';
 
 const T0 = 1_000_000;
@@ -70,7 +70,7 @@ test('starting the briefing seats everyone and hands empty teams to the facilita
   assert.equal(view.phase, 'briefing');
   assert.ok(view.players.every(p => p.role));
   assert.deepEqual(view.offlineRoles, ['buruh', 'masyarakat']);
-  assert.equal(view.phaseEndsAt, T0 + BRIEFING_MS);
+  assert.equal(view.phaseEndsAt, null); // the facilitator moves the briefing on
 });
 
 test('the host screen never receives agendas, hands or private resources', () => {
@@ -113,22 +113,56 @@ test('a player resumes by token, and a kicked player cannot', () => {
   assert.equal(room.playerByToken(player.token), undefined);
 });
 
-test('timers run each step in order, and Santai stretches them by half', () => {
+test('only Rapat, Lobi and Pengesahan run on a clock, and Santai stretches them by half', () => {
   const room = roomWith(['A']);
   room.setTempo('santai', T0);
   room.startBriefing(T0);
-  assert.equal(room.state.phaseEndsAt, T0 + BRIEFING_MS * 1.5);
-  let t = T0 + BRIEFING_MS * 1.5;
-  assert.equal(room.tick(t), true);
-  const seen: string[] = [];
+  assert.equal(room.state.phaseEndsAt, null);
+  assert.equal(room.tick(T0 + 60 * 60_000), false);
+  let t = T0;
+  room.next(t);
+  const clocks: [string, number | null][] = [];
   for (let i = 0; i < 6; i++) {
-    seen.push(room.step!);
-    t = room.state.phaseEndsAt!;
-    room.tick(t);
+    const endsAt = room.state.phaseEndsAt;
+    clocks.push([room.step!, endsAt === null ? null : endsAt - t]);
+    if (endsAt === null) room.next(t);
+    else room.tick((t = endsAt));
   }
-  assert.deepEqual(seen, ['krisis', 'rapat', 'lobi', 'pengesahan', 'pengungkapan', 'koran']);
+  assert.deepEqual(clocks, [
+    ['krisis', null], ['rapat', STEP_MS.rapat! * 1.5], ['lobi', STEP_MS.lobi! * 1.5],
+    ['pengesahan', STEP_MS.pengesahan! * 1.5], ['pengungkapan', null], ['koran', null],
+  ]);
   assert.equal(room.step, 'krisis');
   assert.equal(room.year, 2);
+});
+
+test('every spokesperson saying done ends Rapat and Lobi early; offline and sealed teams count as done', () => {
+  const room = inRapat();
+  const member = room.members('buruh').find(p => p.id !== spokesperson(room, 'buruh'))!;
+  assert.throws(() => room.setReady(member.id, true, T0), (e: RoomError) => e.code === 'bukan-jubir');
+  assert.equal(room.setReady(spokesperson(room, 'buruh'), true, T0), false);
+  assert.equal(hostView(room).teams.find(t => t.role === 'buruh')!.ready, true);
+  assert.equal(room.setReady(spokesperson(room, 'buruh'), false, T0), false);
+  assert.equal(hostView(room).teams.find(t => t.role === 'buruh')!.ready, false);
+  room.hostDecide('pemerintah', neutralDecision('pemerintah'), T0); // sealed early: counts as done
+  for (const role of ['bankSentral', 'pengusaha', 'buruh'] as const) assert.equal(room.setReady(spokesperson(room, role), true, T0), false);
+  assert.equal(room.hostReady('masyarakat', true, T0), true);
+  assert.equal(room.step, 'lobi');
+  assert.ok(hostView(room).teams.every(t => t.ready === !!room.state.locked[t.role]), 'the flags reset in the next step');
+  for (const role of ['bankSentral', 'pengusaha', 'buruh', 'masyarakat'] as const) room.setReady(spokesperson(room, role), true, T0);
+  assert.equal(room.step, 'pengesahan');
+  assert.throws(() => room.setReady(spokesperson(room, 'buruh'), true, T0), (e: RoomError) => e.code === 'fase-salah');
+  assert.throws(() => room.hostReady('buruh', true, T0), (e: RoomError) => e.code === 'fase-salah');
+
+  const small = roomWith(['A', 'B']);
+  small.assign('seimbang', 1, T0);
+  small.startBriefing(T0);
+  small.next(T0);
+  small.next(T0); // rapat, with three teams played by the facilitator
+  const seated = ROLES.filter(r => small.members(r).length);
+  small.setReady(spokesperson(small, seated[0]!), true, T0);
+  assert.equal(small.setReady(spokesperson(small, seated[1]!), true, T0), true);
+  assert.equal(small.step, 'lobi');
 });
 
 test('pausing freezes the clock and extra time is kept while paused', () => {
@@ -224,7 +258,7 @@ test('a full game ends in guesses, then scores with the engine', () => {
   playOut(room);
   assert.equal(room.phase, 'tebak');
   assert.equal(room.state.years.length, room.state.game!.log.length);
-  assert.equal(room.state.phaseEndsAt, T0 + GUESS_MS);
+  assert.equal(room.state.phaseEndsAt, null); // guessing ends when every team is in, or on the facilitator
   const game = room.state.game!;
   const oknum = ROLES.find(r => game.agendas[r] === 'oknum')!;
   // Everyone except the Oknum names it; each guesses one agenda right.
@@ -276,8 +310,8 @@ test('only well-formed client messages get through', () => {
   assert.equal(parseClientMessage(JSON.stringify({ t: 'pactPropose', to: 'buruh', fromTerm: 'nope', toTerm: 'buruhTidakMogok' })), null);
 });
 
-test('step durations add up to about six and a half minutes', () => {
-  assert.equal(Object.values(STEP_MS).reduce((a, b) => a + b), 390_000);
+test('the talking steps add up to four minutes', () => {
+  assert.equal(Object.values(STEP_MS).reduce((a, b) => a! + b!), 240_000);
 });
 
 test('a snapshot from the join-flow release still restores', () => {
@@ -356,9 +390,9 @@ test('every crisis card has a sourced Di Dunia Nyata note', async () => {
   }
 });
 
-test('Year 0 practice lasts three minutes', async () => {
+test('Year 0 practice gives the talking steps under two minutes', async () => {
   const { PRACTICE_MS } = await import('../src/room');
-  assert.equal(Object.values(PRACTICE_MS).reduce((a, b) => a + b), 180_000);
+  assert.equal(Object.values(PRACTICE_MS).reduce((a, b) => a! + b!), 110_000);
 });
 
 /** Ten players briefed, with the practice option on. */
@@ -372,14 +406,15 @@ function briefedWithPractice(): Room {
 test('Year 0 runs on a throwaway country and leaves the real game untouched', () => {
   const room = briefedWithPractice();
   const real = structuredClone(room.state.game!);
-  room.next(T0); // briefing timer or button: practice is on
+  room.next(T0); // the facilitator's button: practice is on
   assert.equal(room.inPractice, true);
   assert.equal(hostView(room).year, 0);
   assert.equal(hostView(room).practice, true);
   assert.equal(hostView(room).crisis!.title, 'Gosip Harga Naik Beredar di Grup Keluarga');
-  assert.equal(room.state.phaseEndsAt, T0 + 20_000);
+  assert.equal(room.state.phaseEndsAt, null); // the practice crisis waits for the facilitator
 
   room.next(T0); // rapat
+  assert.equal(room.state.phaseEndsAt, T0 + 45_000);
   room.propose(spokesperson(room, 'pemerintah'), { role: 'pemerintah', cardId: null, pajak: 1 }, T0);
   room.next(T0); // lobi
   room.proposePact(spokesperson(room, 'pengusaha'), 'buruh', 'usahaTidakPhk', 'buruhTidakMogok', 'latihan1', T0);
@@ -398,7 +433,7 @@ test('Year 0 runs on a throwaway country and leaves the real game untouched', ()
   assert.deepEqual(room.state.pacts, []);
   assert.deepEqual(room.state.years, []);
   assert.deepEqual(room.pactTally().pengusaha, { kept: 0, broken: 0 });
-  assert.equal(room.state.phaseEndsAt, T0 + 45_000);
+  assert.equal(room.state.phaseEndsAt, null);
 });
 
 test('the facilitator can skip the practice or end it early', () => {

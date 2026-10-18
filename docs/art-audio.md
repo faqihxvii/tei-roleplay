@@ -14,22 +14,27 @@ Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon, ikon generik seb
 
 ### Token
 
-Semua nilai desain ada di satu file: `web/src/styles/tokens.css`. Nilainya diambil dari stylesheet economic.co.id sendiri, lalu disesuaikan untuk proyektor kelas: tidak ada teks di bawah 12 px, dan ukuran display mengikuti lebar layar. Isinya tiga lapis, dan setiap lapis hanya membaca lapis di atasnya:
+Sistem desainnya memakai **Tailwind CSS v4** dan **Radix UI**:
 
-1. **Primitif:** palet mentah merek (`--tei-red-600`, `--neutral-100`, …). Komponen tidak boleh memakainya langsung.
-2. **Semantik:** kegunaan sebuah nilai. Lapis ini yang dipakai komponen.
-3. **Token komponen:** nilai milik satu komponen saja, misalnya ukuran teks SVG dan tekstur halftone.
+- `web/src/styles/tokens.css` adalah tema Tailwind (`@theme`) dan satu-satunya tempat nilai mentah. Tema bawaan Tailwind tidak dimuat (`styles/index.css` hanya mengimpor preflight dan mesin utilitas), jadi temanya tertutup: `p-7` atau `text-blue-500` tidak menghasilkan apa pun. Hanya nilai TEI yang ada. Nilainya diambil dari stylesheet economic.co.id, lalu disesuaikan untuk proyektor kelas: tidak ada teks di bawah 12 px, dan ukuran display mengikuti lebar layar.
+- `web/src/styles/base.css` mengatur elemen dasar (judul, tautan, fokus), dan `web/src/styles/components.css` memuat bagian-bagian TEI (tombol, kartu, topbar, koran, papan), masing-masing didefinisikan sekali dan hanya memakai `var(--…)`.
+- Komponen React mengatur tata letak dan jarak antar-bagian dengan utilitas Tailwind (`flex flex-col gap-4`, `text-muted`, `lg:grid-cols-2`).
+- Bagian interaktif memakai Radix: `Dialog` untuk konsol fasilitator (fokus terkunci, Escape menutup), `Tabs` untuk tab bawah HP dan Keputusan/Pakta, `ToggleGroup` untuk tempo, `Switch` dan `Slider` untuk suara.
 
-`web/src/styles.css` hanya boleh memakai token. Tes `web/test/tokens.test.ts` gagal kalau ada ukuran huruf, bobot, jarak huruf, tinggi baris, atau warna mentah di luar file token.
+Lapisan token: primitif (palet mentah, hanya di `:root`), lalu token semantik di `@theme`, lalu token komponen. Tes `web/test/tokens.test.ts` gagal kalau ada ukuran huruf, bobot, jarak huruf, tinggi baris, warna, atau jarak (padding, margin, gap, inset) mentah di luar file token, atau ada nilai sembarang Tailwind seperti `p-[13px]` di komponen.
+
+**Irama jarak** (basis 4 px): langkah 1–2 di dalam kontrol, 3–4 di dalam kartu, 5–6 antar-kartu (dan padding kartu di proyektor), 8–10 antar-bagian, 12–16 ruang lega proyektor. `--spacing-gutter` adalah margin samping proyektor yang mengikuti lebar layar.
+
+**Hierarki huruf**, satu untuk dua permukaan. HP dan konsol: `2xs` label, `xs` keterangan, `sm` isi, `md` pembuka, `lg` judul, `xl` angka, `2xl` skor. Proyektor: `display-sm` teks, `display-md` judul layar, `display-lg` satu pertanyaan utama per layar, `display-xl` kode ruangan. Setiap ukuran membawa tinggi barisnya sendiri.
 
 | Token semantik | Nilai | Dipakai untuk |
 | --- | --- | --- |
 | `--color-bg` | `#f7f6f2` | Latar, putih gading seperti economic.co.id |
-| `--color-surface` | `#fffefa` | Kartu dan isian, dengan garis `--color-border` (`#d9d7d0`) |
-| `--color-surface-sunken` | `#f2eee7` | Tombol sekunder, jalur papan indikator |
-| `--color-surface-paper` | `#fdfcf9` | Halaman Harian TEI |
+| `--color-surface` | `#fffefa` | Kartu dan isian, dengan garis `--color-line` (`#d9d7d0`) |
+| `--color-sunken` | `#f2eee7` | Tombol sekunder, jalur papan indikator |
+| `--color-paper` | `#fdfcf9` | Halaman Harian TEI |
 | `--color-inverse` | `#191918` | Panel gelap (agenda rahasia) |
-| `--color-text` / `--color-text-copy` / `--color-text-muted` | `#171717` / `#4d4c47` / `#5c5b56` | Judul, paragraf di bawah judul, teks pendamping |
+| `--color-ink` / `--color-copy` / `--color-muted` | `#171717` / `#4d4c47` / `#5c5b56` | Judul, paragraf di bawah judul, teks pendamping |
 | `--color-brand` | `#c30700` | Merah TEI: logo, tombol utama, judul koran, krisis, cincin fokus keyboard |
 | `--color-brand-strong` | `#8d1b16` | Label kapital, hover tombol |
 | `--color-brand-soft` | `#f5a99d` | Aksen di atas latar gelap, busur di sudut kartu krisis |
@@ -66,19 +71,19 @@ Skala hurufnya tertutup. Ukuran baru harus masuk ke token lebih dulu, dengan nam
 | `--text-lg` | 24 px | Judul kartu, judul di HP |
 | `--text-xl` | 32 px | Angka besar di kartu, cap SAH |
 | `--text-2xl` | 56 px | Skor akhir di HP |
-| `--display-sm` | 20–30 px | Narasi, pertanyaan diskusi, petunjuk layar |
-| `--display-md` | 28–48 px | Judul layar dan judul bagian |
-| `--display-lg` | 36–72 px | Judul krisis, headline koran, pertanyaan besar |
-| `--display-xl` | 48–112 px | Kode ruangan, timer briefing, nama koran di Edisi Khusus |
+| `--text-display-sm` | 20–28 px | Narasi, pertanyaan diskusi, petunjuk layar |
+| `--text-display-md` | 28–44 px | Judul layar dan judul bagian |
+| `--text-display-lg` | 36–68 px | Judul krisis, headline koran, pertanyaan besar |
+| `--text-display-xl` | 48–112 px | Kode ruangan, nama koran di Edisi Khusus |
 
 Ukuran display mengikuti lebar layar (`clamp`), supaya tetap terbaca dari bangku belakang. Pilihan lainnya juga sedikit:
 
-- **Bobot:** `--weight-regular` 400, `--weight-semibold` 650, `--weight-bold` 700, `--weight-black` 760 (judul), sama dengan situs TEI.
-- **Jarak huruf:** `--tracking-display` −0,055 em (judul, seperti situs TEI), `--tracking-tight` −0,02 em, `--tracking-caps` 0,12 em (huruf kapital kecil), `--tracking-code` 0,3 em (isian kode ruangan).
+- **Bobot:** `--font-weight-regular` 400, `--font-weight-semibold` 650, `--font-weight-bold` 700, `--font-weight-black` 760 (judul), sama dengan situs TEI.
+- **Jarak huruf:** `--tracking-display` −0,045 em (judul, seperti situs TEI), `--tracking-tight` −0,02 em, `--tracking-caps` 0,12 em (huruf kapital kecil), `--tracking-code` 0,3 em (isian kode ruangan).
 - **Tinggi baris:** `--leading-display` 1,04, `--leading-snug` 1,25, `--leading-body` 1,6.
-- **Sudut dan sentuhan:** kartu dan koran bersudut tegas; tombol, isian, dan pilihan memakai sudut 2 px (`--radius-control`). Target sentuh minimal 44 px (`--tap-target`).
+- **Sudut dan sentuhan:** kartu dan koran bersudut tegas; tombol, isian, dan pilihan memakai sudut 2 px (`--radius-control`). Target sentuh minimal 44 px (`--spacing-tap`), tombol 48 px (`--spacing-control`).
 
-Hanya subset latin yang diunduh browser. Muatan awal HP (JS, CSS, dan font) sekitar 170 KB, masih di dalam anggaran 300 KB.
+Hanya subset latin yang diunduh browser. Muatan awal HP (JS, CSS, dan font) sekitar 180 KB (Radix Tabs menambah sekitar 10 KB), masih di dalam anggaran 300 KB.
 
 ### Warna peran
 
@@ -252,7 +257,7 @@ Tabel ini sama dengan `web/src/audio/cues.ts`, yang menjadi sumber kebenarannya.
 | `pakta.robek` | Pakta dilanggar | Kertas dirobek dua | Pakta bergaris merah dan bergetar | 0.8 | 1 |
 | `bahaya` | Indikator masuk zona bahaya | Peluit demo dari kejauhan | Label Bahaya dan arsir merah di papan | 0.7 | 1 |
 | `kolaps` | Negara kolaps | Kerumunan meledak, peluit panjang, toa | Spanduk merah "Negara kolaps" | 1 | 1 |
-| `waktu.hampir` | 10 detik terakhir sebuah fase | Jam meja berdetak 10 detik | Timer berubah merah | 0.5 | 1 |
+| `waktu.hampir` | 10 detik terakhir fase berwaktu; berhenti saat jeda, dilanjutkan sesuai sisa waktu | Jam meja berdetak 10 detik | Timer berubah merah | 0.5 | 1 |
 | `jeda` | Fasilitator menjeda | Peluit wasit pendek | Timer bertuliskan Jeda | 0.6 | 1 |
 | `lanjut` | Fasilitator melanjutkan | Peluit wasit dua kali | Timer berjalan lagi | 0.6 | 1 |
 | `tebak` | Fase tebak agenda | Laci arsip dibuka, map dibalik-balik | Layar tebak agenda | 0.7 | 1 |
