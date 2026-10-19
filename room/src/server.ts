@@ -41,6 +41,7 @@ interface Conn {
   messages: number;
   /** The last view sent, so an unchanged one is not sent again. */
   lastView?: string;
+  lastReaction?: number;
 }
 
 interface LiveRoom {
@@ -62,6 +63,8 @@ const WEBHOOK_EVERY_MS = 60_000;
 // A class acts in bursts (40 phones proposing within seconds). Gathering changes for a moment turns a
 // burst into a few broadcasts instead of one per phone per action; 50 ms is below what anyone notices.
 const BROADCAST_MS = 50;
+/** One reaction per phone per this long: enough for a burst of cheering, too little to flood the projector. */
+const REACTION_MS = 800;
 
 export async function createRoomServer(options: RoomServerOptions) {
   const now = options.now ?? Date.now;
@@ -227,6 +230,15 @@ export async function createRoomServer(options: RoomServerOptions) {
         return;
       }
       const room = live.room;
+      const t0 = now;
+      if (message.t === 'react') {
+        // Relayed straight to the main screen: no state, no snapshot, no broadcast of views.
+        if (t0() - (conn.lastReaction ?? 0) < REACTION_MS) return;
+        conn.lastReaction = t0();
+        const role = room.player(conn.playerId!).role;
+        for (const other of live.conns) if (other.kind === 'host') send(other.ws, { t: 'reaction', kind: message.kind, role });
+        return;
+      }
       if (message.t === 'clientError') {
         room.noteClientError(conn.kind === 'host' ? 'host' : 'phone', message.message);
         schedulePersist(live);

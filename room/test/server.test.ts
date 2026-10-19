@@ -195,3 +195,27 @@ test('a burst of changes goes out as one broadcast, and an unchanged view is not
   for (const client of [host, ...phones]) client.close();
   await srv.close();
 });
+
+test('reactions go to the main screen only, are not stored, and are rate-limited per phone', async () => {
+  const srv = await start();
+  const { code, hostToken } = (await (await fetch(`${srv.http}/api/rooms`, { method: 'POST' })).json()) as { code: string; hostToken: string };
+  const host = await connect(srv.ws);
+  host.send({ t: 'host', code, token: hostToken });
+  await host.next('host-state');
+  const a = await connect(srv.ws);
+  const b = await connect(srv.ws);
+  a.send({ t: 'join', code, nickname: 'Ani' });
+  b.send({ t: 'join', code, nickname: 'Budi' });
+  await a.next('welcome');
+  await b.next('welcome');
+  await new Promise(resolve => setTimeout(resolve, 150));
+  a.send({ t: 'react', kind: 'tawa' });
+  a.send({ t: 'react', kind: 'marah' }); // too soon: dropped
+  const got = await host.next('reaction');
+  assert.equal(got.kind, 'tawa');
+  await new Promise(resolve => setTimeout(resolve, 200));
+  assert.equal(host.pending('reaction'), 0, 'the second reaction inside the cool-down is dropped');
+  assert.equal(b.pending('reaction'), 0, 'phones never receive reactions');
+  for (const client of [host, a, b]) client.close();
+  await srv.close();
+});

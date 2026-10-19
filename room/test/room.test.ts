@@ -590,3 +590,46 @@ test('Pemula: phones vote on the three responses, kesepakatan name them, and the
   assert.equal(room.phase, 'selesai');
   assert.ok(hostView(room).results);
 });
+
+// ---------- Linimasa TEI ----------
+
+test('Linimasa copy: every tag has an official spin and a hashtag, and nothing names a real brand', async () => {
+  const { TAG_WEIGHT, VOICES } = await import('../src/content/koran');
+  const { SPIN, HASHTAGS, BUZZER, GOSIP, ACCOUNTS } = await import('../src/content/linimasa');
+  const banned = /whatsapp|instagram|tiktok|facebook|twitter|gojek|grab|shopee|tokopedia|indomie|pertamina|\bpln\b|\bbi\b|\bojk\b/i;
+  const texts: string[] = [];
+  for (const tag of Object.keys(TAG_WEIGHT) as (keyof typeof SPIN)[]) {
+    assert.ok(SPIN[tag] && ACCOUNTS[SPIN[tag].account].kind === 'pejabat', `${tag}: no official spin`);
+    assert.equal(SPIN[tag].lines.length, 2);
+    assert.match(HASHTAGS[tag] ?? '', /^[A-Za-z0-9]{3,24}$/, `${tag}: hashtag`);
+    texts.push(...SPIN[tag].lines, HASHTAGS[tag]);
+  }
+  for (const zone of ['aman', 'bahaya', 'kolaps'] as const) {
+    assert.ok(BUZZER[zone].length >= 4 && GOSIP[zone].length >= 4, `${zone}: too few buzzer or gossip lines`);
+    texts.push(...BUZZER[zone], ...GOSIP[zone]);
+  }
+  for (const v of Object.values(VOICES)) texts.push(...Object.values(v.lines).flat());
+  for (const text of texts) {
+    assert.ok(!banned.test(text), `real brand or institution in "${text}"`);
+    assert.ok(text.length <= 220, `too long for a post: "${text}"`);
+  }
+});
+
+test('each year closes with a feed: the headline post with the photo, an official, citizens, the data and a promotion', () => {
+  const room = inRapat();
+  room.next(T0); // negosiasi
+  room.next(T0); // pengesahan
+  room.next(T0); // hasil
+  room.next(T0); // linimasa
+  const page = hostView(room).frontPage!;
+  const posts = page.posts!;
+  assert.ok(posts.length >= 6);
+  assert.ok(posts[0]!.text.startsWith(page.headline) && posts[0]!.photo);
+  assert.ok(posts.some(p => p.account.kind === 'pejabat'));
+  assert.ok(posts.some(p => p.account.kind === 'data' && p.text.startsWith('Rekap tahun')));
+  assert.ok(posts.some(p => p.promoted));
+  assert.equal(posts.filter(p => p.replyTo === posts[0]!.id).length, 3, 'three citizens reply to the headline');
+  assert.ok(page.trending!.length >= 1 && page.trending!.length <= 4);
+  assert.ok(posts.every(p => p.likes >= 0 && p.reposts >= 0));
+  assert.ok(hostView(room).growth!.length >= 2, 'the growth chart has the start and this year');
+});

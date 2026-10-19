@@ -9,6 +9,7 @@ import { DebriefScreen } from './Debrief';
 import { QuizCount } from './Quiz';
 import { Portrait } from './art';
 import { Diorama } from './Diorama';
+import { ReactionLayer, useReactionLayer } from './Reactions';
 import { RoleMark, roleProps, StepAnnouncer, TeiLogo } from './shared';
 import { whereLabel } from './text';
 import { EdisiKhusus } from './EdisiKhusus';
@@ -108,9 +109,12 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
   const [notice, setNotice] = useState<string | null>(null);
   const clock = useClockOffset();
   const [consoleOpen, setConsoleOpen] = useConsoleToggle();
+  const reactions = useReactionLayer();
 
   const onMessage = (message: ServerMessage) => {
-    if (message.t === 'host-state') {
+    if (message.t === 'reaction') {
+      reactions.push(message.kind, message.role);
+    } else if (message.t === 'host-state') {
       clock.sync(message.now);
       setView(message.view);
     } else if (message.t === 'error') {
@@ -137,6 +141,7 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
       {status !== 'terhubung' && <p className="banner" role="status">Koneksi server putus. Menyambung ulang…</p>}
       {notice && <p className="banner warn" role="alert">{notice}</p>}
       <StepAnnouncer label={whereLabel(view)} />
+      <ReactionLayer floating={reactions.floating} counts={reactions.counts} />
       {view.phase === 'gabung' && <Lobby view={view} send={send} />}
       {view.phase === 'briefing' && <Briefing view={view} send={send} />}
       {view.phase === 'tahun' && <YearScreen view={view} now={clock.now} send={send} />}

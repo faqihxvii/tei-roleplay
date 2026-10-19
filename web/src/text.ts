@@ -32,7 +32,7 @@ export const STEP_LABEL: Record<YearStep, string> = {
   lobi: 'Negosiasi',
   pengesahan: 'Pengesahan',
   pengungkapan: 'Hasil',
-  koran: 'Halaman Depan',
+  koran: 'Linimasa',
 };
 
 /** One sentence on what teams should do now, always on the main screen (GDD, "Onboarding"). */
@@ -42,7 +42,7 @@ export const STEP_HINT: Record<YearStep, string> = {
   lobi: 'Datangi tim lain dan buat kesepakatan: "kami lakukan ini, kalian lakukan itu". Jubir mengajukan dan menyetujui di HP.',
   pengesahan: 'Jubir menahan tombol SAH untuk mengunci keputusan tim.',
   pengungkapan: 'Semua keputusan dibuka. Lihat siapa menyebabkan apa.',
-  koran: 'Harian TEI melaporkan tahun ini.',
+  koran: 'Linimasa TEI: begini warganet, pejabat, dan buzzer membicarakan tahun ini.',
 };
 
 /** Where the class is, in a few words: the page title and what a screen reader announces on each change. */

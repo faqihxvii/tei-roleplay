@@ -153,6 +153,8 @@ interface Common extends Clock {
   pacts: PactView[];
   reveal: RevealView | null;
   frontPage: FrontPage | null;
+  /** Every indicator from the start to this year, for the growth chart beside the Linimasa. */
+  growth: { year: number; stats: PublicStats }[] | null;
   results: ResultsView | null;
   debrief: DebriefView | null;
   quiz: QuizSummary | null;
@@ -411,6 +413,9 @@ function common(room: Room): Common {
     pacts: s.phase === 'tahun' ? room.pactsThisYear().filter(p => p.status === 'disepakati').map(p => pactView(room, p)) : [],
     reveal: resolvedView && s.phase === 'tahun' ? asYear(revealView(room), year) : null,
     frontPage: s.step === 'koran' ? asYear(s.years.at(-1)?.frontPage ?? null, year) : null,
+    growth: s.step === 'koran' && game && !room.inPractice
+      ? [{ year: 0, stats: publicStats(INITIAL_STATS, 3) }, ...game.log.map(l => ({ year: l.year, stats: publicStats(l.statsAfter, l.bungaAfter) }))]
+      : null,
     results: resultsView(room),
     debrief: s.phase === 'selesai' ? debriefView(s, room.pactTally()) : null,
     quiz: quizSummary(room),

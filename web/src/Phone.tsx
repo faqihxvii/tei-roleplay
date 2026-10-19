@@ -11,7 +11,9 @@ import { CrisisArt, Portrait } from './art';
 import { Concepts, Glossed } from './Glossary';
 import { SurveyForm, SurveyThanks } from './Survey';
 import { useHaptics } from './haptics';
+import { LinimasaFeed } from './Linimasa';
 import { AnimatedNumber, DUR, EASE, m } from './motion';
+import { ReactionBar } from './Reactions';
 import { Board, HoldButton, RoleMark, RoleName, StepAnnouncer, TeiLogo, Timer, roleProps } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
 import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, coachFor, STEP_LABEL, signed, whereLabel } from './text';
@@ -338,7 +340,7 @@ function TaskHead({ view }: { view: PlayerView }) {
     lobi: jubir ? 'Kamu Jubir: datangi tim lain, ajukan dan jawab kesepakatan di bawah, lalu tekan Tim kami selesai.' : 'Bantu Jubir menawar ke tim lain. Tawaran yang masuk muncul di bawah.',
     pengesahan: locked ? 'Keputusan timmu sudah sah.' : jubir ? 'Kamu Jubir: tahan tombol SAH untuk mengesahkan keputusan tim.' : `Tunggu Jubir (${view.team?.spokesperson ?? '-'}) mengesahkan.`,
     pengungkapan: 'Lihat layar utama: keputusan semua tim dibuka satu per satu.',
-    koran: 'Harian TEI terbit. Lihat layar utama.',
+    koran: 'Linimasa TEI ramai. Baca di bawah dan kirim reaksimu.',
   };
   return (
     <div className="flex flex-col gap-1">
@@ -412,7 +414,8 @@ function PhoneBody({ view, send, now }: { view: PlayerView; send: Send; now: () 
       {view.crisis && view.step === 'krisis' && <CrisisCard view={view} />}
       {view.step === 'rapat' && <p className="text-xs text-muted">Setelah ini: <strong className="text-copy">Negosiasi</strong>. Timmu bisa membuat kesepakatan dengan tim lain.</p>}
       {view.decision && <DecideScreen key={`${view.year}`} view={view} send={send} />}
-      {(view.step === 'pengungkapan' || view.step === 'koran') && <RevealMine view={view} now={now} />}
+      {(view.step === 'pengungkapan' || view.step === 'koran') && <RevealMine view={view} now={now} send={send} />}
+      {view.team && (view.step === 'pengungkapan' || view.step === 'koran' || view.step === 'krisis') && <ReactionBar onReact={kind => send({ t: 'react', kind })} />}
     </section>
   );
 }
@@ -691,9 +694,10 @@ function PactPanel({ view, send }: { view: PlayerView; send: Send }) {
  */
 function useRevealClock(view: PlayerView, now: () => number): number {
   const started = view.stepStartedAt;
-  const [shown, setShown] = useState(() => (started === null ? Infinity : Math.floor((now() - started) / REVEAL_STEP_MS)));
+  const at = () => (started === null ? Infinity : Math.floor((now() - started - REVEAL_LEAD_MS) / REVEAL_STEP_MS));
+  const [shown, setShown] = useState(at);
   useEffect(() => {
-    const tick = () => setShown(started === null ? Infinity : Math.floor((now() - started) / REVEAL_STEP_MS));
+    const tick = () => setShown(started === null ? Infinity : Math.floor((now() - started - REVEAL_LEAD_MS) / REVEAL_STEP_MS));
     tick();
     const id = setInterval(tick, 500);
     return () => clearInterval(id);
@@ -702,8 +706,10 @@ function useRevealClock(view: PlayerView, now: () => number): number {
 }
 
 const REVEAL_STEP_MS = 1500;
+/** The projector counts 3-2-1 before the first card (MainScreens REVEAL_LEAD_SECONDS). */
+const REVEAL_LEAD_MS = 3000;
 
-function RevealMine({ view, now }: { view: PlayerView; now: () => number }) {
+function RevealMine({ view, now, send }: { view: PlayerView; now: () => number; send: Send }) {
   const shown = useRevealClock(view, now);
   const reveal = view.reveal;
   const index = reveal?.teams.findIndex(t => t.role === view.team!.role) ?? -1;
@@ -712,7 +718,7 @@ function RevealMine({ view, now }: { view: PlayerView; now: () => number }) {
   const pacts = shown > pactsAt ? (reveal?.pacts ?? []).filter(p => p.from === view.team!.role || p.to === view.team!.role) : [];
   return (
     <section className="flex flex-col gap-4">
-      {view.step === 'koran' && view.frontPage && <h2 className="font-serif text-lg">{view.frontPage.headline}</h2>}
+      {view.step === 'koran' && view.frontPage && <LinimasaFeed page={view.frontPage} onLike={() => send({ t: 'react', kind: 'tepuk' })} />}
       {!mine && view.step === 'pengungkapan' && <p className="text-muted">Keputusan timmu belum dibuka. Lihat layar utama…</p>}
       {mine && (
         <div className="reveal-mine flex flex-col gap-2">

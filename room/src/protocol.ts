@@ -38,8 +38,13 @@ export type ClientMessage =
   | { t: 'final'; vote: FinalVote }
   | { t: 'quiz'; stage: QuizStage; answers: number[] }
   | { t: 'survey'; answers: SurveyAnswers; comment: string | null }
+  | { t: 'react'; kind: ReactionKind }
   // any bound client: a script error for the anonymous telemetry
   | { t: 'clientError'; message: string };
+
+/** Live reactions from phones, floated on the main screen; never stored. */
+export const REACTIONS = ['tawa', 'marah', 'tepuk', 'uang'] as const;
+export type ReactionKind = typeof REACTIONS[number];
 
 export type ServerMessage =
   | { t: 'welcome'; as: 'host' }
@@ -47,12 +52,13 @@ export type ServerMessage =
   | { t: 'host-state'; now: number; view: HostView }
   | { t: 'player-state'; now: number; view: PlayerView }
   | { t: 'error'; code: RoomErrorCode | 'ruangan-tidak-ada' | 'pesan-salah' | 'terlalu-cepat' | 'bukan-host'; message: string }
-  | { t: 'kicked' };
+  | { t: 'kicked' }
+  | { t: 'reaction'; kind: ReactionKind; role: Role | null };
 
 export const HOST_ONLY = new Set<ClientMessage['t']>([
   'assign', 'move', 'kick', 'startBriefing', 'next', 'begin', 'endPractice', 'pause', 'resume-clock', 'addTime', 'tempo', 'hostDecide', 'hostReady', 'hostFinal', 'debrief',
 ]);
-export const PLAYER_ONLY = new Set<ClientMessage['t']>(['propose', 'lock', 'ready', 'pactPropose', 'pactRespond', 'final', 'quiz', 'survey']);
+export const PLAYER_ONLY = new Set<ClientMessage['t']>(['propose', 'lock', 'ready', 'pactPropose', 'pactRespond', 'final', 'quiz', 'survey', 'react']);
 
 const CODE_RE = /^[A-Z]{4}$/;
 const TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;
@@ -201,6 +207,8 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       const a = m.answers;
       return { t: 'survey', answers: { seru: a.seru, jelas: a.jelas, belajar: a.belajar }, comment: m.comment as string | null };
     }
+    case 'react':
+      return REACTIONS.includes(m.kind as ReactionKind) ? { t: 'react', kind: m.kind as ReactionKind } : null;
     case 'clientError':
       return typeof m.message === 'string' && m.message.length <= 2000 ? { t: 'clientError', message: m.message } : null;
     default:

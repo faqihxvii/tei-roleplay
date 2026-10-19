@@ -104,7 +104,7 @@ await roleOf['Pemerintah'].locator('.policy:not(.off)').first().click();
 await shot(roleOf['Pemerintah'], 'y0-phone-rapat.png', true);
 await shot(host, 'y0-rapat.png');
 for (let i = 0; i < 4; i++) await next(); // lobi, pengesahan, pengungkapan, koran
-await host.locator('.frontpage').waitFor();
+await host.locator('.linimasa').waitFor();
 await shot(host, 'y0-koran.png', true);
 await next(); // practice over
 await host.locator('.crisis-title').waitFor();
@@ -185,7 +185,15 @@ await host.waitForTimeout(9000);
 await shot(host, 'y1-pengungkapan.png', true);
 await shot(roleOf['Serikat Buruh'], 'y1-phone-reveal.png', true);
 await next(); // koran
-await host.locator('.frontpage').waitFor();
+await host.locator('.linimasa').waitFor();
+// Phones show the same feed; a like and a reaction float up on the main screen.
+{
+  const p = roleOf['Pemerintah'];
+  await p.locator('.phone-feed').waitFor();
+  await p.locator('.post-like').first().click();
+  await host.locator('.reaction-count').waitFor({ timeout: 5000 });
+  await shot(p, 'y1-phone-linimasa.png', true);
+}
 await shot(host, 'y1-koran.png', true);
 // rest of the game
 for (let i = 0; i < 40; i++) {

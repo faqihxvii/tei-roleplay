@@ -136,6 +136,10 @@ async function phone(code: string, nickname: string, done: Promise<void>): Promi
       }
       if (v.step === 'pengesahan' && v.me.isSpokesperson) void act(`lock-${year}`, cur => cur.decision && socket.send({ t: 'lock', decision: cur.decision.majority }));
     }
+    // The class reacts while the results and the Linimasa are on screen.
+    if (v.phase === 'tahun' && (v.step === 'pengungkapan' || v.step === 'koran')) {
+      void act(`react-${year}-${v.step}`, () => socket.send({ t: 'react', kind: pick(['tawa', 'marah', 'tepuk', 'uang'] as const) }, false));
+    }
     if (v.phase === 'tebak' && v.me.isSpokesperson && v.final && !v.final.mine) {
       void act('final', cur => {
         const agendas: Record<string, string> = {};

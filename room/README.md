@@ -52,6 +52,12 @@ TEI_BASE=http://<alamat-jaringan>:5173 npm run room:e2e -- <folder-tangkapan-lay
 - Tim tanpa anggota saat briefing dimainkan lewat konsol fasilitator (Mode tanpa HP). Pemain yang datang terlambat masuk ke tim terkecil.
 - Snapshot disimpan segera setiap ganti fase atau ada pemain baru, dan maksimal 0,5 detik setelah perubahan lain. Server yang di-restart memulihkan semua ruangan.
 
+## Reaksi langsung dan momen besar
+
+HP bisa mengirim empat reaksi (ngakak, geram, tepuk tangan, boros) saat Krisis, Hasil, dan Linimasa; tombol suka di linimasa ikut mengirim tepuk tangan. Reaksi melayang dari bawah layar utama. Server meneruskannya langsung ke layar utama tanpa menyimpan dan tanpa menyiarkan ulang tampilan, dengan batas satu reaksi per HP setiap 0,8 detik. Saat "Kurangi gerak" aktif, layar hanya menampilkan hitungannya.
+
+Momen besar: hitung mundur 3-2-1 sebelum Hasil (HP menunggu hitungan yang sama), kilat merah dan guncangan saat negara kolaps, konfeti untuk akhir Sejahtera, dan papan peringkat yang batangnya tumbuh satu per satu dengan pemenang terakhir. Semua mengikuti "Kurangi gerak".
+
 ## Tingkat kesulitan
 
 Fasilitator memilih saat membuka ruangan (bawaan: Pemula).
@@ -69,8 +75,8 @@ Respons Pemula diubah menjadi kartu biasa (`rsp_<krisis><Peran><A|B|C>`), jadi v
 | Rapat Tim | 3 menit | Pertanyaan tim kartu krisis tampil besar di layar utama dan di atas formulir HP. Setiap anggota memilih kartu dan pilihan kebijakan; efek tiap pilihan tertulis di bawah tombolnya, dan jumlah suara tampil di semua HP tim. Jubir menekan **Tim kami selesai** bila sudah sepakat. |
 | Negosiasi | 3 menit | Layar utama HP semua pemain. Jubir memilih tim lalu menawarkan kesepakatan siap pakai dengan satu ketukan (atau menyusun sendiri), dan menyetujui atau menolak tawaran yang masuk. Tawaran baru memberi lencana di tab *Sekarang* dan getaran di HP seluruh tim. Kesepakatan yang disetujui tampil di Meja Kesepakatan; tawaran yang belum dijawab kedaluwarsa. |
 | Pengesahan | 1 menit | Jubir menahan SAH 1 detik untuk mengesahkan pilihan terbanyak tim (berubah langsung bila suara berubah), kecuali Jubir memilih lain di fase ini. Jika waktu habis, pilihan terbanyak per bagian yang dipakai (seri: pilihan yang masuk lebih dulu). Fase berakhir begitu kelima tim sah. |
-| Hasil | tanpa timer | Keputusan dibuka satu per satu (dampak terbesar terakhir), lalu setiap perubahan indikator dengan penyebabnya, lalu kesepakatan ditepati atau robek. HP baru menampilkan keputusan tim sendiri saat layar utama sampai di tim itu. |
-| Halaman Depan | tanpa timer | Harian TEI tahun itu. |
+| Hasil | tanpa timer | Hitung mundur 3-2-1, lalu keputusan dibuka satu per satu (dampak terbesar terakhir), lalu setiap perubahan indikator dengan penyebabnya, lalu kesepakatan ditepati atau robek. HP baru menampilkan keputusan tim sendiri saat layar utama sampai di tim itu. |
+| Linimasa | tanpa timer | Tahun itu sebagai linimasa di platform rekaan "Kicau": unggahan Harian TEI dengan headline dan foto krisis, pejabat parodi yang memelintir kejadian, buzzer yang membela, warga yang membalas, rekap angka, dan promosi absurd. Di samping: tagar yang sedang tren dan grafik perjalanan kelima indikator sejak awal. HP menampilkan linimasa yang sama dengan tombol suka. |
 
 Hanya tiga fase bicara yang berwaktu. Fase tanpa timer (juga briefing peran dan tebak agenda) menunggu fasilitator menekan **Lanjut →** di kanan atas layar utama atau di konsol.
 

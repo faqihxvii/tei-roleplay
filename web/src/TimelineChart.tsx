@@ -77,7 +77,7 @@ function Panel({ stat, timeline, focus, onPick }: Props & { stat: Indicator }) {
               className="hit"
               tabIndex={onPick ? 0 : undefined}
               role={onPick ? 'button' : undefined}
-              aria-label={`${INDICATOR_LABEL[stat]} tahun ${p.year}: ${p.value}. Telusuri penyebabnya.`}
+              aria-label={onPick ? `${INDICATOR_LABEL[stat]} tahun ${p.year}: ${p.value}. Telusuri penyebabnya.` : undefined}
               onMouseEnter={() => setHover(p.i)}
               onMouseLeave={() => setHover(null)}
               onFocus={() => setHover(p.i)}

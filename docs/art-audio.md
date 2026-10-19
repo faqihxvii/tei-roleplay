@@ -8,7 +8,7 @@ Untuk ilustrator, animator, sound designer, dan engineer yang memasang aset mere
 
 **Merek TEI**, dengan sumber economic.co.id dan feed Instagram @theeconomicinfluence: tata letak editorial yang lapang di atas putih gading, merah TEI untuk penekanan, judul Geist yang rapat, sudut tegas, dan garis tipis. Dari sampul feed kita ambil rumus judulnya: klaim ditulis tebal merah, lalu penjelasannya langsung menyusul dalam warna hitam. Koran satir *Harian TEI* tetap ada sebagai cerita di dalam permainan, ditata seperti sampul postingan TEI. Ilustrasi tetap bergaya cetak risograph dengan tinta merah dan pink TEI.
 
-Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon, ikon generik sebagai visual utama, dan gambar stok (GDD), kecuali foto halaman depan Harian TEI (lihat Keputusan 18 Oktober 2026 di bagian Ilustrasi). Target audio rilis tetap foley rekaman asli. Suara sintesis hanya dipakai sementara untuk playtest; lihat bagian audio.
+Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon (kecuali reaksi langsung pemain, yang merupakan suara mereka sendiri), ikon generik sebagai visual utama, dan gambar stok (GDD), kecuali foto halaman depan Harian TEI (lihat Keputusan 18 Oktober 2026 di bagian Ilustrasi). Target audio rilis tetap foley rekaman asli. Suara sintesis hanya dipakai sementara untuk playtest; lihat bagian audio.
 
 ## Yang sudah ada di kode
 
