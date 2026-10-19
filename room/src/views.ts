@@ -3,7 +3,7 @@ import { getCrisis } from '../../engine/src/content/crises';
 import { getCard } from '../../engine/src/content/policies';
 import { ROLE_LABEL } from '../../engine/src/content/roles';
 import { canBelanja, canMogok, canPlay, INITIAL_STATS, isLeverFrozen } from '../../engine/src/game';
-import { PACT_TERMS, termsForRole } from '../../engine/src/pacts';
+import { PACT_TERMS, SUGGESTED_DEALS, termsForRole } from '../../engine/src/pacts';
 import { getEnding, indexNegara, type Ending } from '../../engine/src/scoring';
 import { INDICATORS, ROLES, type Collapse, type Decision, type Effects, type GameState, type Indicator, type Lever, type Role, type Stat, type Stats } from '../../engine/src/types';
 import { debriefView, history, type DebriefView, type YearHistory } from './debrief';
@@ -31,6 +31,8 @@ export interface PlayerSummary {
 export interface Clock {
   phaseEndsAt: number | null;
   pausedMs: number | null;
+  /** When the current step or phase began (server clock), so phones can follow the projector's reveal. */
+  stepStartedAt: number | null;
 }
 
 export interface PactView {
@@ -210,7 +212,12 @@ export interface PlayerView extends Common {
     /** Own answers against the key, after the facilitator reveals it. */
     review: { text: string; correct: string; explanation: string; pra: number | null; pasca: number | null; right: number }[] | null;
   } | null;
-  lobby: { terms: Record<Role, { id: string; text: string }[]>; maxPacts: number } | null;
+  lobby: {
+    terms: Record<Role, { id: string; text: string }[]>;
+    /** Ready-made deals with each other team, written from this team's side. */
+    suggestions: { to: Role; fromTerm: string; toTerm: string; fromText: string; toText: string }[];
+    maxPacts: number;
+  } | null;
   /** End-of-session survey, from the debrief's Penutup on. */
   mySurvey: { open: boolean; done: boolean; questions: { id: string; text: string; low: string; high: string }[] } | null;
   final: { options: Record<Role, { id: string; name: string; description: string }[]>; mine: FinalVote | null } | null;
@@ -376,6 +383,7 @@ function common(room: Room): Common {
     tempo: s.tempo,
     phaseEndsAt: s.phaseEndsAt,
     pausedMs: s.pausedMs,
+    stepStartedAt: s.telemetry.current?.startedAt ?? null,
     stats,
     crisis,
     pemilu: !!game && s.phase === 'tahun' && !room.inPractice && year === game.maxYears && !resolvedView,
@@ -520,7 +528,13 @@ export function playerView(room: Room, playerId: string, cache: ViewCache = newV
   if (role && s.phase === 'tahun' && s.step === 'lobi') {
     const terms = {} as Record<Role, { id: string; text: string }[]>;
     for (const r of ROLES) terms[r] = termsForRole(r).map(t => ({ id: t.id, text: t.text }));
-    lobby = { terms, maxPacts: MAX_PACTS_PER_TEAM };
+    const suggestions: NonNullable<PlayerView['lobby']>['suggestions'] = [];
+    for (const deal of SUGGESTED_DEALS) {
+      const [mine, theirs] = PACT_TERMS[deal.a].role === role ? [deal.a, deal.b] : PACT_TERMS[deal.b].role === role ? [deal.b, deal.a] : [null, null];
+      if (!mine || !theirs) continue;
+      suggestions.push({ to: PACT_TERMS[theirs].role, fromTerm: mine, toTerm: theirs, fromText: PACT_TERMS[mine].text, toText: PACT_TERMS[theirs].text });
+    }
+    lobby = { terms, suggestions, maxPacts: MAX_PACTS_PER_TEAM };
   }
 
   let final: PlayerView['final'] = null;

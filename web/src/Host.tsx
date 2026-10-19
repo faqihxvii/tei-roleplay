@@ -82,7 +82,7 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
       </label>
       <label className="check">
         <input type="checkbox" checked={santai} onChange={e => setSantai(e.target.checked)} />
-        <span><strong>Tempo Santai.</strong> Rapat, Lobi dan Pengesahan 50% lebih lama, untuk kelas yang butuh waktu baca lebih panjang.</span>
+        <span><strong>Tempo Santai.</strong> Rapat, Negosiasi dan Pengesahan 50% lebih lama, untuk kelas yang butuh waktu baca lebih panjang.</span>
       </label>
         {error && <p className="text-danger" role="alert">{error}</p>}
         <button className="btn primary big mt-3" onClick={create} disabled={busy}>{busy ? 'Membuka…' : 'Buka ruangan'}</button>
@@ -289,7 +289,7 @@ function PlayerChip({ player, spokesperson, editable, send, onDragStart }: {
     >
       <span className="dot" aria-hidden="true" />
       <span className="name">{player.nickname}</span>
-      {spokesperson && <span className="tag" title="Juru Bicara tahun ini">Jubir</span>}
+      {spokesperson && <span className="tag" title="Jubir tahun ini">Jubir</span>}
       {!player.connected && <span className="sr-only">(terputus)</span>}
       {editable && send && (
         <span className="controls">

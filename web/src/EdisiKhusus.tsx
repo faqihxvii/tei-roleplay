@@ -50,7 +50,7 @@ export function EdisiKhusus({ view }: { view: HostView }) {
               </ul>
               {year.pacts.length > 0 && (
                 <>
-                  <h3>Pakta</h3>
+                  <h3>Kesepakatan</h3>
                   <ul className="mb-3 flex flex-col gap-1.5 text-xs">
                     {year.pacts.map((p, i) => (
                       <li key={i}>{p.fromText} ({p.keptFrom ? 'ditepati' : 'dilanggar'}) ⇄ {p.toText} ({p.keptTo ? 'ditepati' : 'dilanggar'})</li>

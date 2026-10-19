@@ -31,7 +31,7 @@ TEI_BASE=http://<alamat-jaringan>:5173 npm run room:e2e -- <folder-tangkapan-lay
 
 ## Modul
 
-- `src/room.ts`: kelas `Room` murni, tanpa jaringan. Gabung, sambung ulang, pembagian tim, briefing, putaran tahunan enam fase, voting anggota dan SAH Juru Bicara, pakta, resolusi lewat engine, tebakan akhir, voting Oknum, dan skor. Bisa dipindah ke Durable Object atau PartyKit tanpa diubah.
+- `src/room.ts`: kelas `Room` murni, tanpa jaringan. Gabung, sambung ulang, pembagian tim, briefing, putaran tahunan enam fase, voting anggota dan SAH Jubir, kesepakatan (`pact` di kode), resolusi lewat engine, tebakan akhir, voting Oknum, dan skor. Bisa dipindah ke Durable Object atau PartyKit tanpa diubah.
 - `src/views.ts`: apa yang boleh dilihat tiap layar. Layar utama tidak pernah menerima agenda, kartu di tangan, atau sumber daya pribadi. HP hanya menerima milik timnya.
 - `src/labels.ts`: bahasa sebab-akibat untuk pengungkapan ("Upah naik, Pengusaha menaikkan harga").
 - `src/koran.ts` dan `src/content/koran.ts`: halaman depan Harian TEI dari tag peristiwa tahun itu: 33 tag × 8 varian headline, 20 headline kombinasi dua tag, Suara Warga, dan iklan satir. Tes menjaga aturan GDD: minimal 8 varian, tidak ada duplikat, tidak ada merek atau lembaga nyata.
@@ -57,19 +57,19 @@ TEI_BASE=http://<alamat-jaringan>:5173 npm run room:e2e -- <folder-tangkapan-lay
 | Fase | Durasi bawaan | Yang terjadi |
 | --- | --- | --- |
 | Krisis | tanpa timer | Kartu krisis di layar utama: judul, narasi (≤ 60 kata), efek, aturan tahun ini, pertanyaan tim, dan tag konsep. HP menampilkan hal yang sama plus "Tahukah Anda" (peristiwa nyata serupa, hanya judul dan sumber). Tahun 5 dibuka dengan survei Kepercayaan. |
-| Rapat Tim | 75 detik | Pertanyaan tim kartu krisis tampil besar di layar utama dan di atas formulir HP. Setiap anggota memilih kartu dan tuas; jumlah suara tampil di semua HP tim. Juru Bicara menekan **Tim kami selesai** bila sudah sepakat. |
-| Lobi Terbuka | 120 detik | Juru Bicara mengajukan dan menjawab pakta, lalu menekan **Tim kami selesai**. Pakta yang disepakati tampil di Meja Lobi. Tawaran yang belum dijawab kedaluwarsa. |
-| Pengesahan | 45 detik | Juru Bicara menahan SAH 1 detik. Jika waktu habis, pilihan terbanyak per bagian yang dipakai (seri: pilihan yang masuk lebih dulu). Fase berakhir begitu kelima tim sah. |
-| Pengungkapan | tanpa timer | Keputusan dibuka satu per satu (dampak terbesar terakhir), lalu setiap perubahan indikator dengan penyebabnya, lalu pakta ditepati atau robek. |
+| Rapat Tim | 3 menit | Pertanyaan tim kartu krisis tampil besar di layar utama dan di atas formulir HP. Setiap anggota memilih kartu dan pilihan kebijakan; efek tiap pilihan tertulis di bawah tombolnya, dan jumlah suara tampil di semua HP tim. Jubir menekan **Tim kami selesai** bila sudah sepakat. |
+| Negosiasi | 3 menit | Layar utama HP semua pemain. Jubir memilih tim lalu menawarkan kesepakatan siap pakai dengan satu ketukan (atau menyusun sendiri), dan menyetujui atau menolak tawaran yang masuk. Tawaran baru memberi lencana di tab *Sekarang* dan getaran di HP seluruh tim. Kesepakatan yang disetujui tampil di Meja Kesepakatan; tawaran yang belum dijawab kedaluwarsa. |
+| Pengesahan | 1 menit | Jubir menahan SAH 1 detik untuk mengesahkan pilihan terbanyak tim (berubah langsung bila suara berubah), kecuali Jubir memilih lain di fase ini. Jika waktu habis, pilihan terbanyak per bagian yang dipakai (seri: pilihan yang masuk lebih dulu). Fase berakhir begitu kelima tim sah. |
+| Hasil | tanpa timer | Keputusan dibuka satu per satu (dampak terbesar terakhir), lalu setiap perubahan indikator dengan penyebabnya, lalu kesepakatan ditepati atau robek. HP baru menampilkan keputusan tim sendiri saat layar utama sampai di tim itu. |
 | Halaman Depan | tanpa timer | Harian TEI tahun itu. |
 
 Hanya tiga fase bicara yang berwaktu. Fase tanpa timer (juga briefing peran dan tebak agenda) menunggu fasilitator menekan **Lanjut →** di kanan atas layar utama atau di konsol.
 
-Rapat Tim dan Lobi Terbuka berakhir lebih cepat kalau semua tim sudah selesai: Juru Bicara setiap tim menekan **Tim kami selesai** di HP (bisa dibatalkan), atau fasilitator menandai tim dari konsol. Tim tanpa HP dan tim yang keputusannya sudah disahkan dihitung selesai. Layar utama menampilkan lima titik, satu per tim.
+Rapat Tim dan Negosiasi berakhir lebih cepat kalau semua tim sudah selesai: Juru Bicara setiap tim menekan **Tim kami selesai** di HP (bisa dibatalkan), atau fasilitator menandai tim dari konsol. Tim tanpa HP dan tim yang keputusannya sudah disahkan dihitung selesai. Layar utama menampilkan lima titik, satu per tim.
 
-**Layar utama** menceritakan tahun sebagai enam babak. Header satu baris memuat tahun, rel enam babak (babak berjalan merah, babak berikutnya disebut pelan), lalu timer atau tombol Lanjut, dan setiap babak punya satu fokus: kartu krisis, pertanyaan rapat, Meja Lobi, hitungan tim yang sudah sah, pengungkapan di samping papan, lalu Harian TEI. Angka negara tampil sebagai strip tipis di kaki layar, dan semuanya muat dalam satu layar proyektor tanpa digulir.
+**Layar utama** menceritakan tahun sebagai enam babak. Header satu baris memuat tahun, rel enam babak (babak berjalan merah, babak berikutnya disebut pelan), lalu timer atau tombol Lanjut, dan setiap babak punya satu fokus: kartu krisis, pertanyaan rapat, Meja Kesepakatan, hitungan tim yang sudah sah, pengungkapan di samping papan, lalu Harian TEI. Angka negara tampil sebagai strip tipis di kaki layar, dan semuanya muat dalam satu layar proyektor tanpa digulir.
 
-**HP pemain** punya tiga tab di bawah: *Sekarang* (tugas fase ini, dengan satu kalimat tentang apa yang harus dilakukan), *Timku* (sumber daya pribadi, agenda rahasia, kartu peran, anggota), dan *Negara* (papan, krisis tahun ini, pakta yang disepakati). Setiap fase baru membawa pemain kembali ke *Sekarang*. Header menunjukkan peran, fase, penanda Jubir, dan enam garis kemajuan tahun. Tombol SAH menempel di atas tab agar selalu terjangkau.
+**HP pemain** punya tiga tab di bawah: *Sekarang* (tugas fase ini, dengan satu kalimat tentang apa yang harus dilakukan), *Timku* (sumber daya pribadi, agenda rahasia, kartu peran, anggota), dan *Negara* (papan, krisis tahun ini, kesepakatan yang disetujui). Setiap fase baru membawa pemain kembali ke *Sekarang*. Header menunjukkan peran, fase, penanda Jubir, enam garis kemajuan tahun, dan nama langkah berikutnya. Tombol SAH menempel di atas tab agar selalu terjangkau.
 
 Fase berwaktu total 4 menit per tahun. Tempo Santai menambah 50%. Fasilitator bisa menjeda, menambah 30 detik, atau melewati fase dari konsol (tombol K di layar utama). Detak jam 10 detik terakhir berhenti seketika saat dijeda, dan saat dilanjutkan mulai lagi di titik yang sesuai dengan sisa waktu. Setelah tahun 5 atau kolaps: tebak agenda dan tunjuk Oknum (tanpa timer; lanjut otomatis setelah semua tim menebak), lalu hasil akhir dengan skor dari engine, garis waktu, dan daftar headline.
 
@@ -77,9 +77,9 @@ Konsol fasilitator juga mengisi keputusan dan tebakan tim tanpa HP, atau mengamb
 
 ## Tahun 0 latihan
 
-Opsi saat membuka ruangan (bawaan: aktif). Setelah briefing, kelas memainkan satu tahun penuh dengan enam fase yang sama dalam 3 menit (20/45/40/25/35/15 detik), di negara simulasi dengan krisis ringan tanpa aturan khusus. Layar utama memakai pita LATIHAN dan mengganti petunjuk fase dengan satu-dua kalimat pemandu; HP menampilkan kartu pemandu, dengan versi khusus untuk Juru Bicara di fase Lobi dan Pengesahan.
+Opsi saat membuka ruangan (bawaan: aktif). Setelah briefing, kelas memainkan satu tahun penuh dengan enam fase yang sama dengan Rapat 90 detik, Negosiasi 90 detik, dan Pengesahan 40 detik, di negara simulasi dengan krisis ringan tanpa aturan khusus. Layar utama memakai pita LATIHAN dan mengganti petunjuk fase dengan satu-dua kalimat pemandu; HP menampilkan kartu pemandu, dengan versi khusus untuk Jubir di fase Negosiasi dan Pengesahan.
 
-Negara asli disimpan selama latihan dan dikembalikan utuh sesudahnya: keputusan, pakta, skor, dan koran latihan dibuang. Fasilitator bisa melewati latihan dari layar briefing atau mengakhirinya kapan saja dari konsol.
+Negara asli disimpan selama latihan dan dikembalikan utuh sesudahnya: keputusan, kesepakatan, skor, dan koran latihan dibuang. Fasilitator bisa melewati latihan dari layar briefing atau mengakhirinya kapan saja dari konsol.
 
 ## Debrief terpandu
 
@@ -111,7 +111,7 @@ Opsi saat membuka ruangan. Lima soal skenario, satu per tujuan belajar GDD (fisk
 **Kartu peran di HP.** Kartu ini terbuka saat briefing, dan bisa dibuka kembali sepanjang permainan. Isinya:
 
 - apa yang dipedulikan peran itu;
-- tuas beserta efek tiap pilihan;
+- pilihan kebijakan beserta efek tiap pilihan;
 - kekuatan khusus;
 - angka rahasia tim;
 - kawan dan lawan.
@@ -134,7 +134,7 @@ Telemetri anonim dicatat sepanjang sesi:
 - sambung ulang HP dan layar utama;
 - aksi yang ditolak per kode galat, dan galat skrip dari browser (baris pertama saja, maksimal 20 pesan berbeda).
 
-Laporan sesi (`src/report.ts`) merangkum semua itu bersama keputusan per tim per tahun, pakta, hasil akhir, kuis, survei, dan tiga ukuran keberhasilan GDD: tim yang membuat pakta, keseruan, dan kenaikan kuis. **Laporan tidak memuat nama panggilan, ID pemain, atau token.** Tim hanya disebut dengan perannya, dan selama Tahun 0 laporan hanya mencakup negara asli.
+Laporan sesi (`src/report.ts`) merangkum semua itu bersama keputusan per tim per tahun, kesepakatan, hasil akhir, kuis, survei, dan tiga ukuran keberhasilan GDD: tim yang membuat kesepakatan, keseruan, dan kenaikan kuis. **Laporan tidak memuat nama panggilan, ID pemain, atau token.** Tim hanya disebut dengan perannya, dan selama Tahun 0 laporan hanya mencakup negara asli.
 
 Laporan dikirim ke tiga tempat:
 
@@ -174,7 +174,7 @@ HP hanya bergetar.
 
 Ilustrasi dibuat dari kode di `web/art/` (`npm run art:build`): lima karikatur peran × empat ekspresi dan 13 ilustrasi kartu krisis. Diorama kota enam distrik bereaksi pada papan di layar utama. Suara dipasang lewat `web/public/audio/manifest.json` tanpa mengubah kode. Rinciannya ada di `docs/art-audio.md`.
 
-Ekspor di konsol (K): tiga CSV (garis waktu, keputusan per tim, log pakta; pemisah titik koma untuk Excel berbahasa Indonesia) dan Edisi Khusus, halaman semua headline dan hasil yang siap dicetak atau disimpan sebagai PDF.
+Ekspor di konsol (K): tiga CSV (garis waktu, keputusan per tim, log kesepakatan; pemisah titik koma untuk Excel berbahasa Indonesia) dan Edisi Khusus, halaman semua headline dan hasil yang siap dicetak atau disimpan sebagai PDF.
 
 ## Belum dibuat
 

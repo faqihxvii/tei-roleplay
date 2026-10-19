@@ -113,12 +113,12 @@ export function buildFrontPage(input: FrontPageInput): FrontPage {
   const kept = input.pactResults.filter(r => r.keptFrom && r.keptTo).length;
   let subheadline: string;
   if (broken.length) {
-    subheadline = `${broken.length} janji di Meja Lobi tidak ditepati${kept ? `, ${kept} pakta lain bertahan` : ''}.`;
+    subheadline = `${broken.length} kesepakatan tidak ditepati${kept ? `, ${kept} lainnya bertahan` : ''}.`;
   } else if (kept) {
-    subheadline = `Semua ${kept} pakta di Meja Lobi ditepati. Langka, tapi terjadi.`;
+    subheadline = `Semua ${kept} kesepakatan ditepati. Langka, tapi terjadi.`;
   } else {
     const next = tags.find(t => t !== first && !combo?.tags.includes(t));
-    subheadline = next ? pick(next) : 'Tidak ada pakta yang dibuat di Meja Lobi tahun ini.';
+    subheadline = next ? pick(next) : 'Tidak ada kesepakatan yang dibuat tahun ini.';
   }
 
   const collapsed = state.collapses.length > 0 && state.log.at(-1) === log;

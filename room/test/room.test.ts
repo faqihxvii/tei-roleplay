@@ -310,8 +310,8 @@ test('only well-formed client messages get through', () => {
   assert.equal(parseClientMessage(JSON.stringify({ t: 'pactPropose', to: 'buruh', fromTerm: 'nope', toTerm: 'buruhTidakMogok' })), null);
 });
 
-test('the talking steps add up to four minutes', () => {
-  assert.equal(Object.values(STEP_MS).reduce((a, b) => a! + b!), 240_000);
+test('the talking steps add up to seven minutes: Rapat 3, Negosiasi 3, Pengesahan 1', () => {
+  assert.deepEqual(STEP_MS, { rapat: 180_000, lobi: 180_000, pengesahan: 60_000 });
 });
 
 test('a snapshot from the join-flow release still restores', () => {
@@ -390,9 +390,9 @@ test('every crisis card has a sourced Di Dunia Nyata note', async () => {
   }
 });
 
-test('Year 0 practice gives the talking steps under two minutes', async () => {
+test('Year 0 practice gives the talking steps under four minutes', async () => {
   const { PRACTICE_MS } = await import('../src/room');
-  assert.equal(Object.values(PRACTICE_MS).reduce((a, b) => a! + b!), 110_000);
+  assert.equal(Object.values(PRACTICE_MS).reduce((a, b) => a! + b!), 220_000);
 });
 
 /** Ten players briefed, with the practice option on. */
@@ -414,7 +414,7 @@ test('Year 0 runs on a throwaway country and leaves the real game untouched', ()
   assert.equal(room.state.phaseEndsAt, null); // the practice crisis waits for the facilitator
 
   room.next(T0); // rapat
-  assert.equal(room.state.phaseEndsAt, T0 + 45_000);
+  assert.equal(room.state.phaseEndsAt, T0 + 90_000);
   room.propose(spokesperson(room, 'pemerintah'), { role: 'pemerintah', cardId: null, pajak: 1 }, T0);
   room.next(T0); // lobi
   room.proposePact(spokesperson(room, 'pengusaha'), 'buruh', 'usahaTidakPhk', 'buruhTidakMogok', 'latihan1', T0);

@@ -69,12 +69,12 @@ export const HEADLINES: Record<HeadlineTag, string[]> = {
   pakta_dilanggar: [
     'Kemarin Salaman, Hari Ini Saling Tunjuk: Janji {pelanggar} kepada {korban} Menguap',
     '{korban} Merasa Ditikung, {pelanggar} Bilang "Itu Cuma Kesepakatan Lisan"',
-    'Pakta di Meja Lobi Robek; {pelanggar} Disebut Paling Licin Tahun Ini',
+    'Kesepakatan Robek; {pelanggar} Disebut Paling Licin Tahun Ini',
     'Janji {pelanggar} kepada {korban} Ternyata Berlaku Sampai Bel Pengesahan Saja',
     '{korban} Belajar Satu Hal Tahun Ini: Salaman Bukan Kontrak',
     '"Situasinya Berubah," Kata {pelanggar}, Semenit Setelah Berjanji kepada {korban}',
     'Kepercayaan Antartim Anjlok Lebih Dalam daripada Indikator Mana Pun',
-    'Pakta Tinggal Kenangan; {pelanggar} Menang Satu Langkah, Kalah Satu Kawan',
+    'Kesepakatan Tinggal Kenangan; {pelanggar} Menang Satu Langkah, Kalah Satu Kawan',
   ],
   mogok: [
     'Mesin Berhenti, Spanduk Bergerak: Buruh Turun ke Jalan',
@@ -88,7 +88,7 @@ export const HEADLINES: Record<HeadlineTag, string[]> = {
   ],
   lobi_terbongkar: [
     'Amplop Tebal Tertangkap Kamera, Semua Pihak Mengaku Lupa',
-    'Lobi Pengusaha Terbongkar; Juru Bicara: "Itu Uang Konsumsi Rapat"',
+    'Lobi Pengusaha Terbongkar; Jubir: "Itu Uang Konsumsi Rapat"',
     'Rapat di Lapangan Golf Ternyata Bukan Soal Golf',
     'Keringanan Pajak Ternyata Ada Harganya, dan Harganya Terekam',
     'Notulen Rapat Tertutup Bocor; Isinya Cuma Nomor Rekening',
@@ -262,7 +262,7 @@ export const HEADLINES: Record<HeadlineTag, string[]> = {
     'Viral Lebih Dulu, Klarifikasi Belakangan',
     'Satu Unggahan Membuat Naik-Turunnya Kepercayaan Jadi Dua Kali Lipat',
     'Kebijakan Negara Kini Dinilai Lewat Kolom Komentar',
-    'Warganet Menjadi Hakim, Juri, dan Juru Bicara Sekaligus',
+    'Warganet Menjadi Hakim, Juri, dan Jubir Sekaligus',
     'Tim Humas Lembur Membalas Komentar Satu per Satu',
     'Video Lima Belas Detik Mengalahkan Laporan Seratus Halaman',
   ],

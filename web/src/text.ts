@@ -29,18 +29,18 @@ export function zoneOf(stat: Indicator, value: number): 'aman' | 'bahaya' | 'kol
 export const STEP_LABEL: Record<YearStep, string> = {
   krisis: 'Krisis',
   rapat: 'Rapat Tim',
-  lobi: 'Lobi Terbuka',
+  lobi: 'Negosiasi',
   pengesahan: 'Pengesahan',
-  pengungkapan: 'Pengungkapan',
+  pengungkapan: 'Hasil',
   koran: 'Halaman Depan',
 };
 
 /** One sentence on what teams should do now, always on the main screen (GDD, "Onboarding"). */
 export const STEP_HINT: Record<YearStep, string> = {
   krisis: 'Baca krisis tahun ini. Apa dampaknya bagi timmu?',
-  rapat: 'Diskusikan di dalam tim. Setiap anggota memilih di HP-nya. Juru Bicara menekan Tim kami selesai bila sudah sepakat.',
-  lobi: 'Datangi tim lain. Buat pakta lewat HP Juru Bicara, lalu tekan Tim kami selesai.',
-  pengesahan: 'Juru Bicara menahan tombol SAH untuk mengunci keputusan tim.',
+  rapat: 'Diskusikan di dalam tim. Setiap anggota memilih di HP-nya. Jubir menekan Tim kami selesai bila sudah sepakat.',
+  lobi: 'Datangi tim lain dan buat kesepakatan: "kami lakukan ini, kalian lakukan itu". Jubir mengajukan dan menyetujui di HP.',
+  pengesahan: 'Jubir menahan tombol SAH untuk mengunci keputusan tim.',
   pengungkapan: 'Semua keputusan dibuka. Lihat siapa menyebabkan apa.',
   koran: 'Harian TEI melaporkan tahun ini.',
 };
@@ -82,25 +82,25 @@ export const signed = (n: number) => (n > 0 ? `+${n}` : `−${Math.abs(n)}`);
 export const PRACTICE_COACH: Record<YearStep, { main: string; phone: string; spokesperson?: string }> = {
   krisis: {
     main: 'Setiap tahun dibuka dengan krisis. Angkanya langsung mengubah Papan Negara, dan aturan tahun ini berlaku untuk semua tim.',
-    phone: 'Baca krisis di layar utama. Di bawah ini ada sumber daya dan agenda rahasia timmu.',
+    phone: 'Baca krisis di layar utama. Sumber daya dan agenda rahasia timmu ada di tab Timku.',
   },
   rapat: {
-    main: 'Rapat Tim: setiap orang memilih satu kartu dan tuas untuk timnya. Panah menunjukkan arah dampak, bukan angka pasti.',
-    phone: 'Coba pilih satu kartu dan satu tuas. Angka kuning di samping pilihan adalah jumlah anggota timmu yang memilihnya.',
+    main: 'Rapat Tim: setiap orang memilih satu kartu dan satu pilihan kebijakan untuk timnya. Panah menunjukkan arah dampak, bukan angka pasti.',
+    phone: 'Coba pilih satu kartu dan satu pilihan kebijakan. Angka kuning di samping pilihan adalah jumlah anggota timmu yang memilihnya.',
   },
   lobi: {
-    main: 'Lobi Terbuka: berdiri, datangi tim lain, tawar-menawar. Janji yang disepakati muncul di Meja Lobi.',
-    phone: 'Bantu Juru Bicaramu menawar ke tim lain. Pakta dibuat lewat HP Juru Bicara.',
-    spokesperson: 'Buka tab Pakta dan coba ajukan satu janji ke tim lain.',
+    main: 'Negosiasi: berdiri, datangi tim lain, tawar-menawar. Kesepakatan yang disetujui muncul di layar ini.',
+    phone: 'Bantu Jubir menawar ke tim lain. Kesepakatan diajukan dan disetujui lewat HP Jubir.',
+    spokesperson: 'Pilih satu tawaran siap pakai di bawah dan ajukan ke tim lain.',
   },
   pengesahan: {
-    main: 'Pengesahan: Juru Bicara menahan tombol SAH. Kalau tidak sempat, pilihan suara terbanyak yang dipakai.',
-    phone: 'Tunggu Juru Bicaramu mengesahkan. Pilihanmu masih dihitung kalau waktu habis.',
+    main: 'Pengesahan: Jubir menahan tombol SAH. Kalau tidak sempat, pilihan suara terbanyak yang dipakai.',
+    phone: 'Tunggu Jubir mengesahkan. Pilihanmu masih dihitung kalau waktu habis.',
     spokesperson: 'Tahan tombol SAH sampai penuh. Kalau dilepas di tengah, tidak terjadi apa-apa.',
   },
   pengungkapan: {
-    main: 'Semua keputusan dibuka. Setiap perubahan angka punya penyebab dan nama timnya. Pakta yang dilanggar robek.',
-    phone: 'Lihat layar utama. Perubahan sumber daya timmu ada di bawah.',
+    main: 'Semua keputusan dibuka. Setiap perubahan angka punya penyebab dan nama timnya. Kesepakatan yang dilanggar robek.',
+    phone: 'Lihat layar utama. Perubahan sumber daya timmu ada di tab Timku.',
   },
   koran: {
     main: 'Setiap tahun ditutup Harian TEI. Setelah ini permainan sungguhan dimulai dari awal, dan hasil latihan dibuang.',

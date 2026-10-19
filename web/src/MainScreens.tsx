@@ -151,7 +151,7 @@ function TeamsStage({ view }: { view: HostView }) {
   const status = (team: HostView['teams'][number]) => {
     if (team.locked) return null; // the stamp says it
     if (team.offline) return 'Diputuskan fasilitator';
-    if (pengesahan) return 'Menunggu Juru Bicara';
+    if (pengesahan) return 'Menunggu Jubir';
     return team.ready ? 'Selesai berdiskusi' : `${team.proposers} dari ${team.members} sudah memilih`;
   };
   return (
@@ -189,8 +189,8 @@ function LobbyTable({ view }: { view: HostView }) {
   return (
     <section className="flex flex-col gap-6">
       <div className="chapter-hero">
-        <h1 className="chapter-question">Meja Lobi</h1>
-        <p className="chapter-hint">{view.pacts.length ? hintFor(view) : 'Belum ada pakta. Datangi tim lain: siapa butuh apa darimu?'}</p>
+        <h1 className="chapter-question">Meja Kesepakatan</h1>
+        <p className="chapter-hint">{view.pacts.length ? hintFor(view) : 'Belum ada kesepakatan. Datangi tim lain: siapa butuh apa darimu?'}</p>
       </div>
       <ReadyMeter view={view} />
       <ul className="flex max-w-page flex-col gap-3">
@@ -359,7 +359,7 @@ export function GuessScreen({ view, now, send }: { view: HostView; now: () => nu
       <div className="chapter">
         <div className="chapter-hero">
           <h1 className="chapter-question">Siapa mengejar apa?</h1>
-          <p className="chapter-hint">Juru Bicara menebak agenda rahasia tim lain{view.options.oknum ? ' dan menunjuk Oknum' : ''} di HP. Setiap tebakan benar bernilai +1.{view.options.oknum ? ' Oknum terbongkar jika ditunjuk minimal 3 dari 5 tim.' : ''}</p>
+          <p className="chapter-hint">Jubir menebak agenda rahasia tim lain{view.options.oknum ? ' dan menunjuk Oknum' : ''} di HP. Setiap tebakan benar bernilai +1.{view.options.oknum ? ' Oknum terbongkar jika ditunjuk minimal 3 dari 5 tim.' : ''}</p>
         </div>
         <p className="ready-meter" role="status">{done === view.teams.length ? 'Semua tebakan masuk.' : `${done} dari ${view.teams.length} tim sudah menebak`}</p>
         <section className="team-row" aria-label="Tim">
@@ -407,7 +407,7 @@ export function ResultsBody({ view }: { view: HostView }) {
       )}
       <table className="score-table">
         <thead>
-          <tr><th scope="col">Tim</th><th scope="col">Agenda rahasia</th><th scope="col">Tebakan</th><th scope="col">Pakta</th><th scope="col">Skor</th></tr>
+          <tr><th scope="col">Tim</th><th scope="col">Agenda rahasia</th><th scope="col">Tebakan</th><th scope="col">Kesepakatan</th><th scope="col">Skor</th></tr>
         </thead>
         <tbody>
           {ranked.map(t => (

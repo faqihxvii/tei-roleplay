@@ -132,7 +132,7 @@ await shot(roleOf['Pemerintah'], 'y1-phone-rapat.png', true);
   await p.locator('.policy').first().waitFor();
 }
 await shot(host, 'y1-rapat.png');
-// Every Juru Bicara says the team is done (the fifth team has no phone and counts as done): Rapat
+// Every Jubir says the team is done (the fifth team has no phone and counts as done): Rapat
 // ends without waiting for its clock.
 const phonesList = Object.values(roleOf);
 for (const [i, p] of phonesList.entries()) {
@@ -145,17 +145,20 @@ for (const [i, p] of phonesList.entries()) {
 }
 await host.locator('.chapter-lobi').waitFor({ timeout: 5000 });
 const usaha = roleOf['Pengusaha'], buruh = roleOf['Serikat Buruh'];
-await usaha.getByRole('tab', { name: 'Pakta' }).click();
-await usaha.getByLabel('Dengan tim').selectOption('buruh');
-await usaha.getByLabel('Timmu berjanji').selectOption('usahaTidakPhk');
-await usaha.getByLabel(/Asalkan Serikat Buruh berjanji/).selectOption('buruhTidakMogok');
-await usaha.getByRole('button', { name: 'Ajukan' }).click();
-await buruh.getByRole('tab', { name: 'Pakta' }).click();
-await buruh.getByRole('button', { name: 'Sepakat' }).click();
+// Negosiasi is the phone's main screen: pick a team, offer a ready-made deal in one tap.
+await usaha.getByRole('radio', { name: /Serikat Buruh/ }).click();
+await usaha.getByRole('button', { name: 'Tawarkan ke Serikat Buruh' }).first().click();
+// The offer shows up for the receiving team, with a badge on its "Sekarang" tab.
+await buruh.locator('.nav-badge').waitFor();
+await buruh.getByText('Tawaran untuk timmu').waitFor();
+await shot(buruh, 'y1-phone-tawaran.png', true);
+await buruh.getByRole('button', { name: 'Setuju' }).click();
 await host.locator('.pact-card').waitFor();
 await shot(host, 'y1-lobi.png');
-await shot(buruh, 'y1-phone-pakta.png', true);
+await shot(buruh, 'y1-phone-negosiasi.png', true);
 await next(); // pengesahan
+// The Jubir seals the team's majority unless they change it here.
+await roleOf['Pemerintah'].getByText('Yang akan disahkan: pilihan terbanyak timmu', { exact: false }).waitFor();
 for (const p of Object.values(roleOf)) {
   const hold = p.locator('button.hold');
   await hold.scrollIntoViewIfNeeded();
@@ -279,7 +282,7 @@ await shot(host, 'console-survei.png');
   if (report.comments?.length !== 1) errors.push('laporan: komentar fasilitator hilang');
   for (const name of ['Ani', 'Budi', 'Citra', 'Dodi', 'Eka', 'Fajar']) if (JSON.stringify(report).includes(`"${name}"`)) errors.push(`laporan memuat nama ${name}`);
 }
-for (const name of ['Garis waktu (CSV)', 'Keputusan per tim (CSV)', 'Log pakta (CSV)', 'Kuis pra/pasca (CSV)', 'Survei (CSV)']) {
+for (const name of ['Garis waktu (CSV)', 'Keputusan per tim (CSV)', 'Log kesepakatan (CSV)', 'Kuis pra/pasca (CSV)', 'Survei (CSV)']) {
   const [download] = await Promise.all([host.waitForEvent('download'), host.getByRole('button', { name }).click()]);
   const path = await download.path();
   const { readFileSync } = await import('node:fs');

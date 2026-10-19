@@ -1,6 +1,6 @@
 # Uji beban server ruangan
 
-Alat: `tools/loadtest/run.ts`. Satu host dan banyak HP bot memainkan satu permainan penuh lewat WebSocket: masuk, dibagi tim, rapat (usul + "Tim kami selesai"), lobi (pakta diajukan dan dijawab), pengesahan (SAH), tebak agenda. Setiap HP sekali putus lalu tersambung lagi di tahun 2. Bot berpikir sejenak secara acak sebelum tiap aksi (`--think-ms`).
+Alat: `tools/loadtest/run.ts`. Satu host dan banyak HP bot memainkan satu permainan penuh lewat WebSocket: masuk, dibagi tim, rapat (usul + "Tim kami selesai"), negosiasi (kesepakatan diajukan dan dijawab), pengesahan (SAH), tebak agenda. Setiap HP sekali putus lalu tersambung lagi di tahun 2. Bot berpikir sejenak secara acak sebelum tiap aksi (`--think-ms`).
 
 ```bash
 npm run build

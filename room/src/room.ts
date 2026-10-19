@@ -27,11 +27,11 @@ export type Tempo = 'normal' | 'santai';
 
 export const STEP_ORDER: YearStep[] = ['krisis', 'rapat', 'lobi', 'pengesahan', 'pengungkapan', 'koran'];
 /** Only the three talking steps run on a clock; the facilitator moves the story steps on by hand. */
-export const STEP_MS: Partial<Record<YearStep, number>> = { rapat: 75_000, lobi: 120_000, pengesahan: 45_000 };
+export const STEP_MS: Partial<Record<YearStep, number>> = { rapat: 180_000, lobi: 180_000, pengesahan: 60_000 };
 /** Santai gives classes that read slowly 50% more time (GDD, "Waktu dan gerak"). */
 export const TEMPO_FACTOR: Record<Tempo, number> = { normal: 1, santai: 1.5 };
 /** Year 0 practice: the same talking steps on shorter clocks (GDD, "Onboarding"). */
-export const PRACTICE_MS: Partial<Record<YearStep, number>> = { rapat: 45_000, lobi: 40_000, pengesahan: 25_000 };
+export const PRACTICE_MS: Partial<Record<YearStep, number>> = { rapat: 90_000, lobi: 90_000, pengesahan: 40_000 };
 /** Steps that end early once every team's spokesperson says the team is done. */
 export const READY_STEPS: YearStep[] = ['rapat', 'lobi'];
 /** Steps in which members may still change their proposal. */
@@ -167,11 +167,11 @@ const ERROR_TEXT: Record<RoomErrorCode, string> = {
   'pemain-tidak-ada': 'Pemain itu sudah tidak ada di ruangan.',
   'fase-salah': 'Langkah itu tidak bisa dilakukan di fase ini.',
   'belum-ada-pemain': 'Belum ada pemain yang bergabung.',
-  'bukan-jubir': 'Hanya Juru Bicara tim yang bisa melakukan ini.',
+  'bukan-jubir': 'Hanya Jubir tim yang bisa melakukan ini.',
   'keputusan-salah': 'Pilihan itu tidak bisa dipakai tahun ini.',
   'sudah-dikunci': 'Keputusan tim sudah disahkan.',
-  'pakta-salah': 'Pakta itu tidak bisa dibuat.',
-  'pakta-penuh': `Satu tim paling banyak membuat ${MAX_PACTS_PER_TEAM} pakta per tahun.`,
+  'pakta-salah': 'Kesepakatan itu tidak bisa dibuat.',
+  'pakta-penuh': `Satu tim paling banyak punya ${MAX_PACTS_PER_TEAM} kesepakatan per tahun.`,
   'tanpa-tim': 'Kamu belum masuk tim.',
 };
 
@@ -349,7 +349,7 @@ export class Room {
     return this.s.players.filter(p => p.role === role).sort((a, b) => a.joinedAt - b.joinedAt);
   }
 
-  /** The Juru Bicara rotates every year so everyone gets to decide once (GDD, "Keputusan di dalam tim"). */
+  /** The Jubir rotates every year so everyone gets to decide once (GDD, "Keputusan di dalam tim"). */
   spokesperson(role: Role): Player | undefined {
     const members = this.members(role);
     return members.length ? members[(this.year - 1) % members.length] : undefined;
