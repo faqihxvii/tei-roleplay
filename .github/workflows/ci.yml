@@ -49,6 +49,11 @@ jobs:
       - run: npm run room:e2e -- e2e-shots
         env:
           TEI_BASE: http://127.0.0.1:8787
+      - name: Full game, Lanjutan rules
+        run: npm run room:e2e -- e2e-shots/lanjutan
+        env:
+          TEI_BASE: http://127.0.0.1:8787
+          TEI_MODE: lanjutan
       - if: failure()
         uses: actions/upload-artifact@v4
         with:

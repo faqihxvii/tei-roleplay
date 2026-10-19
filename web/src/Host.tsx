@@ -9,6 +9,7 @@ import { DebriefScreen } from './Debrief';
 import { QuizCount } from './Quiz';
 import { Portrait } from './art';
 import { Diorama } from './Diorama';
+import { ReactionLayer, useReactionLayer } from './Reactions';
 import { RoleMark, roleProps, StepAnnouncer, TeiLogo } from './shared';
 import { whereLabel } from './text';
 import { EdisiKhusus } from './EdisiKhusus';
@@ -36,6 +37,7 @@ export function Host() {
 }
 
 function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string) => void }) {
+  const [mode, setMode] = useState<'pemula' | 'lanjutan'>('pemula');
   const [oknum, setOknum] = useState(false);
   const [santai, setSantai] = useState(false);
   const [latihan, setLatihan] = useState(true);
@@ -47,7 +49,7 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/rooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ oknum, latihan, kuis, tempo: santai ? 'santai' : 'normal' }) });
+      const res = await fetch('/api/rooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode, oknum, latihan, kuis, tempo: santai ? 'santai' : 'normal' }) });
       const body = (await res.json()) as { code?: string; hostToken?: string; message?: string };
       if (!res.ok || !body.code || !body.hostToken) throw new Error(body.message ?? 'Ruangan gagal dibuat.');
       onCreated(body.code, body.hostToken);
@@ -68,6 +70,17 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
         <p className="lead">Lima tim memerintah satu negara selama lima tahun. Siapkan proyektor, lalu pilih cara bermain kelas ini.</p>
       </div>
       <div className="flex w-full max-w-form flex-col gap-3">
+      <fieldset className="flex flex-col gap-2">
+        <legend className="kicker">Tingkat kesulitan</legend>
+        <label className="check">
+          <input type="radio" name="mode" checked={mode === 'pemula'} onChange={() => setMode('pemula')} />
+          <span><strong>Pemula.</strong> Setiap krisis memberi tiap tim tiga pilihan respons dengan akibat yang tertulis jelas. Satu ketukan per tim. Cocok untuk kelas pertama.</span>
+        </label>
+        <label className="check">
+          <input type="radio" name="mode" checked={mode === 'lanjutan'} onChange={() => setMode('lanjutan')} />
+          <span><strong>Lanjutan.</strong> Kartu kebijakan, pilihan kebijakan tiap peran (pajak, bunga, harga, upah, konsumsi), kekuatan khusus, dan tebak agenda di akhir.</span>
+        </label>
+      </fieldset>
       <label className="check">
         <input type="checkbox" checked={oknum} onChange={e => setOknum(e.target.checked)} />
         <span><strong>Mode Oknum.</strong> Satu tim diam-diam bermain untuk membuat negara kolaps.</span>
@@ -82,7 +95,7 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
       </label>
       <label className="check">
         <input type="checkbox" checked={santai} onChange={e => setSantai(e.target.checked)} />
-        <span><strong>Tempo Santai.</strong> Rapat, Lobi dan Pengesahan 50% lebih lama, untuk kelas yang butuh waktu baca lebih panjang.</span>
+        <span><strong>Tempo Santai.</strong> Rapat, Negosiasi dan Pengesahan 50% lebih lama, untuk kelas yang butuh waktu baca lebih panjang.</span>
       </label>
         {error && <p className="text-danger" role="alert">{error}</p>}
         <button className="btn primary big mt-3" onClick={create} disabled={busy}>{busy ? 'Membuka…' : 'Buka ruangan'}</button>
@@ -96,9 +109,12 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
   const [notice, setNotice] = useState<string | null>(null);
   const clock = useClockOffset();
   const [consoleOpen, setConsoleOpen] = useConsoleToggle();
+  const reactions = useReactionLayer();
 
   const onMessage = (message: ServerMessage) => {
-    if (message.t === 'host-state') {
+    if (message.t === 'reaction') {
+      reactions.push(message.kind, message.role);
+    } else if (message.t === 'host-state') {
       clock.sync(message.now);
       setView(message.view);
     } else if (message.t === 'error') {
@@ -125,6 +141,7 @@ function HostRoom({ code, token, onLost }: { code: string; token: string; onLost
       {status !== 'terhubung' && <p className="banner" role="status">Koneksi server putus. Menyambung ulang…</p>}
       {notice && <p className="banner warn" role="alert">{notice}</p>}
       <StepAnnouncer label={whereLabel(view)} />
+      <ReactionLayer floating={reactions.floating} counts={reactions.counts} />
       {view.phase === 'gabung' && <Lobby view={view} send={send} />}
       {view.phase === 'briefing' && <Briefing view={view} send={send} />}
       {view.phase === 'tahun' && <YearScreen view={view} now={clock.now} send={send} />}
@@ -176,6 +193,7 @@ function Lobby({ view, send }: { view: HostView; send: (m: ClientMessage) => voi
         <section className="card gap-4 p-5">
           <p className="count"><strong>{view.players.length}</strong> pemain · {connected} terhubung</p>
           <QuizCount view={view} stage="pra" />
+          <p className="badge">{view.options.mode === 'lanjutan' ? 'Lanjutan' : 'Pemula'}</p>
           {view.options.oknum && <p className="badge">Mode Oknum aktif</p>}
           <div className="flex flex-wrap gap-2">
             <button className="btn" onClick={() => send({ t: 'assign', mode: 'acak' })} disabled={!view.players.length}>Bagi acak</button>
@@ -289,7 +307,7 @@ function PlayerChip({ player, spokesperson, editable, send, onDragStart }: {
     >
       <span className="dot" aria-hidden="true" />
       <span className="name">{player.nickname}</span>
-      {spokesperson && <span className="tag" title="Juru Bicara tahun ini">Jubir</span>}
+      {spokesperson && <span className="tag" title="Jubir tahun ini">Jubir</span>}
       {!player.connected && <span className="sr-only">(terputus)</span>}
       {editable && send && (
         <span className="controls">

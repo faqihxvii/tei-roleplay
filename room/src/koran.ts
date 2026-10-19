@@ -4,6 +4,7 @@ import { ROLE_LABEL } from '../../engine/src/content/roles';
 import { Rng } from '../../engine/src/rng';
 import { INDICATORS, type GameState, type Indicator, type Stats, type YearLog } from '../../engine/src/types';
 import { ADS, COMBO_HEADLINES, HEADLINES, TAG_WEIGHT, VOICES, type Archetype, type HeadlineTag, type Zone } from './content/koran';
+import { ACCOUNTS, BUZZER, GOSIP, HASHTAGS, SPIN, VOICE_HANDLES, type Account } from './content/linimasa';
 import type { PactRecord, PactResult } from './room';
 
 // The "Harian TEI" front page that closes every year, assembled from what teams actually did
@@ -21,6 +22,23 @@ export interface FrontPage {
   ad: string;
   tags: HeadlineTag[];
   variantIds: string[];
+  /** Linimasa TEI: the same year as a feed of posts (absent in snapshots from before the feed). */
+  posts?: Post[];
+  /** Hashtags trending this year, heaviest first, without "#". */
+  trending?: string[];
+}
+
+export interface Post {
+  id: string;
+  account: Pick<Account, 'handle' | 'name' | 'role' | 'kind'>;
+  text: string;
+  /** The post this one replies to. */
+  replyTo?: string;
+  /** Carries the year's crisis photo. */
+  photo?: boolean;
+  promoted?: boolean;
+  likes: number;
+  reposts: number;
 }
 
 export interface FrontPageInput {
@@ -113,12 +131,12 @@ export function buildFrontPage(input: FrontPageInput): FrontPage {
   const kept = input.pactResults.filter(r => r.keptFrom && r.keptTo).length;
   let subheadline: string;
   if (broken.length) {
-    subheadline = `${broken.length} janji di Meja Lobi tidak ditepati${kept ? `, ${kept} pakta lain bertahan` : ''}.`;
+    subheadline = `${broken.length} kesepakatan tidak ditepati${kept ? `, ${kept} lainnya bertahan` : ''}.`;
   } else if (kept) {
-    subheadline = `Semua ${kept} pakta di Meja Lobi ditepati. Langka, tapi terjadi.`;
+    subheadline = `Semua ${kept} kesepakatan ditepati. Langka, tapi terjadi.`;
   } else {
     const next = tags.find(t => t !== first && !combo?.tags.includes(t));
-    subheadline = next ? pick(next) : 'Tidak ada pakta yang dibuat di Meja Lobi tahun ini.';
+    subheadline = next ? pick(next) : 'Tidak ada kesepakatan yang dibuat tahun ini.';
   }
 
   const collapsed = state.collapses.length > 0 && state.log.at(-1) === log;
@@ -136,9 +154,37 @@ export function buildFrontPage(input: FrontPageInput): FrontPage {
   if (chosenAd) variantIds.push(chosenAd.id);
   const ad = chosenAd?.text ?? ADS.at(-1)!.text;
 
+  // ---- Linimasa ----
+  const after = log.statsAfter;
+  const zone: Zone = collapsed ? 'kolaps' : after.keresahan >= 7 || after.harga >= 7 || after.kas <= 2 || after.kepercayaan <= 3 ? 'bahaya' : 'aman';
+  // Unrest makes everything louder: likes and reposts grow with Keresahan.
+  const loud = (base: number) => Math.round(base * (1 + after.keresahan / 3) * (0.6 + rng.next() * 0.8));
+  const post = (id: string, account: Account, text: string, extra: Partial<Post> = {}): Post =>
+    ({ id: `${log.year}-${id}`, account: { handle: account.handle, name: account.name, role: account.role, kind: account.kind }, text, likes: loud(40), reposts: loud(8), ...extra });
+  const spin = SPIN[first!];
+  const official = spin ? post('pejabat', ACCOUNTS[spin.account], rng.pick(spin.lines), { likes: loud(25) }) : null;
+  const moved = INDICATORS.filter(stat => after[stat] !== before[stat]);
+  const arrow = (stat: Indicator) => (after[stat] > before[stat] ? '▲' : '▼');
+  const data = moved.length
+    ? `Rekap tahun ${log.year}: ${moved.map(stat => `${INDICATOR_NAME[stat]} ${before[stat]}→${after[stat]} ${arrow(stat)}`).join(' · ')}`
+    : `Rekap tahun ${log.year}: semua angka sama persis seperti awal tahun. Mencurigakan.`;
+  const lead = post('berita', ACCOUNTS.harianTei, `${headline}. ${subheadline}`, { photo: true, likes: loud(120), reposts: loud(30) });
+  const posts: Post[] = [
+    lead,
+    ...(official ? [official] : []),
+    ...(official && BUZZER[zone].length ? [post('buzzer', ACCOUNTS.buzzer, rng.pick(BUZZER[zone]), { replyTo: official.id, likes: loud(6), reposts: loud(1) })] : []),
+    post('data', ACCOUNTS.dataWarga, data, { likes: loud(30), reposts: loud(12) }),
+    ...voices.map((v, i) => post(`warga${i}`, { handle: VOICE_HANDLES[archetypes[i]!], name: v.who, role: null, kind: 'gosip' }, v.text, { replyTo: lead.id })),
+    ...(GOSIP[zone].length ? [post('gosip', ACCOUNTS.gosip, rng.pick(GOSIP[zone]), { likes: loud(60), reposts: loud(20) })] : []),
+    post('promosi', { handle: 'PromosiTerpercaya', name: 'Promosi', role: null, kind: 'gosip' }, ad, { promoted: true, likes: loud(2), reposts: 0 }),
+  ];
+  const trending = tags.slice(0, 4).map(tag => HASHTAGS[tag]).filter(Boolean);
+
   return {
     year: log.year,
     crisisId: log.crisisId,
+    posts,
+    trending,
     headline,
     subheadline,
     voices,
@@ -148,6 +194,8 @@ export function buildFrontPage(input: FrontPageInput): FrontPage {
     variantIds,
   };
 }
+
+const INDICATOR_NAME: Record<Indicator, string> = { harga: 'Harga', kerja: 'Lapangan Kerja', kas: 'Kas', kepercayaan: 'Kepercayaan', keresahan: 'Keresahan' };
 
 function zoneOf(stat: 'harga' | 'kerja' | 'kepercayaan' | 'keresahan', stats: Stats): Zone {
   switch (stat) {

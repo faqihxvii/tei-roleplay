@@ -8,7 +8,7 @@ Untuk ilustrator, animator, sound designer, dan engineer yang memasang aset mere
 
 **Merek TEI**, dengan sumber economic.co.id dan feed Instagram @theeconomicinfluence: tata letak editorial yang lapang di atas putih gading, merah TEI untuk penekanan, judul Geist yang rapat, sudut tegas, dan garis tipis. Dari sampul feed kita ambil rumus judulnya: klaim ditulis tebal merah, lalu penjelasannya langsung menyusul dalam warna hitam. Koran satir *Harian TEI* tetap ada sebagai cerita di dalam permainan, ditata seperti sampul postingan TEI. Ilustrasi tetap bergaya cetak risograph dengan tinta merah dan pink TEI.
 
-Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon, ikon generik sebagai visual utama, dan gambar stok (GDD), kecuali foto halaman depan Harian TEI (lihat Keputusan 18 Oktober 2026 di bagian Ilustrasi). Target audio rilis tetap foley rekaman asli. Suara sintesis hanya dipakai sementara untuk playtest; lihat bagian audio.
+Dilarang: gradien dekoratif, glassmorphism, emoji sebagai ikon (kecuali reaksi langsung pemain, yang merupakan suara mereka sendiri), ikon generik sebagai visual utama, dan gambar stok (GDD), kecuali foto halaman depan Harian TEI (lihat Keputusan 18 Oktober 2026 di bagian Ilustrasi). Target audio rilis tetap foley rekaman asli. Suara sintesis hanya dipakai sementara untuk playtest; lihat bagian audio.
 
 ## Yang sudah ada di kode
 
@@ -19,7 +19,7 @@ Sistem desainnya memakai **Tailwind CSS v4** dan **Radix UI**:
 - `web/src/styles/tokens.css` adalah tema Tailwind (`@theme`) dan satu-satunya tempat nilai mentah. Tema bawaan Tailwind tidak dimuat (`styles/index.css` hanya mengimpor preflight dan mesin utilitas), jadi temanya tertutup: `p-7` atau `text-blue-500` tidak menghasilkan apa pun. Hanya nilai TEI yang ada. Nilainya diambil dari stylesheet economic.co.id, lalu disesuaikan untuk proyektor kelas: tidak ada teks di bawah 12 px, dan ukuran display mengikuti lebar layar.
 - `web/src/styles/base.css` mengatur elemen dasar (judul, tautan, fokus), dan `web/src/styles/components.css` memuat bagian-bagian TEI (tombol, kartu, topbar, koran, papan), masing-masing didefinisikan sekali dan hanya memakai `var(--…)`.
 - Komponen React mengatur tata letak dan jarak antar-bagian dengan utilitas Tailwind (`flex flex-col gap-4`, `text-muted`, `lg:grid-cols-2`).
-- Bagian interaktif memakai Radix: `Dialog` untuk konsol fasilitator (fokus terkunci, Escape menutup), `Tabs` untuk tab bawah HP dan Keputusan/Pakta, `ToggleGroup` untuk tempo, `Switch` dan `Slider` untuk suara.
+- Bagian interaktif memakai Radix: `Dialog` untuk konsol fasilitator (fokus terkunci, Escape menutup), `Tabs` untuk tab bawah HP, `ToggleGroup` untuk tempo, `Switch` dan `Slider` untuk suara.
 
 Lapisan token: primitif (palet mentah, hanya di `:root`), lalu token semantik di `@theme`, lalu token komponen. Tes `web/test/tokens.test.ts` gagal kalau ada ukuran huruf, bobot, jarak huruf, tinggi baris, warna, atau jarak (padding, margin, gap, inset) mentah di luar file token, atau ada nilai sembarang Tailwind seperti `p-[13px]` di komponen.
 
@@ -107,8 +107,8 @@ Setiap gerak punya makna (GDD, "Gerak"). Semuanya CSS murni, tanpa library anima
 | --- | --- | --- |
 | Kartu krisis dibuka | Kertas meluncur ke meja | Pudar 160 ms |
 | Tim mengesahkan | Cap SAH menghantam, tinta menyebar, kartu tim sedikit tertekan | Pudar |
-| Pengungkapan | Kartu dibalik, penyebab meresap seperti tinta | Pudar |
-| Pakta dilanggar | Kartu pakta tersentak sekali | Pudar |
+| Hasil | Kartu dibalik, penyebab meresap seperti tinta | Pudar |
+| Kesepakatan dilanggar | Kartu kesepakatan tersentak sekali | Pudar |
 | Negara kolaps | Spanduk merah mendarat | Pudar |
 | Halaman depan | Koran meluncur dan sedikit berputar | Pudar |
 
@@ -118,7 +118,7 @@ Versi kurangi gerak dipakai jika perangkat meminta `prefers-reduced-motion`, ata
 
 - **Hanya layar utama yang berbunyi.** HP tidak pernah memuat kode audio. Tab cetak Edisi Khusus juga senyap.
 - **Howler.js** dimuat hanya jika `web/public/audio/manifest.json` mendaftarkan setidaknya satu file. Selama manifest kosong, tidak ada byte audio yang diunduh.
-- **Pemicu cue diturunkan dari perubahan state ruangan** (`web/src/audio/derive.ts`), lalu diuji. Pengungkapan berbunyi mengikuti tempo layar: satu bunyi per kartu, per penyebab, per pakta, lalu vonis.
+- **Pemicu cue diturunkan dari perubahan state ruangan** (`web/src/audio/derive.ts`), lalu diuji. Pengungkapan berbunyi mengikuti tempo layar: satu bunyi per kartu, per penyebab, per kesepakatan, lalu vonis.
 - **Musik:** tiga loop yang berganti menurut Keresahan, dengan crossfade 1,5 detik. Musik turun (ducking) saat kartu krisis dibuka, saat pengungkapan, saat halaman depan, dan saat jeda. Musik diam saat debrief, karena kelas sedang berdiskusi.
 - **Konsol fasilitator (K):** tombol bisu, volume utama, musik dan efek terpisah, sakelar kurangi gerak, dan jumlah file yang terpasang. Di lobi ada sakelar suara singkat. Pengaturan ini tersimpan per laptop.
 - **Pemeriksaan:** setiap cue yang diminta tercatat di `window.__teiAudio`, ada filenya atau tidak. Uji browser memakainya untuk memastikan semua cue terpicu.
@@ -131,9 +131,9 @@ HP senyap dan hanya bergetar (`web/src/haptics.ts`). Setiap getaran punya padana
 | --- | --- |
 | 60 ms | Setiap ganti fase |
 | 80 ms | Rapat Tim dimulai: giliran tim memilih |
-| 60-40-60 | Juru Bicara: Lobi, Pengesahan, dan tebak agenda dimulai |
-| 100-50-100 | Juru Bicara menerima tawaran pakta |
-| 120 ms | Keputusan tim disahkan (anggota selain Juru Bicara; Juru Bicara sudah merasakannya saat menahan tombol) |
+| 60-40-60 | Jubir: Negosiasi, Pengesahan, dan tebak agenda dimulai |
+| 100-50-100 | Tim menerima tawaran kesepakatan (semua anggota) |
+| 120 ms | Keputusan tim disahkan (anggota selain Jubir; Jubir sudah merasakannya saat menahan tombol) |
 
 ## Ilustrasi
 
@@ -250,17 +250,17 @@ Tabel ini sama dengan `web/src/audio/cues.ts`, yang menjadi sumber kebenarannya.
 | `briefing` | Briefing peran dimulai | Amplop cokelat dirobek, kertas ditarik keluar | Layar briefing dan hitung mundur | 0.8 | 1 |
 | `fase.krisis` | Kartu krisis dibuka | Mesin ketik cepat lalu bel ruang redaksi | Kartu krisis meluncur masuk | 0.9 | 1 |
 | `fase.rapat` | Rapat Tim dimulai | Kursi digeser, gumam ruang rapat | Pertanyaan tim tampil besar | 0.6 | 1 |
-| `fase.lobi` | Lobi Terbuka dimulai | Bel pasar dan obrolan kerumunan naik | Meja Lobi | 0.7 | 1 |
+| `fase.lobi` | Negosiasi dimulai | Bel pasar dan obrolan kerumunan naik | Meja Kesepakatan | 0.7 | 1 |
 | `fase.pengesahan` | Pengesahan dimulai | Ketukan palu sidang dua kali | Kartu status tim menunggu SAH | 0.8 | 1 |
 | `fase.pengungkapan` | Pengungkapan dimulai | Gulungan kendang pendek | Kartu keputusan tertutup | 0.8 | 1 |
 | `fase.koran` | Halaman depan terbit | Mesin cetak berputar lalu koran dilempar ke meja | Koran meluncur masuk | 0.9 | 1 |
 | `sah` | Satu tim mengesahkan keputusan | Stempel karet menghantam kertas | Cap SAH merah di kartu tim | 0.9 | 3 |
-| `pakta.sepakat` | Pakta disepakati di Lobi | Pulpen menandatangani, kertas dilipat | Pakta muncul di Meja Lobi | 0.7 | 3 |
+| `pakta.sepakat` | Kesepakatan disetujui saat Negosiasi | Pulpen menandatangani, kertas dilipat | Kesepakatan muncul di Meja Kesepakatan | 0.7 | 3 |
 | `kartu.buka` | Keputusan satu tim dibuka | Kartu dibalik di atas meja | Kartu tim terbuka | 0.7 | 3 |
 | `sebab.baik` | Perubahan indikator yang membaik | Koin jatuh ke kaleng | Angka hijau dan papan bergerak | 0.6 | 3 |
 | `sebab.buruk` | Perubahan indikator yang memburuk | Map tebal dijatuhkan ke meja | Angka merah dan papan bergerak | 0.6 | 3 |
-| `pakta.tepat` | Pakta ditepati | Jabat tangan dan tepukan pundak | Pakta hijau "Ditepati +1" | 0.6 | 1 |
-| `pakta.robek` | Pakta dilanggar | Kertas dirobek dua | Pakta bergaris merah dan bergetar | 0.8 | 1 |
+| `pakta.tepat` | Kesepakatan ditepati | Jabat tangan dan tepukan pundak | Kesepakatan hijau "Ditepati +1" | 0.6 | 1 |
+| `pakta.robek` | Kesepakatan dilanggar | Kertas dirobek dua | Kesepakatan bergaris merah dan bergetar | 0.8 | 1 |
 | `bahaya` | Indikator masuk zona bahaya | Peluit demo dari kejauhan | Label Bahaya dan arsir merah di papan | 0.7 | 1 |
 | `kolaps` | Negara kolaps | Kerumunan meledak, peluit panjang, toa | Spanduk merah "Negara kolaps" | 1 | 1 |
 | `waktu.hampir` | 10 detik terakhir fase berwaktu; berhenti saat jeda, dilanjutkan sesuai sisa waktu | Jam meja berdetak 10 detik | Timer berubah merah | 0.5 | 1 |

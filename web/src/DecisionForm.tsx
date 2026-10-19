@@ -1,3 +1,4 @@
+import { ROLE_BRIEF } from '../../engine/src/content/briefs';
 import { ROLE_LABEL } from '../../engine/src/content/roles';
 import type { Decision, Konsumsi, Lever, Role, Step, Upah } from '../../engine/src/types';
 import type { CardView, DecisionContext } from '../../room/src/views';
@@ -15,11 +16,14 @@ function VoteBadge({ count }: { count: number }) {
   return <span className="votes" aria-label={`${count} suara`}>{count}</span>;
 }
 
+/** What a lever option does, in the role card's own words, so the effect sits under the button pressed. */
+const leverFx = (role: Role, name: string) => ROLE_BRIEF[role].lever.options.find(([n]) => n === name)?.[1];
+
 function Choice<T>({ legend, field, value, options, onChange, disabled, tally, frozen }: {
   legend: string;
   field: string;
   value: T;
-  options: { value: T; label: string; disabled?: boolean; hint?: string }[];
+  options: { value: T; label: string; disabled?: boolean; hint?: string; fx?: string }[];
   onChange: (value: T) => void;
   disabled: boolean;
   tally?: Tally;
@@ -43,17 +47,21 @@ function Choice<T>({ legend, field, value, options, onChange, disabled, tally, f
           </label>
         ))}
       </div>
+      {(() => {
+        const chosen = options.find(o => JSON.stringify(o.value) === JSON.stringify(value));
+        return chosen?.fx ? <p className="choice-effect" aria-live="polite"><strong>{chosen.label}:</strong> {chosen.fx}</p> : null;
+      })()}
     </fieldset>
   );
 }
 
-function CardOption({ card, checked, onChange, disabled, count }: { card: CardView | null; checked: boolean; onChange: () => void; disabled: boolean; count: number }) {
+function CardOption({ card, checked, onChange, disabled, count, slot }: { card: CardView | null; checked: boolean; onChange: () => void; disabled: boolean; count: number; slot?: string }) {
   const unplayable = !!card && !card.playable;
   return (
     <label className={`policy${checked ? ' on' : ''}${unplayable ? ' off' : ''}`}>
       <input type="radio" name="cardId" checked={checked} onChange={onChange} disabled={disabled || unplayable} />
       <span className="policy-body">
-        <span className="policy-name">{card ? card.name : 'Tidak memainkan kartu'}<VoteBadge count={count} /></span>
+        <span className="policy-name">{slot && <span className="slot" aria-hidden="true">{slot}</span>}{card ? card.name : 'Tidak memainkan kartu'}<VoteBadge count={count} /></span>
         {card && <span className="policy-desc">{card.description}</span>}
         {card && (
           <span className="effects">
@@ -84,10 +92,22 @@ export function DecisionForm({ ctx, value, onChange, disabled = false, showVotes
   const frozen = (lever: Lever) => ctx.frozen.includes(lever);
   const set = (patch: Partial<Decision>) => onChange({ ...value, ...patch } as Decision);
 
+  // Pemula: the three responses to this crisis are the whole decision.
+  if (ctx.mode === 'pemula') {
+    return (
+      <fieldset className="flex flex-col gap-3 responses" disabled={disabled}>
+        <legend>Pilih respons timmu <small className="text-muted">(satu)</small></legend>
+        {ctx.hand.map((card, i) => (
+          <CardOption key={card.id} card={card} slot={'ABC'[i]} checked={value.cardId === card.id} onChange={() => set({ cardId: card.id })} disabled={disabled} count={votes(tally, 'cardId', card.id)} />
+        ))}
+      </fieldset>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <fieldset className="flex flex-col gap-2" disabled={disabled}>
-        <legend>Kartu kebijakan</legend>
+        <legend>Kartu kebijakan <small className="text-muted">(pilih satu)</small></legend>
         {ctx.hand.map(card => (
           <CardOption key={card.id} card={card} checked={value.cardId === card.id} onChange={() => set({ cardId: card.id })} disabled={disabled} count={votes(tally, 'cardId', card.id)} />
         ))}
@@ -95,35 +115,35 @@ export function DecisionForm({ ctx, value, onChange, disabled = false, showVotes
       </fieldset>
 
       {value.role === 'pemerintah' && (
-        <Choice<Step> legend="Pajak" field="pajak" value={value.pajak} tally={tally} disabled={disabled} frozen={frozen('pajak')}
-          options={[{ value: -1, label: 'Turun' }, { value: 0, label: 'Tetap' }, { value: 1, label: 'Naik' }]}
+        <Choice<Step> legend="Pilihan kebijakan: Pajak" field="pajak" value={value.pajak} tally={tally} disabled={disabled} frozen={frozen('pajak')}
+          options={[{ value: -1, label: 'Turun', fx: leverFx('pemerintah', 'Turun') }, { value: 0, label: 'Tetap', fx: leverFx('pemerintah', 'Tetap') }, { value: 1, label: 'Naik', fx: leverFx('pemerintah', 'Naik') }]}
           onChange={pajak => set({ pajak })} />
       )}
 
       {value.role === 'bankSentral' && (
         <>
-          <Choice<Step> legend={`Suku bunga (sekarang level ${ctx.bunga} dari 5)`} field="bunga" value={value.bunga} tally={tally} disabled={disabled} frozen={frozen('bunga')}
-            options={[{ value: -1, label: 'Turun', disabled: ctx.bunga <= 1 }, { value: 0, label: 'Tahan' }, { value: 1, label: 'Naik', disabled: ctx.bunga >= 5 }]}
+          <Choice<Step> legend={`Pilihan kebijakan: Suku bunga (sekarang level ${ctx.bunga} dari 5)`} field="bunga" value={value.bunga} tally={tally} disabled={disabled} frozen={frozen('bunga')}
+            options={[{ value: -1, label: 'Turun', disabled: ctx.bunga <= 1, fx: leverFx('bankSentral', 'Turun 1') }, { value: 0, label: 'Tahan', fx: leverFx('bankSentral', 'Tahan') }, { value: 1, label: 'Naik', disabled: ctx.bunga >= 5, fx: leverFx('bankSentral', 'Naik 1') }]}
             onChange={bunga => set({ bunga })} />
           <Choice legend="Kekuatan: Independen" field="tolakCetakUang" value={value.tolakCetakUang} tally={tally} disabled={disabled}
-            options={[{ value: false, label: 'Ikuti Pemerintah' }, { value: true, label: 'Tolak Cetak Uang' }]}
+            options={[{ value: false, label: 'Ikuti Pemerintah' }, { value: true, label: 'Tolak Cetak Uang', fx: 'Kalau Pemerintah memainkan Cetak Uang, kartunya batal. Kredibilitas ▲' }]}
             onChange={tolakCetakUang => set({ tolakCetakUang })} />
         </>
       )}
 
       {value.role === 'pengusaha' && (
-        <Choice legend="Harga" field="hargaNaik" value={value.hargaNaik} tally={tally} disabled={disabled} frozen={frozen('harga')}
-          options={[{ value: false, label: 'Tahan' }, { value: true, label: 'Naik' }]}
+        <Choice legend="Pilihan kebijakan: Harga jual" field="hargaNaik" value={value.hargaNaik} tally={tally} disabled={disabled} frozen={frozen('harga')}
+          options={[{ value: false, label: 'Tahan', fx: leverFx('pengusaha', 'Tahan') }, { value: true, label: 'Naik', fx: leverFx('pengusaha', 'Naikkan') }]}
           onChange={hargaNaik => set({ hargaNaik })} />
       )}
 
       {value.role === 'buruh' && (
         <>
-          <Choice<Upah> legend="Tuntutan upah" field="upah" value={value.upah} tally={tally} disabled={disabled} frozen={frozen('upah')}
-            options={[{ value: 0, label: 'Tidak ada' }, { value: 1, label: 'Moderat' }, { value: 2, label: 'Tinggi' }]}
+          <Choice<Upah> legend="Pilihan kebijakan: Tuntutan upah" field="upah" value={value.upah} tally={tally} disabled={disabled} frozen={frozen('upah')}
+            options={[{ value: 0, label: 'Tidak ada', fx: leverFx('buruh', 'Tidak menuntut') }, { value: 1, label: 'Moderat', fx: leverFx('buruh', 'Moderat') }, { value: 2, label: 'Tinggi', fx: leverFx('buruh', 'Tinggi') }]}
             onChange={upah => set({ upah })} />
           <Choice legend="Kekuatan: Mogok" field="mogok" value={value.mogok} tally={tally} disabled={disabled}
-            options={[{ value: false, label: 'Tidak mogok' }, { value: true, label: 'Mogok', disabled: !ctx.canMogok, hint: ctx.canMogok ? undefined : 'Butuh Solidaritas ≥ 2' }]}
+            options={[{ value: false, label: 'Tidak mogok' }, { value: true, label: 'Mogok', disabled: !ctx.canMogok, hint: ctx.canMogok ? undefined : 'Butuh Solidaritas ≥ 2', fx: 'Kartu Pengusaha tahun ini batal. Kas ▼, Keresahan ▲, Modal Pengusaha ▼▼, Solidaritas −2' }]}
             onChange={mogok => set({ mogok })} />
           {!ctx.canMogok && <p className="text-muted text-xs">Mogok butuh Solidaritas minimal 2.</p>}
         </>
@@ -131,8 +151,8 @@ export function DecisionForm({ ctx, value, onChange, disabled = false, showVotes
 
       {value.role === 'masyarakat' && (
         <>
-          <Choice<Konsumsi> legend="Konsumsi" field="konsumsi" value={value.konsumsi} tally={tally} disabled={disabled} frozen={frozen('konsumsi')}
-            options={[{ value: 'hemat', label: 'Hemat' }, { value: 'biasa', label: 'Biasa' }, { value: 'belanja', label: 'Belanja', disabled: !ctx.canBelanja, hint: ctx.canBelanja ? undefined : 'Butuh Tabungan ≥ 1' }]}
+          <Choice<Konsumsi> legend="Pilihan kebijakan: Konsumsi" field="konsumsi" value={value.konsumsi} tally={tally} disabled={disabled} frozen={frozen('konsumsi')}
+            options={[{ value: 'hemat', label: 'Hemat', fx: leverFx('masyarakat', 'Hemat') }, { value: 'biasa', label: 'Biasa', fx: leverFx('masyarakat', 'Biasa') }, { value: 'belanja', label: 'Belanja', disabled: !ctx.canBelanja, hint: ctx.canBelanja ? undefined : 'Butuh Tabungan ≥ 1', fx: leverFx('masyarakat', 'Belanja') }]}
             onChange={konsumsi => set({ konsumsi })} />
           <label className="field compact">
             <span>Kekuatan: Suara Publik <small className="text-muted">(efek Kepercayaan kartu tim itu jadi dua kali lipat)</small></span>

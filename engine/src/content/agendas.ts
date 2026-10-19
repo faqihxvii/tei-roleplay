@@ -1,4 +1,4 @@
-import type { AgendaId, GameState, Role } from '../types';
+import type { AgendaId, GameMode, GameState, Role } from '../types';
 
 export interface Agenda {
   id: AgendaId;
@@ -10,6 +10,10 @@ export interface Agenda {
   /** Higher is closer to achieving it; used by bots to rank options. */
   progress: (state: GameState) => number;
 }
+
+// Left out of Mode Pemula's draw: out of reach without the tax lever (APBN Sehat), or met almost
+// automatically by its crisis responses (Ekspansi, Pengawas) — measured with `npm run sim -- --pemula`.
+const NOT_IN_PEMULA = new Set<AgendaId>(['apbnSehat', 'ekspansi', 'pengawas']);
 
 // Rewards distance to a "≥ target" threshold, capped once reached.
 const atLeast = (value: number, target: number) => Math.min(value, target) - target;
@@ -41,8 +45,8 @@ export const AGENDAS: Agenda[] = [
 
 export const AGENDAS_BY_ID: ReadonlyMap<AgendaId, Agenda> = new Map(AGENDAS.map(agenda => [agenda.id, agenda]));
 
-export function agendasForRole(role: Role): Agenda[] {
-  return AGENDAS.filter(agenda => agenda.role === role);
+export function agendasForRole(role: Role, mode: GameMode = 'lanjutan'): Agenda[] {
+  return AGENDAS.filter(agenda => agenda.role === role && (mode === 'lanjutan' || !NOT_IN_PEMULA.has(agenda.id)));
 }
 
 export function getAgenda(id: AgendaId): Agenda {

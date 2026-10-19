@@ -112,7 +112,7 @@ export function Console({ view, send, open, onOpenChange }: { view: HostView; se
                 <ToggleGroup.Item className="step-pill" value="santai">Santai (+50%)</ToggleGroup.Item>
               </ToggleGroup.Root>
             </div>
-            <p className="text-xs text-muted">Hanya Rapat Tim, Lobi Terbuka dan Pengesahan yang berwaktu. Tempo baru berlaku mulai fase berikutnya.</p>
+            <p className="text-xs text-muted">Hanya Rapat Tim, Negosiasi dan Pengesahan yang berwaktu. Tempo baru berlaku mulai fase berikutnya.</p>
           </section>
 
           {view.console && Object.keys(view.console.decisions).length > 0 && (

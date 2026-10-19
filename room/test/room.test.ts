@@ -310,8 +310,8 @@ test('only well-formed client messages get through', () => {
   assert.equal(parseClientMessage(JSON.stringify({ t: 'pactPropose', to: 'buruh', fromTerm: 'nope', toTerm: 'buruhTidakMogok' })), null);
 });
 
-test('the talking steps add up to four minutes', () => {
-  assert.equal(Object.values(STEP_MS).reduce((a, b) => a! + b!), 240_000);
+test('the talking steps add up to seven minutes: Rapat 3, Negosiasi 3, Pengesahan 1', () => {
+  assert.deepEqual(STEP_MS, { rapat: 180_000, lobi: 180_000, pengesahan: 60_000 });
 });
 
 test('a snapshot from the join-flow release still restores', () => {
@@ -390,9 +390,9 @@ test('every crisis card has a sourced Di Dunia Nyata note', async () => {
   }
 });
 
-test('Year 0 practice gives the talking steps under two minutes', async () => {
+test('Year 0 practice gives the talking steps under four minutes', async () => {
   const { PRACTICE_MS } = await import('../src/room');
-  assert.equal(Object.values(PRACTICE_MS).reduce((a, b) => a! + b!), 110_000);
+  assert.equal(Object.values(PRACTICE_MS).reduce((a, b) => a! + b!), 220_000);
 });
 
 /** Ten players briefed, with the practice option on. */
@@ -414,7 +414,7 @@ test('Year 0 runs on a throwaway country and leaves the real game untouched', ()
   assert.equal(room.state.phaseEndsAt, null); // the practice crisis waits for the facilitator
 
   room.next(T0); // rapat
-  assert.equal(room.state.phaseEndsAt, T0 + 45_000);
+  assert.equal(room.state.phaseEndsAt, T0 + 90_000);
   room.propose(spokesperson(room, 'pemerintah'), { role: 'pemerintah', cardId: null, pajak: 1 }, T0);
   room.next(T0); // lobi
   room.proposePact(spokesperson(room, 'pengusaha'), 'buruh', 'usahaTidakPhk', 'buruhTidakMogok', 'latihan1', T0);
@@ -552,4 +552,84 @@ test('a session of five years can print a fresh headline every year', () => {
     const headlines = room.state.years.map(y => y.frontPage.headline);
     assert.equal(new Set(headlines).size, headlines.length, `seed ${seed}: ${headlines.join(' | ')}`);
   }
+});
+
+// ---------- Mode Pemula ----------
+
+function pemulaInRapat(): Room {
+  const room = roomWith(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'], { oknum: false, mode: 'pemula' } as never);
+  room.assign('seimbang', 1, T0);
+  room.startBriefing(T0);
+  room.next(T0); // krisis
+  room.next(T0); // rapat
+  return room;
+}
+
+test('Pemula: phones vote on the three responses, kesepakatan name them, and the game skips guessing agendas', () => {
+  const room = pemulaInRapat();
+  const pem = spokesperson(room, 'pemerintah');
+  const ctx = playerView(room, pem).decision!;
+  assert.equal(ctx.mode, 'pemula');
+  assert.equal(ctx.hand.length, 3);
+  assert.deepEqual(ctx.viralTargets, []);
+  room.propose(pem, { ...neutralDecision('pemerintah'), cardId: ctx.hand[0]!.id } as Decision, T0);
+  assert.equal(room.majority('pemerintah').cardId, ctx.hand[0]!.id);
+  room.next(T0); // negosiasi
+  const usaha = spokesperson(room, 'pengusaha');
+  const lobby = playerView(room, usaha).lobby!;
+  assert.ok(lobby.terms.pengusaha.every(t => t.id.startsWith('pilih')), 'only response terms in Pemula');
+  assert.ok(lobby.suggestions.length >= 4, 'two suggested deals with each other team');
+  // A Lanjutan term is refused in Pemula.
+  assert.throws(() => room.proposePact(usaha, 'buruh', 'usahaTidakPhk', 'buruhTidakMogok', 'pX', T0), (e: RoomError) => e.code === 'pakta-salah');
+  const deal = lobby.suggestions.find(s => s.to === 'buruh')!;
+  room.proposePact(usaha, 'buruh', deal.fromTerm as never, deal.toTerm as never, 'pY', T0);
+  const shown = playerView(room, spokesperson(room, 'buruh')).pacts.find(p => p.id === 'pY')!;
+  assert.match(shown.fromText, /^Pengusaha memilih ".+"$/);
+  // Play to the end: no tebak phase in Pemula.
+  while (room.phase === 'tahun') room.next(T0);
+  assert.equal(room.phase, 'selesai');
+  assert.ok(hostView(room).results);
+});
+
+// ---------- Linimasa TEI ----------
+
+test('Linimasa copy: every tag has an official spin and a hashtag, and nothing names a real brand', async () => {
+  const { TAG_WEIGHT, VOICES } = await import('../src/content/koran');
+  const { SPIN, HASHTAGS, BUZZER, GOSIP, ACCOUNTS } = await import('../src/content/linimasa');
+  const banned = /whatsapp|instagram|tiktok|facebook|twitter|gojek|grab|shopee|tokopedia|indomie|pertamina|\bpln\b|\bbi\b|\bojk\b/i;
+  const texts: string[] = [];
+  for (const tag of Object.keys(TAG_WEIGHT) as (keyof typeof SPIN)[]) {
+    assert.ok(SPIN[tag] && ACCOUNTS[SPIN[tag].account].kind === 'pejabat', `${tag}: no official spin`);
+    assert.equal(SPIN[tag].lines.length, 2);
+    assert.match(HASHTAGS[tag] ?? '', /^[A-Za-z0-9]{3,24}$/, `${tag}: hashtag`);
+    texts.push(...SPIN[tag].lines, HASHTAGS[tag]);
+  }
+  for (const zone of ['aman', 'bahaya', 'kolaps'] as const) {
+    assert.ok(BUZZER[zone].length >= 4 && GOSIP[zone].length >= 4, `${zone}: too few buzzer or gossip lines`);
+    texts.push(...BUZZER[zone], ...GOSIP[zone]);
+  }
+  for (const v of Object.values(VOICES)) texts.push(...Object.values(v.lines).flat());
+  for (const text of texts) {
+    assert.ok(!banned.test(text), `real brand or institution in "${text}"`);
+    assert.ok(text.length <= 220, `too long for a post: "${text}"`);
+  }
+});
+
+test('each year closes with a feed: the headline post with the photo, an official, citizens, the data and a promotion', () => {
+  const room = inRapat();
+  room.next(T0); // negosiasi
+  room.next(T0); // pengesahan
+  room.next(T0); // hasil
+  room.next(T0); // linimasa
+  const page = hostView(room).frontPage!;
+  const posts = page.posts!;
+  assert.ok(posts.length >= 6);
+  assert.ok(posts[0]!.text.startsWith(page.headline) && posts[0]!.photo);
+  assert.ok(posts.some(p => p.account.kind === 'pejabat'));
+  assert.ok(posts.some(p => p.account.kind === 'data' && p.text.startsWith('Rekap tahun')));
+  assert.ok(posts.some(p => p.promoted));
+  assert.equal(posts.filter(p => p.replyTo === posts[0]!.id).length, 3, 'three citizens reply to the headline');
+  assert.ok(page.trending!.length >= 1 && page.trending!.length <= 4);
+  assert.ok(posts.every(p => p.likes >= 0 && p.reposts >= 0));
+  assert.ok(hostView(room).growth!.length >= 2, 'the growth chart has the start and this year');
 });

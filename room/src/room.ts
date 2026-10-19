@@ -6,7 +6,7 @@ import { Rng } from '../../engine/src/rng';
 import { cleanComment, validSurveyAnswers, type SurveyAnswers } from './content/survey';
 import { closeTiming, emptyTelemetry, noteAddTime, noteClientError, noteError, notePause, noteResume, openTiming, type StepEnd, type Telemetry } from './telemetry';
 import { isOknumIdentified, scoreGame, type TeamResult } from '../../engine/src/scoring';
-import { ROLES, type AgendaId, type Decision, type DecisionFor, type GameState, type Role, type YearDecisions } from '../../engine/src/types';
+import { ROLES, type AgendaId, type Decision, type DecisionFor, type GameMode, type GameState, type Role, type YearDecisions } from '../../engine/src/types';
 import { DONT_KNOW, QUIZ } from './content/quiz';
 import { initialDebrief, type DebriefState } from './debrief';
 import { buildFrontPage, type FrontPage } from './koran';
@@ -27,11 +27,11 @@ export type Tempo = 'normal' | 'santai';
 
 export const STEP_ORDER: YearStep[] = ['krisis', 'rapat', 'lobi', 'pengesahan', 'pengungkapan', 'koran'];
 /** Only the three talking steps run on a clock; the facilitator moves the story steps on by hand. */
-export const STEP_MS: Partial<Record<YearStep, number>> = { rapat: 75_000, lobi: 120_000, pengesahan: 45_000 };
+export const STEP_MS: Partial<Record<YearStep, number>> = { rapat: 180_000, lobi: 180_000, pengesahan: 60_000 };
 /** Santai gives classes that read slowly 50% more time (GDD, "Waktu dan gerak"). */
 export const TEMPO_FACTOR: Record<Tempo, number> = { normal: 1, santai: 1.5 };
 /** Year 0 practice: the same talking steps on shorter clocks (GDD, "Onboarding"). */
-export const PRACTICE_MS: Partial<Record<YearStep, number>> = { rapat: 45_000, lobi: 40_000, pengesahan: 25_000 };
+export const PRACTICE_MS: Partial<Record<YearStep, number>> = { rapat: 90_000, lobi: 90_000, pengesahan: 40_000 };
 /** Steps that end early once every team's spokesperson says the team is done. */
 export const READY_STEPS: YearStep[] = ['rapat', 'lobi'];
 /** Steps in which members may still change their proposal. */
@@ -54,6 +54,8 @@ export interface RoomOptions {
   latihan?: boolean;
   /** Pre/post quiz: five questions on each phone before and after play. */
   kuis?: boolean;
+  /** Pemula or Lanjutan rules (engine GameMode); rooms saved before modes existed are Lanjutan. */
+  mode?: GameMode;
 }
 
 export type QuizStage = 'pra' | 'pasca';
@@ -167,11 +169,11 @@ const ERROR_TEXT: Record<RoomErrorCode, string> = {
   'pemain-tidak-ada': 'Pemain itu sudah tidak ada di ruangan.',
   'fase-salah': 'Langkah itu tidak bisa dilakukan di fase ini.',
   'belum-ada-pemain': 'Belum ada pemain yang bergabung.',
-  'bukan-jubir': 'Hanya Juru Bicara tim yang bisa melakukan ini.',
+  'bukan-jubir': 'Hanya Jubir tim yang bisa melakukan ini.',
   'keputusan-salah': 'Pilihan itu tidak bisa dipakai tahun ini.',
   'sudah-dikunci': 'Keputusan tim sudah disahkan.',
-  'pakta-salah': 'Pakta itu tidak bisa dibuat.',
-  'pakta-penuh': `Satu tim paling banyak membuat ${MAX_PACTS_PER_TEAM} pakta per tahun.`,
+  'pakta-salah': 'Kesepakatan itu tidak bisa dibuat.',
+  'pakta-penuh': `Satu tim paling banyak punya ${MAX_PACTS_PER_TEAM} kesepakatan per tahun.`,
   'tanpa-tim': 'Kamu belum masuk tim.',
 };
 
@@ -349,7 +351,7 @@ export class Room {
     return this.s.players.filter(p => p.role === role).sort((a, b) => a.joinedAt - b.joinedAt);
   }
 
-  /** The Juru Bicara rotates every year so everyone gets to decide once (GDD, "Keputusan di dalam tim"). */
+  /** The Jubir rotates every year so everyone gets to decide once (GDD, "Keputusan di dalam tim"). */
   spokesperson(role: Role): Player | undefined {
     const members = this.members(role);
     return members.length ? members[(this.year - 1) % members.length] : undefined;
@@ -372,7 +374,7 @@ export class Room {
     if (!this.s.players.length) throw new RoomError('belum-ada-pemain');
     for (const player of this.s.players) if (!player.role) this.placeInSmallestTeam(player);
     this.markEmptyTeamsOffline();
-    this.s.game = createGame({ seed: this.s.seed, oknum: this.s.options.oknum });
+    this.s.game = createGame({ seed: this.s.seed, oknum: this.s.options.oknum, mode: this.s.options.mode });
     this.s.phase = 'briefing';
     this.setTimer(null, now);
     this.touch(now);
@@ -442,6 +444,14 @@ export class Room {
         case 'koran':
           if (s.practice) {
             this.endPractice(now);
+          } else if (s.game!.ended && s.options.mode === 'pemula') {
+            // Pemula skips guessing the agendas: straight to the results.
+            this.finish();
+            s.debrief = initialDebrief();
+            s.phase = 'selesai';
+            s.step = null;
+            s.phaseEndsAt = null;
+            s.pausedMs = null;
           } else if (s.game!.ended) {
             s.phase = 'tebak';
             s.step = null;
@@ -472,7 +482,7 @@ export class Room {
     if (practice) {
       s.practice = { game: s.game!, pacts: s.pacts, years: s.years, usedVariants: s.usedVariants };
       // A throwaway country with the same starting board and a mild, rule-free crisis.
-      s.game = createGame({ seed: (s.seed ^ 0x5eed) >>> 0, firstCrisis: TUTORIAL_CRISIS.id });
+      s.game = createGame({ seed: (s.seed ^ 0x5eed) >>> 0, firstCrisis: TUTORIAL_CRISIS.id, mode: s.options.mode });
       s.pacts = [];
       s.years = [];
       s.usedVariants = [...s.usedVariants];
@@ -652,7 +662,9 @@ export class Room {
 
   proposePact(playerId: string, to: Role, fromTerm: PactTermId, toTerm: PactTermId, pactId: string, now: number): PactRecord {
     const from = this.requireLobbySpokesperson(playerId);
-    if (to === from || !PACT_TERMS[fromTerm] || !PACT_TERMS[toTerm] || PACT_TERMS[fromTerm].role !== from || PACT_TERMS[toTerm].role !== to) {
+    const mode = this.s.options.mode ?? 'lanjutan';
+    if (to === from || !PACT_TERMS[fromTerm] || !PACT_TERMS[toTerm] || PACT_TERMS[fromTerm].role !== from || PACT_TERMS[toTerm].role !== to
+      || PACT_TERMS[fromTerm].mode !== mode || PACT_TERMS[toTerm].mode !== mode) {
       throw new RoomError('pakta-salah');
     }
     const live = this.pactsThisYear().filter(p => p.status === 'diajukan' || p.status === 'disepakati');

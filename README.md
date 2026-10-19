@@ -39,11 +39,11 @@ npm run print-kit # kit cetak PDF (butuh Chromium)
 npm run room:e2e  # satu permainan penuh di browser (butuh server dan klien berjalan)
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) menjalankan lint, tes, dan build di setiap PR dan push ke `main`, lalu memainkan satu permainan penuh di Chromium terhadap build produksi. Setiap run memakai permainan acak baru, jadi krisis dan tuas yang dibekukan ikut teruji dari waktu ke waktu. Dependabot mengusulkan pembaruan dependensi sebulan sekali.
+GitHub Actions (`.github/workflows/ci.yml`) menjalankan lint, tes, dan build di setiap PR dan push ke `main`, lalu memainkan satu permainan penuh di Chromium terhadap build produksi. Setiap run memakai permainan acak baru, jadi krisis dan pilihan kebijakan yang dibekukan ikut teruji dari waktu ke waktu. Dependabot mengusulkan pembaruan dependensi sebulan sekali.
 
 ## Struktur
 
-- `engine/`: aturan permainan murni dan konten (krisis, kebijakan, agenda, pakta). Dipakai server dan simulator.
+- `engine/`: aturan permainan murni dan konten (krisis, kebijakan, agenda, kesepakatan). Dipakai server dan simulator.
 - `room/`: server ruangan otoritatif, dengan Express dan WebSocket.
 - `web/`: klien React untuk HP (`/`) dan layar utama (`/host`). Sistem desain: Tailwind CSS v4 dengan tema TEI tertutup dan Radix UI untuk komponen interaktif (lihat `docs/art-audio.md`).
 - `docs/`: brief art dan audio.

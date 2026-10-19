@@ -247,12 +247,12 @@ export function ExportPanel({ view }: { view: HostView }) {
       <div className="flex flex-wrap items-center gap-2">
         <button className="btn" onClick={() => exportTimeline(view)}>Garis waktu (CSV)</button>
         <button className="btn" onClick={() => exportDecisions(view)}>Keputusan per tim (CSV)</button>
-        <button className="btn" onClick={() => exportPacts(view)}>Log pakta (CSV)</button>
+        <button className="btn" onClick={() => exportPacts(view)}>Log kesepakatan (CSV)</button>
         {view.quizRows && <button className="btn" onClick={() => exportQuiz(view)}>Kuis pra/pasca (CSV)</button>}
         {view.survey && <button className="btn" onClick={() => exportSurvey(view)}>Survei (CSV)</button>}
         {view.report && <button className="btn" onClick={() => exportReport(view)}>Laporan sesi (JSON)</button>}
       </div>
-      <p className="text-muted text-xs">Laporan sesi berisi waktu tiap fase, keputusan per tim, pakta, kuis, dan survei, tanpa nama pemain. Kirimkan ke tim TEI setelah playtest.</p>
+      <p className="text-muted text-xs">Laporan sesi berisi waktu tiap fase, keputusan per tim, kesepakatan, kuis, dan survei, tanpa nama pemain. Kirimkan ke tim TEI setelah playtest.</p>
       <a className="btn primary" href={`/host?r=${view.code}&cetak=edisi`} target="_blank" rel="noopener">Edisi Khusus (cetak atau simpan PDF)</a>
     </section>
   );

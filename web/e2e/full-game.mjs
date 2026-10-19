@@ -10,6 +10,8 @@ import { chromium } from 'playwright';
 
 const OUT = process.argv[2];
 const BASE = process.env.TEI_BASE ?? 'http://127.0.0.1:5173';
+// Pemula (crisis responses only) by default; TEI_MODE=lanjutan plays the full rules with levers and guessing.
+const MODE = process.env.TEI_MODE === 'lanjutan' ? 'lanjutan' : 'pemula';
 if (OUT) mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--no-proxy-server'] });
 const errors = [];
@@ -41,6 +43,7 @@ const host = await (await browser.newContext({ viewport: { width: 1440, height: 
 host.on('pageerror', e => errors.push('host: ' + e.message));
 host.on('console', m => { if (m.type() === 'error') errors.push('host console: ' + m.text()); });
 await host.goto(BASE + '/host');
+await host.locator('input[name=mode]').nth(MODE === 'pemula' ? 0 : 1).check();
 await host.getByLabel(/Mode Oknum/).check();
 await host.getByLabel(/Tahun 0 latihan/).check();
 await host.getByLabel(/Kuis pra\/pasca/).check();
@@ -101,7 +104,7 @@ await roleOf['Pemerintah'].locator('.policy:not(.off)').first().click();
 await shot(roleOf['Pemerintah'], 'y0-phone-rapat.png', true);
 await shot(host, 'y0-rapat.png');
 for (let i = 0; i < 4; i++) await next(); // lobi, pengesahan, pengungkapan, koran
-await host.locator('.frontpage').waitFor();
+await host.locator('.linimasa').waitFor();
 await shot(host, 'y0-koran.png', true);
 await next(); // practice over
 await host.locator('.crisis-title').waitFor();
@@ -132,7 +135,7 @@ await shot(roleOf['Pemerintah'], 'y1-phone-rapat.png', true);
   await p.locator('.policy').first().waitFor();
 }
 await shot(host, 'y1-rapat.png');
-// Every Juru Bicara says the team is done (the fifth team has no phone and counts as done): Rapat
+// Every Jubir says the team is done (the fifth team has no phone and counts as done): Rapat
 // ends without waiting for its clock.
 const phonesList = Object.values(roleOf);
 for (const [i, p] of phonesList.entries()) {
@@ -145,17 +148,20 @@ for (const [i, p] of phonesList.entries()) {
 }
 await host.locator('.chapter-lobi').waitFor({ timeout: 5000 });
 const usaha = roleOf['Pengusaha'], buruh = roleOf['Serikat Buruh'];
-await usaha.getByRole('tab', { name: 'Pakta' }).click();
-await usaha.getByLabel('Dengan tim').selectOption('buruh');
-await usaha.getByLabel('Timmu berjanji').selectOption('usahaTidakPhk');
-await usaha.getByLabel(/Asalkan Serikat Buruh berjanji/).selectOption('buruhTidakMogok');
-await usaha.getByRole('button', { name: 'Ajukan' }).click();
-await buruh.getByRole('tab', { name: 'Pakta' }).click();
-await buruh.getByRole('button', { name: 'Sepakat' }).click();
+// Negosiasi is the phone's main screen: pick a team, offer a ready-made deal in one tap.
+await usaha.getByRole('radio', { name: /Serikat Buruh/ }).click();
+await usaha.getByRole('button', { name: 'Tawarkan ke Serikat Buruh' }).first().click();
+// The offer shows up for the receiving team, with a badge on its "Sekarang" tab.
+await buruh.locator('.nav-badge').waitFor();
+await buruh.getByText('Tawaran untuk timmu').waitFor();
+await shot(buruh, 'y1-phone-tawaran.png', true);
+await buruh.getByRole('button', { name: 'Setuju' }).click();
 await host.locator('.pact-card').waitFor();
 await shot(host, 'y1-lobi.png');
-await shot(buruh, 'y1-phone-pakta.png', true);
+await shot(buruh, 'y1-phone-negosiasi.png', true);
 await next(); // pengesahan
+// The Jubir seals the team's majority unless they change it here.
+await roleOf['Pemerintah'].getByText('Yang akan disahkan: pilihan terbanyak timmu', { exact: false }).waitFor();
 for (const p of Object.values(roleOf)) {
   const hold = p.locator('button.hold');
   await hold.scrollIntoViewIfNeeded();
@@ -179,21 +185,33 @@ await host.waitForTimeout(9000);
 await shot(host, 'y1-pengungkapan.png', true);
 await shot(roleOf['Serikat Buruh'], 'y1-phone-reveal.png', true);
 await next(); // koran
-await host.locator('.frontpage').waitFor();
+await host.locator('.linimasa').waitFor();
+// Phones show the same feed; a like and a reaction float up on the main screen.
+{
+  const p = roleOf['Pemerintah'];
+  await p.locator('.phone-feed').waitFor();
+  await p.locator('.post-like').first().click();
+  await host.locator('.reaction-count').waitFor({ timeout: 5000 });
+  await shot(p, 'y1-phone-linimasa.png', true);
+}
 await shot(host, 'y1-koran.png', true);
 // rest of the game
 for (let i = 0; i < 40; i++) {
-  if (await host.getByText('Tebak agenda').count()) break;
+  if (await host.locator('.topbar-title', { hasText: 'Tebak agenda' }).count() || await host.locator('.results').count()) break;
   await next();
   await host.waitForTimeout(150);
 }
-await shot(host, 'tebak.png');
-for (const [label, p] of Object.entries(roleOf)) {
-  if (await p.getByRole('button', { name: 'Kirim tebakan' }).count()) {
-    await p.locator('.guess').first().click();
-    if (label === 'Pemerintah') await shot(p, 'phone-tebak.png', true);
-    await p.getByRole('button', { name: 'Kirim tebakan' }).click();
+if (MODE === 'lanjutan') {
+  await shot(host, 'tebak.png');
+  for (const [label, p] of Object.entries(roleOf)) {
+    if (await p.getByRole('button', { name: 'Kirim tebakan' }).count()) {
+      await p.locator('.guess').first().click();
+      if (label === 'Pemerintah') await shot(p, 'phone-tebak.png', true);
+      await p.getByRole('button', { name: 'Kirim tebakan' }).click();
+    }
   }
+} else if (await host.locator('.topbar-title', { hasText: 'Tebak agenda' }).count()) {
+  errors.push('Pemula tidak boleh punya fase tebak agenda');
 }
 await host.locator('.results').waitFor({ timeout: 10000 });
 await shot(host, 'debrief-1-hasil.png', true);
@@ -279,7 +297,7 @@ await shot(host, 'console-survei.png');
   if (report.comments?.length !== 1) errors.push('laporan: komentar fasilitator hilang');
   for (const name of ['Ani', 'Budi', 'Citra', 'Dodi', 'Eka', 'Fajar']) if (JSON.stringify(report).includes(`"${name}"`)) errors.push(`laporan memuat nama ${name}`);
 }
-for (const name of ['Garis waktu (CSV)', 'Keputusan per tim (CSV)', 'Log pakta (CSV)', 'Kuis pra/pasca (CSV)', 'Survei (CSV)']) {
+for (const name of ['Garis waktu (CSV)', 'Keputusan per tim (CSV)', 'Log kesepakatan (CSV)', 'Kuis pra/pasca (CSV)', 'Survei (CSV)']) {
   const [download] = await Promise.all([host.waitForEvent('download'), host.getByRole('button', { name }).click()]);
   const path = await download.path();
   const { readFileSync } = await import('node:fs');
@@ -294,7 +312,7 @@ await edisi.waitForFunction(() => [...document.images].every(i => i.complete && 
 await shot(edisi, 'edisi-khusus.png', true);
 // Every cue the main screen asked for, file or not. The print tab stays silent.
 const heard = new Set((await host.evaluate(() => window.__teiAudio ?? [])).map(c => c.cue));
-for (const cue of ['gabung', 'briefing', 'fase.krisis', 'fase.rapat', 'fase.lobi', 'fase.pengesahan', 'sah', 'fase.pengungkapan', 'kartu.buka', 'fase.koran', 'tebak', 'halaman', 'kuis.jawaban']) {
+for (const cue of ['gabung', 'briefing', 'fase.krisis', 'fase.rapat', 'fase.lobi', 'fase.pengesahan', 'sah', 'fase.pengungkapan', 'kartu.buka', 'fase.koran', ...(MODE === 'lanjutan' ? ['tebak'] : []), 'halaman', 'kuis.jawaban']) {
   if (!heard.has(cue)) errors.push(`cue ${cue} tidak terdengar`);
 }
 if (!heard.has('akhir.baik') && !heard.has('akhir.kolaps')) errors.push('cue akhir tidak terdengar');

@@ -1,3 +1,4 @@
+import { RESPONSES } from './responses';
 import type { PolicyCard, Role } from '../types';
 
 // Draft v0 deck: names and numbers for balancing only. Final card text is written and
@@ -55,10 +56,43 @@ export const POLICY_CARDS: PolicyCard[] = [
   { id: 'cit_usaha', role: 'masyarakat', name: 'Buka Usaha Rumahan', description: 'Modal dari tabungan, karyawan dari keluarga.', effects: { kerja: 1, tabungan: -2 }, requires: { tabungan: 2 }, tags: [] },
 ];
 
-export const CARDS_BY_ID: ReadonlyMap<string, PolicyCard> = new Map(POLICY_CARDS.map(card => [card.id, card]));
+const ROLE_CODE: Record<Role, string> = { pemerintah: 'Pem', bankSentral: 'Bsn', pengusaha: 'Ush', buruh: 'Brh', masyarakat: 'Msy' };
+const SLOTS = ['A', 'B', 'C'] as const;
+export type ResponseSlot = typeof SLOTS[number];
 
+/** Mode Pemula's response cards: `rsp_beras` + `Pem` + `A`, one per crisis, role and slot. */
+export const responseCardId = (crisisId: string, role: Role, slot: ResponseSlot) => `rsp_${crisisId.replace(/^c_/, '')}${ROLE_CODE[role]}${slot}`;
+
+/** Which team and slot a response card belongs to, or null for an ordinary policy card. */
+export function responseSlotOf(cardId: string): { role: Role; slot: ResponseSlot } | null {
+  const match = /^rsp_[a-z]+(Pem|Bsn|Ush|Brh|Msy)([ABC])$/.exec(cardId);
+  if (!match) return null;
+  const role = (Object.keys(ROLE_CODE) as Role[]).find(r => ROLE_CODE[r] === match[1])!;
+  return { role, slot: match[2] as ResponseSlot };
+}
+
+export const RESPONSE_CARDS: PolicyCard[] = Object.entries(RESPONSES).flatMap(([key, set]) =>
+  (Object.keys(set) as Role[]).flatMap(role => set[role].map((draft, i) => ({
+    id: responseCardId(`c_${key}`, role, SLOTS[i]!),
+    role,
+    name: draft.name,
+    description: draft.description,
+    effects: draft.effects,
+    delayed: draft.delayed,
+    tags: draft.tags ?? [],
+  }))),
+);
+
+export const CARDS_BY_ID: ReadonlyMap<string, PolicyCard> = new Map([...POLICY_CARDS, ...RESPONSE_CARDS].map(card => [card.id, card]));
+
+/** The Lanjutan deck for a role (response cards are dealt only in Pemula, by crisis). */
 export function cardsForRole(role: Role): PolicyCard[] {
   return POLICY_CARDS.filter(card => card.role === role);
+}
+
+/** This crisis's three responses for a team, in slot order; empty when none are written. */
+export function responseCardsFor(crisisId: string, role: Role): string[] {
+  return SLOTS.map(slot => responseCardId(crisisId, role, slot)).filter(id => CARDS_BY_ID.has(id));
 }
 
 export function getCard(id: string): PolicyCard {

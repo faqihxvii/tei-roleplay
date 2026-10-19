@@ -1,11 +1,11 @@
 import { agendasForRole } from './content/agendas';
 import { CRISIS_CARDS, getCrisis } from './content/crises';
-import { cardsForRole, getCard } from './content/policies';
+import { cardsForRole, getCard, responseCardsFor } from './content/policies';
 import { Rng } from './rng';
 import { RULES } from './rules';
 import {
   ROLES,
-  type AgendaId, type Collapse, type Delta, type Effects, type GameState, type Lever,
+  type AgendaId, type Collapse, type Delta, type Effects, type GameMode, type GameState, type Lever,
   type PolicyCard, type Role, type Stat, type Stats, type YearDecisions,
 } from './types';
 
@@ -34,7 +34,11 @@ export interface CreateGameOptions {
   agendas?: Partial<Record<Role, AgendaId>>;
   /** Open with this crisis instead of the deck's first card (the Year 0 practice). */
   firstCrisis?: string;
+  /** Pemula (one response per team) or Lanjutan (cards, levers and powers); Lanjutan by default. */
+  mode?: GameMode;
 }
+
+export const isPemula = (state: GameState) => state.mode === 'pemula';
 
 export interface ResolveOptions {
   /**
@@ -53,10 +57,11 @@ export function createGame(options: CreateGameOptions): GameState {
   deck.splice(GLOBAL_SHOCK_YEAR - 1, 0, globals[0]!.id);
 
   const agendas = {} as Record<Role, AgendaId>;
-  for (const role of ROLES) agendas[role] = options.agendas?.[role] ?? rng.pick(agendasForRole(role)).id;
+  for (const role of ROLES) agendas[role] = options.agendas?.[role] ?? rng.pick(agendasForRole(role, options.mode)).id;
   if (options.oknum) agendas[rng.pick(ROLES)] = 'oknum';
 
   const state: GameState = {
+    mode: options.mode ?? 'lanjutan',
     seed: options.seed,
     rng: rng.state,
     year: 1,
@@ -90,7 +95,19 @@ function openYear(state: GameState, rng: Rng): void {
   state.openingDeltas = toDeltas(crisis.effects, `krisis:${crisis.id}`, factor);
   applyDeltas(state.stats, state.openingDeltas);
   for (const role of ROLES) {
-    state.hands[role] = rng.shuffle(cardsForRole(role)).slice(0, HAND_SIZE).map(card => card.id);
+    if (isPemula(state)) {
+      state.hands[role] = responseCardsFor(crisis.id, role);
+      continue;
+    }
+    const hand = rng.shuffle(cardsForRole(role)).slice(0, HAND_SIZE);
+    // The crisis rewards one kind of card; whoever owns such a card always gets it this year, so
+    // the answer to the crisis is on the table instead of in the deck.
+    if (crisis.modifier.kind === 'scaleTag') {
+      const tag = crisis.modifier.tag;
+      const answer = cardsForRole(role).find(card => card.tags.includes(tag));
+      if (answer && !hand.some(card => card.tags.includes(tag))) hand[hand.length - 1] = answer;
+    }
+    state.hands[role] = hand.map(card => card.id);
   }
   state.rng = rng.state;
 }
@@ -106,7 +123,7 @@ export function playableCards(state: GameState, role: Role): string[] {
 }
 
 export function canMogok(state: GameState): boolean {
-  return state.stats.solidaritas >= 2;
+  return !isPemula(state) && state.stats.solidaritas >= 2;
 }
 
 export function canBelanja(state: GameState): boolean {
@@ -114,6 +131,7 @@ export function canBelanja(state: GameState): boolean {
 }
 
 export function isLeverFrozen(state: GameState, lever: Lever): boolean {
+  if (isPemula(state)) return true; // Pemula has no levers: the response is the whole decision
   const modifier = getCrisis(state.crisisId).modifier;
   return modifier.kind === 'freezeLever' && modifier.lever === lever;
 }
@@ -129,6 +147,9 @@ export function validateDecisions(state: GameState, decisions: YearDecisions): v
   if (decisions.buruh.mogok && !canMogok(state)) throw new Error('Mogok needs Solidaritas >= 2');
   if (decisions.masyarakat.konsumsi === 'belanja' && !canBelanja(state)) throw new Error('Belanja needs Tabungan >= 1');
   if (decisions.masyarakat.viral === 'masyarakat') throw new Error('Masyarakat cannot make itself viral');
+  if (isPemula(state) && (decisions.bankSentral.tolakCetakUang || decisions.masyarakat.viral !== null)) {
+    throw new Error('Pemula has no powers');
+  }
 }
 
 /** Resolves one year (GDD, "Aturan resolusi per tahun") and returns the new state. */
@@ -229,7 +250,10 @@ export function resolveYear(state: GameState, decisions: YearDecisions, options:
   if (hargaNaik) add({ modal: 2, harga: 1, kepercayaan: -1 }, 'tuas:hargaNaik');
 
   const upah = isLeverFrozen(s, 'upah') ? 0 : decisions.buruh.upah;
-  if (upah === 0) {
+  if (isPemula(s)) {
+    // No wage lever: a response tagged as a wage demand counts as a raise year for the agendas.
+    if (cardOrNull(decisions.buruh.cardId)?.tags.includes('upah')) s.counters.upahNaikTahun++;
+  } else if (upah === 0) {
     add({ solidaritas: -1 }, 'tuas:upahTetap');
   } else {
     s.counters.upahNaikTahun++;
@@ -250,7 +274,8 @@ export function resolveYear(state: GameState, decisions: YearDecisions, options:
   // 5. System rules, read from the state after steps 1-4.
   const systemDeltas: Delta[] = [];
   if (modifier.kind === 'endOfYear') systemDeltas.push(...toDeltas(modifier.effects, `krisis:${crisis.id}`));
-  if (RULES.bebanRutinKas) systemDeltas.push({ stat: 'kas', amount: -RULES.bebanRutinKas, cause: 'sistem:bebanRutin' });
+  // Pemula has no tax lever to pay the fixed yearly cost, so it starts with the escalation in year 3.
+  if (RULES.bebanRutinKas && (!isPemula(s) || s.year >= RULES.eskalasiKrisisMulaiTahun)) systemDeltas.push({ stat: 'kas', amount: -RULES.bebanRutinKas, cause: 'sistem:bebanRutin' });
   const st = s.stats;
   if (s.bunga < RULES.inflasiBawaanDiBawahBunga) systemDeltas.push({ stat: 'harga', amount: 1, cause: 'sistem:inflasiBawaan' });
   const laba = Math.floor(st.kerja / RULES.labaUsahaPembagi);

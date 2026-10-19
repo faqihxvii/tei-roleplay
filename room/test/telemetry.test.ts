@@ -202,7 +202,7 @@ test('the server saves reports, posts them to a webhook, and serves them only wi
   await new Promise<void>(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${(app.server.address() as AddressInfo).port}`;
   try {
-    const { code, hostToken } = await (await fetch(`${base}/api/rooms`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })).json() as { code: string; hostToken: string };
+    const { code, hostToken } = await (await fetch(`${base}/api/rooms`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"mode":"lanjutan"}' })).json() as { code: string; hostToken: string };
     const live = app.rooms.get(code)!;
     assert.ok(hostToken);
     for (const name of NAMES.slice(0, 5)) live.room.join(name, ids(), T0);

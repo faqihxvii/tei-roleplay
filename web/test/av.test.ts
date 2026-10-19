@@ -156,7 +156,7 @@ test('phones buzz on every phase change, with distinct patterns when the player 
   assert.deepEqual(advance(() => r.next(T0)), [BUZZ.giliran, BUZZ.giliran]); // rapat
   assert.deepEqual(advance(() => r.setReady(spokes, true, T0)), [null, BUZZ.selesai]);
   assert.deepEqual(advance(() => r.next(T0)), [BUZZ.jubir, BUZZ.fase]); // lobi
-  assert.deepEqual(advance(() => r.proposePact(jubir(r, 'pengusaha'), 'buruh', 'usahaTidakPhk', 'buruhTidakMogok', 'p1', T0)), [BUZZ.tawaran, null]);
+  assert.deepEqual(advance(() => r.proposePact(jubir(r, 'pengusaha'), 'buruh', 'usahaTidakPhk', 'buruhTidakMogok', 'p1', T0)), [BUZZ.tawaran, BUZZ.tawaran]); // the whole team feels an offer
   assert.deepEqual(advance(() => r.next(T0)), [BUZZ.jubir, BUZZ.fase]); // pengesahan
   assert.deepEqual(advance(() => r.lock(spokes, neutralDecision('buruh'), T0)), [null, BUZZ.sah]);
 });

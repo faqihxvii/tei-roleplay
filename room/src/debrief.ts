@@ -3,7 +3,7 @@ import { getCrisis } from '../../engine/src/content/crises';
 import { getCard } from '../../engine/src/content/policies';
 import { ROLE_LABEL } from '../../engine/src/content/roles';
 import { INITIAL_STATS } from '../../engine/src/game';
-import { PACT_TERMS } from '../../engine/src/pacts';
+import { pactTermText } from '../../engine/src/pacts';
 import { INDICATORS, ROLES, type Delta, type GameState, type Indicator, type Role, type Stats, type YearLog } from '../../engine/src/types';
 import { REAL_WORLD, type RealWorldNote } from './content/realWorld';
 import { causeLabel, causeRole, describeDecision, groupDeltas, isIndicator, STAT_NAME, type CauseGroup } from './labels';
@@ -225,7 +225,7 @@ export function titles(s: RoomSnapshot, tally: Record<Role, { kept: number; brok
   if (tally[byKept[0]!].kept > 0) out.push({ title: 'Paling Menepati Janji', role: byKept[0]!, reason: `Menepati ${tally[byKept[0]!].kept} janji, melanggar ${tally[byKept[0]!].broken}.` });
   const byBroken = [...ROLES].sort((a, b) => tally[b].broken - tally[a].broken);
   if (tally[byBroken[0]!].broken > 0) {
-    out.push({ title: 'Paling Licin', role: byBroken[0]!, reason: `Melanggar ${tally[byBroken[0]!].broken} janji di Meja Lobi.` });
+    out.push({ title: 'Paling Licin', role: byBroken[0]!, reason: `Melanggar ${tally[byBroken[0]!].broken} kesepakatan.` });
   } else if (game.counters.lobiAman > 0) {
     out.push({ title: 'Paling Licin', role: 'pengusaha', reason: 'Lobinya lolos tanpa pernah terbongkar.' });
   }
@@ -279,8 +279,8 @@ export function debriefView(s: RoomSnapshot, tally: Record<Role, { kept: number;
     const record = s.years.find(y => y.year === log.year);
     for (const result of record?.pactResults ?? []) {
       const pact = s.pacts.find(p => p.id === result.pactId)!;
-      if (!result.keptFrom) markers.push({ year: log.year, text: `${ROLE_LABEL[pact.from]} melanggar pakta` });
-      if (!result.keptTo) markers.push({ year: log.year, text: `${ROLE_LABEL[pact.to]} melanggar pakta` });
+      if (!result.keptFrom) markers.push({ year: log.year, text: `${ROLE_LABEL[pact.from]} melanggar kesepakatan` });
+      if (!result.keptTo) markers.push({ year: log.year, text: `${ROLE_LABEL[pact.to]} melanggar kesepakatan` });
     }
   }
 
@@ -297,7 +297,7 @@ export function debriefView(s: RoomSnapshot, tally: Record<Role, { kept: number;
         prompts: [
           'Ceritakan lima tahun ini dalam satu kalimat, seperti headline koran.',
           top ? `Titik balik terbesar: ${top.label}. Apa yang kalian rasakan saat itu?` : 'Indikator mana yang paling banyak berubah?',
-          brokenPacts ? `Ada ${brokenPacts} janji yang dilanggar. Bagaimana rasanya dikhianati, atau mengkhianati?` : 'Pakta mana yang paling penting, dan mengapa ditepati?',
+          brokenPacts ? `Ada ${brokenPacts} janji yang dilanggar. Bagaimana rasanya dikhianati, atau mengkhianati?` : 'Kesepakatan mana yang paling penting, dan mengapa ditepati?',
         ],
       },
       {
@@ -342,7 +342,7 @@ export function history(s: RoomSnapshot): YearHistory[] {
       events: log.events,
       pacts: (record?.pactResults ?? []).map(r => {
         const p = s.pacts.find(x => x.id === r.pactId)!;
-        return { from: p.from, to: p.to, fromText: PACT_TERMS[p.fromTerm].text, toText: PACT_TERMS[p.toTerm].text, keptFrom: r.keptFrom, keptTo: r.keptTo };
+        return { from: p.from, to: p.to, fromText: pactTermText(p.fromTerm, log.crisisId), toText: pactTermText(p.toTerm, log.crisisId), keptFrom: r.keptFrom, keptTo: r.keptTo };
       }),
       headline: record?.frontPage.headline ?? '',
       subheadline: record?.frontPage.subheadline ?? '',

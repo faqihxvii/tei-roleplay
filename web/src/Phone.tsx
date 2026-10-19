@@ -11,10 +11,12 @@ import { CrisisArt, Portrait } from './art';
 import { Concepts, Glossed } from './Glossary';
 import { SurveyForm, SurveyThanks } from './Survey';
 import { useHaptics } from './haptics';
+import { LinimasaFeed } from './Linimasa';
 import { AnimatedNumber, DUR, EASE, m } from './motion';
+import { ReactionBar } from './Reactions';
 import { Board, HoldButton, RoleMark, RoleName, StepAnnouncer, TeiLogo, Timer, roleProps } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
-import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, PRACTICE_COACH, STEP_LABEL, signed, whereLabel } from './text';
+import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, coachFor, STEP_LABEL, signed, whereLabel } from './text';
 
 const YEAR_STEPS = ['krisis', 'rapat', 'lobi', 'pengesahan', 'pengungkapan', 'koran'] as const;
 
@@ -173,11 +175,12 @@ function PhoneShell({ view, send, now }: { view: PlayerView; send: Send; now: ()
   const setTab = (next: string) => { setTabState(next as PhoneTab); window.scrollTo({ top: 0 }); };
   const phaseKey = `${view.phase}:${view.year}:${view.step}`;
   useEffect(() => { setTabState('sekarang'); }, [phaseKey]);
+  const incoming = view.team ? view.pacts.filter(p => p.to === view.team!.role && p.status === 'diajukan').length : 0;
   if (!view.team || view.phase === 'gabung') {
     return (
       <>
         <PhoneHeader view={view} now={now} />
-        <div className="phone-page"><PhoneBody view={view} send={send} /></div>
+        <div className="phone-page"><PhoneBody view={view} send={send} now={now} /></div>
       </>
     );
   }
@@ -185,31 +188,40 @@ function PhoneShell({ view, send, now }: { view: PlayerView; send: Send; now: ()
     <Tabs.Root value={tab} onValueChange={setTab} className="contents">
       <PhoneHeader view={view} now={now} />
       <div className="phone-page with-nav">
-        <Tabs.Content value="sekarang" asChild><Fade className="flex flex-col gap-5"><PhoneBody view={view} send={send} /></Fade></Tabs.Content>
+        <Tabs.Content value="sekarang" asChild><Fade className="flex flex-col gap-5"><PhoneBody view={view} send={send} now={now} /></Fade></Tabs.Content>
         <Tabs.Content value="tim" asChild><Fade><TeamTab view={view} /></Fade></Tabs.Content>
         <Tabs.Content value="negara" asChild><Fade><CountryTab view={view} /></Fade></Tabs.Content>
       </div>
       <Tabs.List className="phone-nav" aria-label="Bagian layar">
-        {PHONE_TABS.map(t => <Tabs.Trigger key={t.id} value={t.id}>{t.label}</Tabs.Trigger>)}
+        {PHONE_TABS.map(t => (
+          <Tabs.Trigger key={t.id} value={t.id}>
+            {t.label}
+            {t.id === 'sekarang' && incoming > 0 && <span className="nav-badge" aria-label={`${incoming} tawaran kesepakatan baru`}>{incoming}</span>}
+          </Tabs.Trigger>
+        ))}
       </Tabs.List>
     </Tabs.Root>
   );
 }
 
-/** Where the year stands: six steps, the current one marked, so a phone always says "you are here". */
 /** Tab content fades in when it opens; Radix keeps only the open tab mounted. */
 const Fade = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<'div'>>(function Fade({ children, className, ...rest }, ref) {
   const { onAnimationStart: _a, onDrag: _b, onDragStart: _c, onDragEnd: _d, ...props } = rest;
   return <m.div ref={ref} className={className} {...props} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: DUR.fast }}>{children}</m.div>;
 });
 
+/** Where the year stands: six steps, the current one marked and named, and what comes next. */
 function StepRail({ view }: { view: PlayerView }) {
   if (view.phase !== 'tahun' || !view.step) return null;
   const at = YEAR_STEPS.indexOf(view.step);
+  const next = YEAR_STEPS[at + 1];
   return (
-    <ol className="step-rail" aria-label={`Langkah ${at + 1} dari ${YEAR_STEPS.length}: ${STEP_LABEL[view.step]}`}>
-      {YEAR_STEPS.map((step, i) => <li key={step} className={i < at ? 'done' : i === at ? 'now' : ''} aria-hidden="true" />)}
-    </ol>
+    <div className="flex flex-col gap-1">
+      <ol className="step-rail" aria-label={`Langkah ${at + 1} dari ${YEAR_STEPS.length}: ${STEP_LABEL[view.step]}`}>
+        {YEAR_STEPS.map((step, i) => <li key={step} className={i < at ? 'done' : i === at ? 'now' : ''} aria-hidden="true" />)}
+      </ol>
+      <p className="step-next" aria-hidden="true">Langkah {at + 1}/{YEAR_STEPS.length}{next ? ` · berikutnya: ${STEP_LABEL[next]}` : ''}</p>
+    </div>
   );
 }
 
@@ -245,7 +257,7 @@ function TeamTab({ view }: { view: PlayerView }) {
           <p className="text-xs text-on-inverse-muted">Jangan tunjukkan layar ini ke tim lain.</p>
         </div>
       )}
-      <RoleBriefCard role={team.role} open />
+      <RoleBriefCard role={team.role} open pemula={view.options.mode === 'pemula'} />
       <Members view={view} />
     </section>
   );
@@ -266,7 +278,7 @@ function CountryTab({ view }: { view: PlayerView }) {
       )}
       {agreed.length > 0 && (
         <div>
-          <p className="kicker">Pakta yang disepakati</p>
+          <p className="kicker">Kesepakatan yang disetujui</p>
           <ul className="flex flex-col gap-2">
             {agreed.map(p => (
               <li key={p.id} className="pact disepakati">
@@ -318,14 +330,17 @@ function TaskHead({ view }: { view: PlayerView }) {
   }, [where]);
   if (view.phase !== 'tahun' || !view.step) return null;
   const jubir = view.me.isSpokesperson;
+  const pemula = view.options.mode === 'pemula';
   const locked = !!view.decision?.locked;
   const task: Record<string, string> = {
     krisis: 'Baca krisisnya. Apa dampaknya bagi timmu?',
-    rapat: jubir ? 'Pilih kartu dan tuas bersama tim. Kalau sudah sepakat, tekan Tim kami selesai.' : 'Pilih satu kartu dan atur tuas timmu. Suara terbanyak yang dipakai.',
-    lobi: jubir ? 'Kamu Juru Bicara: buat dan jawab pakta, lalu tekan Tim kami selesai.' : 'Bantu Juru Bicara bernegosiasi. Kamu masih bisa mengubah pilihan.',
-    pengesahan: locked ? 'Keputusan timmu sudah sah.' : jubir ? 'Kamu Juru Bicara: tahan tombol SAH untuk mengesahkan keputusan tim.' : `Tunggu Juru Bicara (${view.team?.spokesperson ?? '-'}) mengesahkan.`,
-    pengungkapan: 'Lihat layar utama: keputusan semua tim dibuka.',
-    koran: 'Harian TEI terbit. Lihat layar utama.',
+    rapat: pemula
+      ? jubir ? 'Pilih satu dari tiga respons bersama tim. Kalau sudah sepakat, tekan Tim kami selesai.' : 'Pilih satu dari tiga respons. Suara terbanyak tim yang dipakai.'
+      : jubir ? 'Pilih kartu dan pilihan kebijakan bersama tim. Kalau sudah sepakat, tekan Tim kami selesai.' : 'Pilih satu kartu dan satu pilihan kebijakan. Suara terbanyak tim yang dipakai.',
+    lobi: jubir ? 'Kamu Jubir: datangi tim lain, ajukan dan jawab kesepakatan di bawah, lalu tekan Tim kami selesai.' : 'Bantu Jubir menawar ke tim lain. Tawaran yang masuk muncul di bawah.',
+    pengesahan: locked ? 'Keputusan timmu sudah sah.' : jubir ? 'Kamu Jubir: tahan tombol SAH untuk mengesahkan keputusan tim.' : `Tunggu Jubir (${view.team?.spokesperson ?? '-'}) mengesahkan.`,
+    pengungkapan: 'Lihat layar utama: keputusan semua tim dibuka satu per satu.',
+    koran: 'Linimasa TEI ramai. Baca di bawah dan kirim reaksimu.',
   };
   return (
     <div className="flex flex-col gap-1">
@@ -335,7 +350,7 @@ function TaskHead({ view }: { view: PlayerView }) {
   );
 }
 
-function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
+function PhoneBody({ view, send, now }: { view: PlayerView; send: Send; now: () => number }) {
   const team = view.team;
   const quiz = view.myQuiz;
   const preQuiz = quiz?.open === 'pra' ? <QuizForm key="pra" quiz={quiz} send={send} /> : quiz?.done.pra && (view.phase === 'gabung' || view.phase === 'briefing') ? <p className="text-muted text-xs">Kuis awal terkirim. Terima kasih.</p> : null;
@@ -349,7 +364,7 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
         </div>
         <Cast />
         {preQuiz}
-        <HowToPlay />
+        <HowToPlay pemula={view.options.mode === 'pemula'} />
       </section>
     );
   }
@@ -375,7 +390,7 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
             <p className="text-xs">Baca kartumu sebelum Tahun 1 dimulai.</p>
           </div>
         </div>
-        {view.me.isSpokesperson && <p className="badge">Kamu Juru Bicara tahun 1: kamu yang mengesahkan keputusan tim dan membuat pakta.</p>}
+        {view.me.isSpokesperson && <p className="badge">Kamu Jubir (juru bicara) tahun 1: kamu yang mengesahkan keputusan tim dan membuat kesepakatan dengan tim lain.</p>}
         {preQuiz}
         <TeamTab view={view} />
       </section>
@@ -386,7 +401,7 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
   if (view.phase === 'selesai') return <ResultsScreen view={view} send={send} />;
 
   // A year in progress.
-  const coach = view.practice && view.step ? PRACTICE_COACH[view.step] : null;
+  const coach = view.practice && view.step ? coachFor(view.step, view.options.mode === 'pemula') : null;
   return (
     <section className="flex flex-col gap-4">
       <TaskHead view={view} />
@@ -397,8 +412,10 @@ function PhoneBody({ view, send }: { view: PlayerView; send: Send }) {
         </aside>
       )}
       {view.crisis && view.step === 'krisis' && <CrisisCard view={view} />}
+      {view.step === 'rapat' && <p className="text-xs text-muted">Setelah ini: <strong className="text-copy">Negosiasi</strong>. Timmu bisa membuat kesepakatan dengan tim lain.</p>}
       {view.decision && <DecideScreen key={`${view.year}`} view={view} send={send} />}
-      {(view.step === 'pengungkapan' || view.step === 'koran') && <RevealMine view={view} />}
+      {(view.step === 'pengungkapan' || view.step === 'koran') && <RevealMine view={view} now={now} send={send} />}
+      {view.team && (view.step === 'pengungkapan' || view.step === 'koran' || view.step === 'krisis') && <ReactionBar onReact={kind => send({ t: 'react', kind })} />}
     </section>
   );
 }
@@ -413,13 +430,13 @@ function Cast() {
   );
 }
 
-function HowToPlay() {
+function HowToPlay({ pemula }: { pemula: boolean }) {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="kicker">Cara bermain</h2>
       <ol className="list flex flex-col gap-2">
-        <li><strong>Rapat dengan timmu.</strong> Pilih satu kartu kebijakan dan atur tuas peranmu di HP.</li>
-        <li><strong>Lobi tim lain.</strong> Juru Bicara membuat pakta: janji yang dicek setelah keputusan dibuka.</li>
+        <li><strong>Rapat dengan timmu.</strong> {pemula ? 'Setiap krisis memberi timmu tiga pilihan respons. Pilih satu di HP.' : 'Pilih satu kartu kebijakan dan satu pilihan kebijakan di HP.'}</li>
+        <li><strong>Negosiasi dengan tim lain.</strong> Buat kesepakatan: "kami lakukan ini, kalian lakukan itu". Ditepati +1, dilanggar −1.</li>
         <li><strong>Jaga negara tetap hidup</strong> sambil diam-diam mengejar agenda rahasia timmu.</li>
       </ol>
     </section>
@@ -427,22 +444,26 @@ function HowToPlay() {
 }
 
 /** What this role controls, its power and its friends (GDD, "Peran"), shared with the paper kit. */
-function RoleBriefCard({ role, open }: { role: Role; open: boolean }) {
+function RoleBriefCard({ role, open, pemula }: { role: Role; open: boolean; pemula: boolean }) {
   const brief = ROLE_BRIEF[role];
   return (
     <details className="card ruled" open={open}>
       <summary>Kartu peran: {ROLE_LABEL[role]}</summary>
       <div className="flex flex-col gap-3 pt-2">
         <p className="text-lg leading-snug"><Glossed text={brief.focus} /></p>
-        <h3 className="kicker mt-2">Tuas: {brief.lever.name}</h3>
-        <dl className="lever-list">
-          {brief.lever.options.map(([name, fx]) => (
-            <div key={name}><dt>{name}</dt><dd>{fx}</dd></div>
-          ))}
-        </dl>
-        <h3 className="kicker mt-2">Kekuatan: {brief.power.name}</h3>
-        <p><Glossed text={brief.power.text} /></p>
-        {brief.resource?.income && <p className="text-xs text-muted">{brief.resource.income}</p>}
+        {!pemula && (
+          <>
+            <h3 className="kicker mt-2">Pilihan kebijakan: {brief.lever.name}</h3>
+            <dl className="lever-list">
+              {brief.lever.options.map(([name, fx]) => (
+                <div key={name}><dt>{name}</dt><dd>{fx}</dd></div>
+              ))}
+            </dl>
+            <h3 className="kicker mt-2">Kekuatan: {brief.power.name}</h3>
+            <p><Glossed text={brief.power.text} /></p>
+            {brief.resource?.income && <p className="text-xs text-muted">{brief.resource.income}</p>}
+          </>
+        )}
         <p className="bg-sunken px-3 py-2 text-xs"><strong>Kawan dan lawan.</strong> {brief.allies}</p>
       </div>
     </details>
@@ -471,23 +492,28 @@ function CrisisCard({ view }: { view: PlayerView }) {
 
 function DecideScreen({ view, send }: { view: PlayerView; send: Send }) {
   const ctx = view.decision!;
-  const [tab, setTab] = useState<'keputusan' | 'pakta'>('keputusan');
   const [draft, setDraft] = useState<Decision>(ctx.myProposal ?? ctx.majority);
+  // In Pengesahan the Jubir seals the team's majority, live, unless they pick something else there.
+  const [edited, setEdited] = useState(false);
   const submitted = !!ctx.myProposal;
   const isSpokesperson = view.me.isSpokesperson;
+  const sealing = view.step === 'pengesahan' && isSpokesperson;
+  const shown = sealing && !edited ? ctx.majority : draft;
 
   const change = (decision: Decision) => {
     setDraft(decision);
+    if (sealing) setEdited(true);
     send({ t: 'propose', decision });
   };
 
   const form = (
     <>
       {view.step === 'rapat' && view.crisis && <p className="callout"><span className="kicker">Bahas di timmu</span><br /><Glossed text={view.crisis.question} /></p>}
-      <p className="text-xs text-copy"><strong className="text-ink">{ctx.proposers} dari {ctx.members}</strong> anggota sudah memilih. Angka di samping pilihan adalah jumlah suara.</p>
-      <DecisionForm ctx={ctx} value={draft} onChange={change} />
-      {!submitted && <button className="btn" onClick={() => change(draft)}>Pilih ini</button>}
-      {submitted && <p className="text-xs text-muted">Pilihanmu terkirim. Kamu masih bisa mengubahnya.</p>}
+      <p className="text-xs text-copy"><strong className="text-ink">{ctx.proposers} dari {ctx.members}</strong> anggota sudah memilih. Angka di samping pilihan adalah jumlah suara.{ctx.mode === 'pemula' ? ' Panah hijau baik untuk negara, merah buruk.' : ''}</p>
+      {sealing && <p className="callout plain text-xs">{edited ? 'Yang akan disahkan: pilihanmu di bawah.' : 'Yang akan disahkan: pilihan terbanyak timmu (ditampilkan di bawah, ikut berubah bila suara berubah).'}</p>}
+      <DecisionForm ctx={ctx} value={shown} onChange={change} />
+      {!submitted && !sealing && <button className="btn" onClick={() => change(draft)}>Pilih ini</button>}
+      {submitted && !sealing && <p className="text-xs text-muted">Pilihanmu terkirim. Kamu masih bisa mengubahnya.</p>}
       {view.step === 'pengesahan' && <p className="text-xs text-muted">Jika waktu habis sebelum SAH, pilihan terbanyak yang dipakai.</p>}
     </>
   );
@@ -505,19 +531,18 @@ function DecideScreen({ view, send }: { view: PlayerView; send: Send }) {
   return (
     <section className="flex flex-col gap-4">
       {view.step === 'lobi' ? (
-        <Tabs.Root value={tab} onValueChange={v => setTab(v as 'keputusan' | 'pakta')} className="flex flex-col gap-4">
-          <Tabs.List className="tabs" aria-label="Lobi">
-            <Tabs.Trigger value="keputusan">Keputusan</Tabs.Trigger>
-            <Tabs.Trigger value="pakta">Pakta</Tabs.Trigger>
-          </Tabs.List>
-          <Tabs.Content value="keputusan" className="flex flex-col gap-4">{form}</Tabs.Content>
-          <Tabs.Content value="pakta"><PactPanel view={view} send={send} /></Tabs.Content>
-        </Tabs.Root>
+        <>
+          <PactPanel view={view} send={send} />
+          <details className="card">
+            <summary>Keputusan timmu (masih bisa diubah)</summary>
+            <div className="flex flex-col gap-4 pt-3">{form}</div>
+          </details>
+        </>
       ) : form}
-      {view.step === 'pengesahan' && isSpokesperson && (
+      {sealing && (
         <div className="action-dock">
-          <button className="btn" onClick={() => change(ctx.majority)}>Pakai pilihan terbanyak</button>
-          <HoldButton label="Tahan untuk SAH" onConfirm={() => send({ t: 'lock', decision: draft })} />
+          {edited && <button className="btn" onClick={() => setEdited(false)}>Kembali ke pilihan terbanyak</button>}
+          <HoldButton label="Tahan untuk SAH" onConfirm={() => send({ t: 'lock', decision: shown })} />
         </div>
       )}
       <ReadyBox view={view} send={send} />
@@ -532,7 +557,7 @@ function ReadyBox({ view, send }: { view: PlayerView; send: Send }) {
   const done = view.teams.filter(t => t.ready).length;
   const count = <strong>{done} dari {view.teams.length} tim selesai</strong>;
   if (!view.me.isSpokesperson) {
-    return <p className="text-xs text-copy" role="status">{ready ? 'Juru Bicara bilang timmu selesai. ' : ''}{count}. Juru Bicara ({view.team!.spokesperson}) menekan tombol selesai.</p>;
+    return <p className="text-xs text-copy" role="status">{ready ? 'Jubir bilang timmu selesai. ' : ''}{count}. Jubir ({view.team!.spokesperson}) menekan tombol selesai.</p>;
   }
   return (
     <div className="action-dock" role="group" aria-label="Konfirmasi tim">
@@ -546,85 +571,155 @@ function ReadyBox({ view, send }: { view: PlayerView; send: Send }) {
   );
 }
 
+/**
+ * Negosiasi, the main screen of its step for everyone: offers waiting for this team first, then
+ * ready-made deals with each other team (one tap for the Jubir), then a free-form deal.
+ */
 function PactPanel({ view, send }: { view: PlayerView; send: Send }) {
   const role = view.team!.role;
   const lobby = view.lobby;
   const isSpokesperson = view.me.isSpokesperson;
   const partners = ROLES.filter(r => r !== role);
   const [to, setTo] = useState<Role>(partners[0]!);
+  const [custom, setCustom] = useState(false);
   const [mine, setMine] = useState('');
   const [theirs, setTheirs] = useState('');
   const myTerms = lobby?.terms[role] ?? [];
   const theirTerms = lobby?.terms[to] ?? [];
   const live = view.pacts.filter(p => p.status === 'diajukan' || p.status === 'disepakati');
+  const full = !!lobby && live.filter(p => p.from === role || p.to === role).length >= lobby.maxPacts;
+  const incoming = view.pacts.filter(p => p.to === role && p.status === 'diajukan');
+  const others = view.pacts.filter(p => !incoming.includes(p));
+  const offered = (fromTerm: string, toTerm: string) => live.some(p => p.from === role && p.fromText === myTerms.find(t => t.id === fromTerm)?.text && p.toText === theirTerms.find(t => t.id === toTerm)?.text);
+  const suggestions = (lobby?.suggestions ?? []).filter(s => s.to === to);
+  const propose = (fromTerm: string, toTerm: string) => send({ t: 'pactPropose', to, fromTerm: fromTerm as never, toTerm: toTerm as never });
+
+  const deal = (p: PlayerView['pacts'][number]) => (
+    <>
+      <p><RoleName role={p.from} />: {p.fromText}</p>
+      <p><RoleName role={p.to} />: {p.toText}</p>
+    </>
+  );
 
   return (
-    <section className="flex flex-col gap-4">
-      <h3 className="kicker">Pakta tahun ini</h3>
-      {!view.pacts.length && <p className="text-muted text-xs">Belum ada pakta. Pakta adalah janji dua arah yang dicek setelah pengungkapan: +1 jika ditepati, −1 jika dilanggar.</p>}
-      <ul className="flex flex-col gap-2">
-        {view.pacts.map(p => {
-          const incoming = p.to === role && p.status === 'diajukan';
-          const outgoing = p.from === role && p.status === 'diajukan';
-          return (
-            <li key={p.id} className={`pact ${p.status}`}>
-              <p><RoleName role={p.from} />: {p.fromText}</p>
-              <p><RoleName role={p.to} />: {p.toText}</p>
-              <p className="text-muted text-xs">{{ diajukan: incoming ? 'Menunggu jawaban timmu' : 'Menunggu jawaban', disepakati: 'Disepakati', ditolak: 'Ditolak', ditarik: 'Ditarik', kedaluwarsa: 'Kedaluwarsa' }[p.status]}</p>
-              {isSpokesperson && incoming && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <button className="btn primary" onClick={() => send({ t: 'pactRespond', pactId: p.id, accept: true })}>Sepakat</button>
-                  <button className="btn" onClick={() => send({ t: 'pactRespond', pactId: p.id, accept: false })}>Tolak</button>
-                </div>
-              )}
-              {isSpokesperson && outgoing && <button className="btn" onClick={() => send({ t: 'pactRespond', pactId: p.id, accept: false })}>Tarik</button>}
-            </li>
-          );
-        })}
-      </ul>
+    <section className="flex flex-col gap-4" aria-label="Kesepakatan">
+      <p className="text-xs text-copy">Kesepakatan = janji dua tim, dicek setelah keputusan dibuka. Ditepati <strong>+1 poin</strong>, dilanggar <strong>−1 poin</strong>.</p>
 
-      {lobby && isSpokesperson && live.filter(p => p.from === role || p.to === role).length < lobby.maxPacts && (
-        <form className="flex flex-col gap-4 pact-form" onSubmit={e => {
-          e.preventDefault();
-          if (mine && theirs) send({ t: 'pactPropose', to, fromTerm: mine as never, toTerm: theirs as never });
-          setMine('');
-          setTheirs('');
-        }}>
-          <h3 className="kicker">Ajukan pakta</h3>
-          <label className="field compact">
-            <span>Dengan tim</span>
-            <select value={to} onChange={e => { setTo(e.target.value as Role); setTheirs(''); }}>
-              {partners.map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
-            </select>
-          </label>
-          <label className="field compact">
-            <span>Timmu berjanji</span>
-            <select value={mine} onChange={e => setMine(e.target.value)} required>
-              <option value="">Pilih janji…</option>
-              {myTerms.map(t => <option key={t.id} value={t.id}>{t.text}</option>)}
-            </select>
-          </label>
-          <label className="field compact">
-            <span>Asalkan {ROLE_LABEL[to]} berjanji</span>
-            <select value={theirs} onChange={e => setTheirs(e.target.value)} required>
-              <option value="">Pilih janji…</option>
-              {theirTerms.map(t => <option key={t.id} value={t.id}>{t.text}</option>)}
-            </select>
-          </label>
-          <button className="btn primary" disabled={!mine || !theirs}>Ajukan</button>
-        </form>
+      {incoming.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="kicker">Tawaran untuk timmu</h3>
+          {incoming.map(p => (
+            <div key={p.id} className="pact diajukan incoming">
+              {deal(p)}
+              {isSpokesperson
+                ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button className="btn primary" onClick={() => send({ t: 'pactRespond', pactId: p.id, accept: true })}>Setuju</button>
+                    <button className="btn" onClick={() => send({ t: 'pactRespond', pactId: p.id, accept: false })}>Tolak</button>
+                  </div>
+                )
+                : <p className="text-xs text-muted">Jubir ({view.team!.spokesperson}) yang menjawab. Diskusikan dulu bersamanya.</p>}
+            </div>
+          ))}
+        </div>
       )}
-      {lobby && !isSpokesperson && <p className="text-muted text-xs">Hanya Juru Bicara ({view.team!.spokesperson}) yang bisa mengajukan dan menjawab pakta. Bantu ia bernegosiasi.</p>}
+
+      {others.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {others.map(p => (
+            <li key={p.id} className={`pact ${p.status}`}>
+              {deal(p)}
+              <p className="text-muted text-xs">{{ diajukan: 'Menunggu jawaban mereka', disepakati: 'Disetujui', ditolak: 'Ditolak', ditarik: 'Ditarik', kedaluwarsa: 'Kedaluwarsa' }[p.status]}</p>
+              {isSpokesperson && p.from === role && p.status === 'diajukan' && <button className="btn" onClick={() => send({ t: 'pactRespond', pactId: p.id, accept: false })}>Tarik tawaran</button>}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {lobby && isSpokesperson && !full && (
+        <div className="flex flex-col gap-3">
+          <h3 className="kicker">Tawarkan kesepakatan</h3>
+          <div className="partner-picker" role="radiogroup" aria-label="Dengan tim">
+            {partners.map(r => (
+              <button key={r} type="button" role="radio" aria-checked={to === r} className={`chip-btn${to === r ? ' on' : ''}`} onClick={() => { setTo(r); setTheirs(''); }} {...roleProps(r)}>
+                <RoleMark role={r} small /> {ROLE_LABEL[r]}
+              </button>
+            ))}
+          </div>
+          {suggestions.map(s => (
+            <div key={`${s.fromTerm}-${s.toTerm}`} className="deal-card">
+              <p><strong>Kami:</strong> {s.fromText}</p>
+              <p><strong>{ROLE_LABEL[to]}:</strong> {s.toText}</p>
+              <button className="btn primary" disabled={offered(s.fromTerm, s.toTerm)} onClick={() => propose(s.fromTerm, s.toTerm)}>
+                {offered(s.fromTerm, s.toTerm) ? 'Sudah ditawarkan' : `Tawarkan ke ${ROLE_LABEL[to]}`}
+              </button>
+            </div>
+          ))}
+          {!custom && <button type="button" className="btn" onClick={() => setCustom(true)}>Buat kesepakatan sendiri</button>}
+          {custom && (
+            <form className="flex flex-col gap-4 pact-form" onSubmit={e => {
+              e.preventDefault();
+              if (mine && theirs) propose(mine, theirs);
+              setMine('');
+              setTheirs('');
+            }}>
+              <label className="field compact">
+                <span>Timmu berjanji</span>
+                <select value={mine} onChange={e => setMine(e.target.value)} required>
+                  <option value="">Pilih janji…</option>
+                  {myTerms.map(t => <option key={t.id} value={t.id}>{t.text}</option>)}
+                </select>
+              </label>
+              <label className="field compact">
+                <span>Asalkan {ROLE_LABEL[to]} berjanji</span>
+                <select value={theirs} onChange={e => setTheirs(e.target.value)} required>
+                  <option value="">Pilih janji…</option>
+                  {theirTerms.map(t => <option key={t.id} value={t.id}>{t.text}</option>)}
+                </select>
+              </label>
+              <button className="btn primary" disabled={!mine || !theirs}>Tawarkan</button>
+            </form>
+          )}
+        </div>
+      )}
+      {lobby && isSpokesperson && full && <p className="text-xs text-muted">Timmu sudah punya {lobby.maxPacts} kesepakatan tahun ini (batas maksimal).</p>}
+      {lobby && !isSpokesperson && !incoming.length && <p className="text-muted text-xs">Hanya Jubir ({view.team!.spokesperson}) yang bisa menawarkan dan menyetujui kesepakatan. Bantu ia menawar ke tim lain.</p>}
     </section>
   );
 }
 
-function RevealMine({ view }: { view: PlayerView }) {
-  const mine = view.reveal?.teams.find(t => t.role === view.team!.role);
-  const pacts = (view.reveal?.pacts ?? []).filter(p => p.from === view.team!.role || p.to === view.team!.role);
+/**
+ * The team's own outcome, revealed on the phone only when the projector reaches it: teams one by
+ * one, every 1.5 s from the start of the step, then causes, then kesepakatan (MainScreens RevealStage).
+ */
+function useRevealClock(view: PlayerView, now: () => number): number {
+  const started = view.stepStartedAt;
+  const at = () => (started === null ? Infinity : Math.floor((now() - started - REVEAL_LEAD_MS) / REVEAL_STEP_MS));
+  const [shown, setShown] = useState(at);
+  useEffect(() => {
+    const tick = () => setShown(started === null ? Infinity : Math.floor((now() - started - REVEAL_LEAD_MS) / REVEAL_STEP_MS));
+    tick();
+    const id = setInterval(tick, 500);
+    return () => clearInterval(id);
+  }, [started, now]);
+  return view.step === 'pengungkapan' ? shown : Infinity;
+}
+
+const REVEAL_STEP_MS = 1500;
+/** The projector counts 3-2-1 before the first card (MainScreens REVEAL_LEAD_SECONDS). */
+const REVEAL_LEAD_MS = 3000;
+
+function RevealMine({ view, now, send }: { view: PlayerView; now: () => number; send: Send }) {
+  const shown = useRevealClock(view, now);
+  const reveal = view.reveal;
+  const index = reveal?.teams.findIndex(t => t.role === view.team!.role) ?? -1;
+  const mine = index >= 0 && shown >= index + 1 ? reveal!.teams[index] : null;
+  const pactsAt = reveal ? reveal.teams.length + reveal.groups.length : 0;
+  const pacts = shown > pactsAt ? (reveal?.pacts ?? []).filter(p => p.from === view.team!.role || p.to === view.team!.role) : [];
   return (
     <section className="flex flex-col gap-4">
-      {view.step === 'koran' && view.frontPage && <h2 className="font-serif text-lg">{view.frontPage.headline}</h2>}
+      {view.step === 'koran' && view.frontPage && <LinimasaFeed page={view.frontPage} onLike={() => send({ t: 'react', kind: 'tepuk' })} />}
+      {!mine && view.step === 'pengungkapan' && <p className="text-muted">Keputusan timmu belum dibuka. Lihat layar utama…</p>}
       {mine && (
         <div className="reveal-mine flex flex-col gap-2">
           <h3 className="kicker">Keputusan timmu</h3>
@@ -634,7 +729,7 @@ function RevealMine({ view }: { view: PlayerView }) {
       )}
       {pacts.map(p => {
         const kept = p.from === view.team!.role ? p.result?.keptFrom : p.result?.keptTo;
-        return <p key={p.id} className={kept ? 'text-success' : 'text-danger'}>Pakta dengan {ROLE_LABEL[p.from === view.team!.role ? p.to : p.from]}: timmu {kept ? 'menepati (+1)' : 'melanggar (−1)'}.</p>;
+        return <p key={p.id} className={kept ? 'text-success' : 'text-danger'}>Kesepakatan dengan {ROLE_LABEL[p.from === view.team!.role ? p.to : p.from]}: timmu {kept ? 'menepati (+1)' : 'melanggar (−1)'}.</p>;
       })}
     </section>
   );
@@ -659,7 +754,7 @@ function FinalScreen({ view, send }: { view: PlayerView; send: Send }) {
     return (
       <section className="flex flex-col gap-4">
         <p className="lead">Tebak agenda rahasia tim lain.</p>
-        <p className="text-muted">Diskusikan dengan timmu. Juru Bicara ({view.team!.spokesperson}) yang mengirim tebakan: +1 untuk setiap tebakan benar{view.options.oknum ? ', dan Oknum terbongkar jika minimal 3 tim menunjuknya' : ''}.</p>
+        <p className="text-muted">Diskusikan dengan timmu. Jubir ({view.team!.spokesperson}) yang mengirim tebakan: +1 untuk setiap tebakan benar{view.options.oknum ? ', dan Oknum terbongkar jika minimal 3 tim menunjuknya' : ''}.</p>
       </section>
     );
   }
@@ -791,7 +886,7 @@ function ResultsScreen({ view, send }: { view: PlayerView; send: Send }) {
       <ul className="list flex flex-col gap-1">
         <li>Agenda {mine.agendaName}: {mine.achieved ? 'tercapai' : 'tidak tercapai'}</li>
         <li>Tebakan benar: {mine.correctGuesses}</li>
-        <li>Pakta ditepati {mine.pactsKept}, dilanggar {mine.pactsBroken}</li>
+        <li>Kesepakatan ditepati {mine.pactsKept}, dilanggar {mine.pactsBroken}</li>
       </ul>
       <p className="text-muted text-xs">Debrief dipandu fasilitator di layar utama.</p>
     </section>

@@ -42,7 +42,7 @@ export function exportPacts(view: HostView): void {
   for (const year of view.history ?? []) {
     for (const p of year.pacts) rows.push([year.year, ROLE_LABEL[p.from], p.fromText, p.keptFrom ? 'ya' : 'tidak', ROLE_LABEL[p.to], p.toText, p.keptTo ? 'ya' : 'tidak']);
   }
-  download(`TEI-${view.code}-pakta.csv`, csv(rows));
+  download(`TEI-${view.code}-kesepakatan.csv`, csv(rows));
 }
 
 export function exportQuiz(view: HostView): void {

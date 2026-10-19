@@ -10,12 +10,13 @@ const flag = (name: string, fallback: number) => {
 const games = flag('games', 2000);
 const seed = flag('seed', 1);
 const strict = args.includes('--check');
+const mode = args.includes('--pemula') ? 'pemula' : 'lanjutan';
 
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`.padStart(6);
 const started = Date.now();
-const reports: MixReport[] = MIXES.map(mix => simulateMix(mix, games, seed));
+const reports: MixReport[] = MIXES.map(mix => simulateMix(mix, games, seed, { pacts: true, mode }));
 
-console.log(`\nTEI balance simulator — ${games} game per campuran bot, seed ${seed}, ${((Date.now() - started) / 1000).toFixed(1)} dtk\n`);
+console.log(`\nTEI balance simulator (${mode}) — ${games} game per campuran bot, seed ${seed}, ${((Date.now() - started) / 1000).toFixed(1)} dtk\n`);
 
 console.log('Campuran     Kolaps  Bangkrut Lengser Anarki Hiperinf  Sejahtera Bertahan Tertatih  Thn kolaps');
 for (const r of reports) {

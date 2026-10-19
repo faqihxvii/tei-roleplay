@@ -1,13 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import type { Role } from '../../engine/src/types';
 import type { ClientMessage } from '../../room/src/protocol';
 import type { HostView, PublicStats, RevealView } from '../../room/src/views';
-import { CrisisArt, CrisisPhoto, endExpression, Portrait } from './art';
+import { CrisisArt, endExpression, Portrait } from './art';
 import { Concepts, Glossed } from './Glossary';
 import { cueBus } from './audio/bus';
 import { revealCue } from './audio/derive';
-import { DUR, EASE, m } from './motion';
+import { Confetti } from './Celebrate';
+import { LinimasaStage } from './Linimasa';
+import { AnimatedNumber, DUR, EASE, m } from './motion';
 import { Board, RoleMark, RoleName, TeiLogo, Timer, roleProps, useSequence } from './shared';
-import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL, INDICATOR_ORDER, PRACTICE_COACH, signed, STEP_HINT, STEP_LABEL } from './text';
+import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL, INDICATOR_ORDER, coachFor, signed, STEP_HINT, STEP_HINT_PEMULA, STEP_LABEL } from './text';
 
 // The projected main screen during the year loop and the end of the game. Text sized to be read
 // from the back row; one focus per phase (GDD, "UX/UI").
@@ -62,7 +65,8 @@ function StoryRail({ step }: { step: NonNullable<HostView['step']> }) {
 
 /** What the class does in this chapter, as one line under its headline. */
 function hintFor(view: HostView): string {
-  return view.practice ? PRACTICE_COACH[view.step!].main : STEP_HINT[view.step!];
+  const pemula = view.options.mode === 'pemula';
+  return view.practice ? coachFor(view.step!, pemula).main : (pemula && STEP_HINT_PEMULA[view.step!]) || STEP_HINT[view.step!];
 }
 
 export function YearScreen({ view, now, send }: { view: HostView; now: () => number; send: Send }) {
@@ -83,6 +87,9 @@ export function YearScreen({ view, now, send }: { view: HostView; now: () => num
       <m.div
         key={`${view.practice ? 0 : view.year}-${step}`}
         className={`chapter chapter-${step}`}
+        // Negosiasi and Linimasa can outgrow a small projector; a keyboard can then scroll them.
+        tabIndex={step === 'lobi' || step === 'koran' ? 0 : undefined}
+        aria-label={step === 'lobi' || step === 'koran' ? STEP_LABEL[step] : undefined}
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: DUR.base, ease: EASE.paper }}
@@ -91,7 +98,7 @@ export function YearScreen({ view, now, send }: { view: HostView; now: () => num
         {step === 'rapat' && <TeamsStage view={view} />}
         {step === 'lobi' && <LobbyTable view={view} />}
         {step === 'pengesahan' && <TeamsStage view={view} />}
-        {step === 'koran' && <FrontPageStage view={view} />}
+        {step === 'koran' && view.frontPage && <LinimasaStage page={view.frontPage} growth={view.growth} />}
       </m.div>
       {step !== 'koran' && view.stats && <div className="country-strip"><Board stats={view.stats} strip /></div>}
     </>
@@ -148,10 +155,12 @@ function ReadyMeter({ view }: { view: HostView }) {
 function TeamsStage({ view }: { view: HostView }) {
   const pengesahan = view.step === 'pengesahan';
   const signedCount = view.teams.filter(t => t.locked).length;
+  // Pemula: the class sees every team's three options, so talk can cross tables.
+  const options = (role: Role) => (view.options.mode === 'pemula' && !pengesahan ? view.console?.decisions[role]?.hand.map(c => c.name) : undefined);
   const status = (team: HostView['teams'][number]) => {
     if (team.locked) return null; // the stamp says it
     if (team.offline) return 'Diputuskan fasilitator';
-    if (pengesahan) return 'Menunggu Juru Bicara';
+    if (pengesahan) return 'Menunggu Jubir';
     return team.ready ? 'Selesai berdiskusi' : `${team.proposers} dari ${team.members} sudah memilih`;
   };
   return (
@@ -165,16 +174,21 @@ function TeamsStage({ view }: { view: HostView }) {
             <h1 className="chapter-question">{view.crisis?.question ?? STEP_LABEL.rapat}</h1>
           </>
         )}
-        <p className="chapter-hint">{hintFor(view)}</p>
+        {!options('pemerintah') && <p className="chapter-hint">{hintFor(view)}</p>}
       </div>
       {!pengesahan && <ReadyMeter view={view} />}
       <section className="team-row" aria-label="Tim">
         {view.teams.map(team => {
           const done = team.locked || (!pengesahan && team.ready && !team.offline);
           return (
-            <div key={team.role} className={`team-tile role-card${done ? ' done' : ''}`} {...roleProps(team.role)}>
+            <div key={team.role} className={`team-tile role-card${done ? ' done' : ''}${options(team.role) ? ' with-options' : ''}`} {...roleProps(team.role)}>
               <Portrait role={team.role} expression={team.locked ? 'senang' : pengesahan && !team.offline ? 'panik' : 'tenang'} fallback={<RoleMark role={team.role} />} />
               <p className="text-md font-bold">{team.label}</p>
+              {options(team.role) && (
+                <ol className="tile-options" aria-label={`Pilihan ${team.label}`}>
+                  {options(team.role)!.map((name, i) => <li key={name}><span className="slot" aria-hidden="true">{'ABC'[i]}</span>{name}</li>)}
+                </ol>
+              )}
               {status(team) && <p className="status">{status(team)}</p>}
               {team.locked && <span className="stamp small" aria-label="Sah">SAH</span>}
             </div>
@@ -189,8 +203,8 @@ function LobbyTable({ view }: { view: HostView }) {
   return (
     <section className="flex flex-col gap-6">
       <div className="chapter-hero">
-        <h1 className="chapter-question">Meja Lobi</h1>
-        <p className="chapter-hint">{view.pacts.length ? hintFor(view) : 'Belum ada pakta. Datangi tim lain: siapa butuh apa darimu?'}</p>
+        <h1 className="chapter-question">Meja Kesepakatan</h1>
+        <p className="chapter-hint">{view.pacts.length ? hintFor(view) : 'Belum ada kesepakatan. Datangi tim lain: siapa butuh apa darimu?'}</p>
       </div>
       <ReadyMeter view={view} />
       <ul className="flex max-w-page flex-col gap-3">
@@ -212,10 +226,26 @@ function LobbyTable({ view }: { view: HostView }) {
   );
 }
 
+export const REVEAL_LEAD_SECONDS = 3;
+
+/** Counts down whole seconds from `from` to 0, restarting when `key` changes. */
+function useCountdown(from: number, key: unknown): number {
+  const [left, setLeft] = useState(from);
+  useEffect(() => {
+    setLeft(from);
+    const id = setInterval(() => setLeft(n => (n <= 1 ? (clearInterval(id), 0) : n - 1)), 1000);
+    return () => clearInterval(id);
+  }, [from, key]);
+  return left;
+}
+
 /** Teams one by one (biggest impact last), then every change with its cause, then the pacts. */
 function RevealStage({ reveal }: { reveal: RevealView }) {
   const total = reveal.teams.length + reveal.groups.length + reveal.pacts.length + 1;
-  const shown = useSequence(total, 1500, reveal.year);
+  // A 3-2-1 before the first card; phones count the same lead-in (Phone.tsx REVEAL_LEAD_MS).
+  const countdown = useCountdown(REVEAL_LEAD_SECONDS, reveal.year);
+  const sequence = useSequence(total, 1500, `${reveal.year}-${countdown === 0}`);
+  const shown = countdown > 0 ? 0 : sequence;
   const teamsShown = Math.min(shown, reveal.teams.length);
   const groupsShown = Math.max(0, Math.min(shown - reveal.teams.length, reveal.groups.length));
   const pactsShown = Math.max(0, Math.min(shown - reveal.teams.length - reveal.groups.length, reveal.pacts.length));
@@ -236,8 +266,16 @@ function RevealStage({ reveal }: { reveal: RevealView }) {
   for (const c of reveal.groups[groupsShown - 1]?.changes ?? []) lastChanges[c.stat as keyof PublicStats] = c.amount;
   const board = groupsShown >= reveal.groups.length ? reveal.statsAfter : running;
 
+  const collapsed = done && reveal.collapses.length > 0;
   return (
-    <div className="chapter chapter-pengungkapan">
+    <div className={`chapter chapter-pengungkapan${collapsed ? ' shake' : ''}`}>
+      {countdown > 0 && (
+        <div className="countdown" role="status" aria-live="assertive">
+          <m.span key={countdown} initial={{ scale: 2.2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.45, ease: EASE.slam }}>{countdown}</m.span>
+          <p>Keputusan semua tim dibuka…</p>
+        </div>
+      )}
+      {collapsed && <div className="red-flash" aria-hidden="true" />}
       <section className="reveal">
         <div className="reveal-teams">
           {reveal.teams.map((team, i) => (
@@ -295,62 +333,6 @@ function RevealStage({ reveal }: { reveal: RevealView }) {
   );
 }
 
-function FrontPageStage({ view }: { view: HostView }) {
-  const page = view.frontPage;
-  if (!page) return null;
-  return (
-    <m.article
-      className="frontpage"
-      initial={{ opacity: 0, y: -56, rotate: -2 }}
-      animate={{ opacity: 1, y: 0, rotate: 0 }}
-      transition={{ duration: DUR.slow, ease: EASE.paper }}
-    >
-      <header className="fp-mast">
-        <TeiLogo />
-        <h1>Harian TEI</h1>
-        <span>Edisi Tahun {page.year}<br />Satu-satunya koran yang membaca keputusan Anda</span>
-      </header>
-      <div className={`fp-lead${page.crisisId ? ' with-photo' : ''}`}>
-        <div>
-          <m.h2 className="fp-headline" initial={{ opacity: 0, scale: 1.15 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.45, duration: DUR.base, ease: EASE.slam }}>{page.headline}</m.h2>
-          <m.p className="fp-sub" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: DUR.base }}>{page.subheadline}</m.p>
-        </div>
-        {page.crisisId && (
-          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: DUR.slow }}>
-            <CrisisPhoto id={page.crisisId} year={page.year} />
-          </m.div>
-        )}
-      </div>
-      <div className="fp-body">
-        <section className="fp-chart" aria-label="Indikator tahun ini">
-          <h3>Angka tahun ini</h3>
-          <table>
-            <tbody>
-              {page.indicators.map(i => (
-                <tr key={i.stat}>
-                  <th scope="row">{INDICATOR_LABEL[i.stat]}</th>
-                  <td>{i.from} → <strong>{i.to}</strong></td>
-                  <td className={i.to === i.from ? 'text-muted' : (i.stat === 'harga' || i.stat === 'keresahan') === i.to > i.from ? 'text-danger' : 'text-success'}>{i.to === i.from ? '=' : signed(i.to - i.from)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-        <section className="fp-voices">
-          <h3>Suara Warga</h3>
-          {page.voices.map(v => (
-            <blockquote key={v.who}>
-              <p>“{v.text}”</p>
-              <cite>{v.who}</cite>
-            </blockquote>
-          ))}
-        </section>
-        <aside className="fp-ad"><span className="kicker">Iklan</span><p>{page.ad}</p></aside>
-      </div>
-    </m.article>
-  );
-}
-
 export function GuessScreen({ view, now, send }: { view: HostView; now: () => number; send: Send }) {
   const done = view.teams.filter(t => t.finalDone).length;
   return (
@@ -359,7 +341,7 @@ export function GuessScreen({ view, now, send }: { view: HostView; now: () => nu
       <div className="chapter">
         <div className="chapter-hero">
           <h1 className="chapter-question">Siapa mengejar apa?</h1>
-          <p className="chapter-hint">Juru Bicara menebak agenda rahasia tim lain{view.options.oknum ? ' dan menunjuk Oknum' : ''} di HP. Setiap tebakan benar bernilai +1.{view.options.oknum ? ' Oknum terbongkar jika ditunjuk minimal 3 dari 5 tim.' : ''}</p>
+          <p className="chapter-hint">Jubir menebak agenda rahasia tim lain{view.options.oknum ? ' dan menunjuk Oknum' : ''} di HP. Setiap tebakan benar bernilai +1.{view.options.oknum ? ' Oknum terbongkar jika ditunjuk minimal 3 dari 5 tim.' : ''}</p>
         </div>
         <p className="ready-meter" role="status">{done === view.teams.length ? 'Semua tebakan masuk.' : `${done} dari ${view.teams.length} tim sudah menebak`}</p>
         <section className="team-row" aria-label="Tim">
@@ -383,6 +365,7 @@ export function ResultsBody({ view }: { view: HostView }) {
   const top = ranked[0]?.score ?? 0;
   return (
     <section className="results flex flex-col gap-8">
+      {results.ending === 'sejahtera' && <Confetti />}
       <div className={`card ruled ending ${results.ending}`}>
         <p className="kicker">Akhir permainan</p>
         <h1>{ENDING_LABEL[results.ending]}</h1>
@@ -405,9 +388,20 @@ export function ResultsBody({ view }: { view: HostView }) {
           ))}
         </ul>
       )}
+      <ol className="score-race" aria-label="Peringkat akhir">
+        {ranked.map((t, i) => (
+          <li key={t.role} {...roleProps(t.role)}>
+            <span className="race-name"><RoleName role={t.role} /></span>
+            <span className="race-track">
+              <m.span className="race-bar" initial={{ width: 0 }} animate={{ width: `${top > 0 ? Math.max(4, (t.score / top) * 100) : 4}%` }} transition={{ delay: 0.4 + (ranked.length - i) * 0.35, duration: DUR.slow, ease: EASE.paper }} />
+            </span>
+            <span className="race-score"><AnimatedNumber value={t.score} /></span>
+          </li>
+        ))}
+      </ol>
       <table className="score-table">
         <thead>
-          <tr><th scope="col">Tim</th><th scope="col">Agenda rahasia</th><th scope="col">Tebakan</th><th scope="col">Pakta</th><th scope="col">Skor</th></tr>
+          <tr><th scope="col">Tim</th><th scope="col">Agenda rahasia</th><th scope="col">Tebakan</th><th scope="col">Kesepakatan</th><th scope="col">Skor</th></tr>
         </thead>
         <tbody>
           {ranked.map(t => (

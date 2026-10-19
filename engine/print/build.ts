@@ -157,7 +157,7 @@ function roleSheet(role: Role): string {
   return page(`
     <div class="role-band" style="--c:${ROLE_COLOR[role]};--ci:${ROLE_INK[role]}">${roleMark(role)}<h1>${e(ROLE_LABEL[role])}</h1></div>
     <p class="focus">${e(sheet.focus)}</p>
-    <h2>Tuas: ${e(sheet.lever.paperName ?? sheet.lever.name)} <small>pilih satu setiap tahun</small></h2>
+    <h2>Pilihan kebijakan: ${e(sheet.lever.paperName ?? sheet.lever.name)} <small>pilih satu setiap tahun</small></h2>
     <table class="lever">${options}</table>
     <h2>Kekuatan: ${e(sheet.power.name)}</h2>
     <p>${e(sheet.power.paper ?? sheet.power.text)}</p>
@@ -166,8 +166,8 @@ function roleSheet(role: Role): string {
     <ol class="steps">
       <li>Pegang ${HAND_SIZE} kartu kebijakan peranmu.</li>
       <li>Diskusikan dengan tim, lalu ikut Lobi dengan tim lain.</li>
-      <li>Tulis di lembar keputusan: satu kartu (atau tidak memainkan kartu), satu pilihan tuas, dan kekuatan jika dipakai.</li>
-      <li>Juru Bicara menyerahkan lembar keputusan tertutup ke fasilitator.</li>
+      <li>Tulis di lembar keputusan: satu kartu (atau tidak memainkan kartu), satu pilihan kebijakan, dan kekuatan jika dipakai.</li>
+      <li>Jubir (juru bicara) menyerahkan lembar keputusan tertutup ke fasilitator.</li>
     </ol>
     <div class="ally"><b>Kawan dan lawan</b> ${e(sheet.allies)}</div>
     <div class="agenda-slot">Taruh kartu agenda rahasia di sini, tertutup.</div>`);
@@ -189,19 +189,19 @@ function rulesPages(): string {
       <h2>Satu tahun</h2>
       <ol>
         <li><b>Krisis.</b> Buka kartu krisis tahun ini; terapkan angkanya (tahun ${RULES.eskalasiKrisisMulaiTahun}–${MAX_YEARS} dua kali lipat). Setiap tim mengambil ${HAND_SIZE} kartu kebijakan acak dari dek perannya.</li>
-        <li><b>Rapat Tim</b> (90 detik). Bahas pilihan di dalam tim.</li>
-        <li><b>Lobi Terbuka</b> (90 detik). Bebas bernegosiasi dan membuat pakta. Pakta tidak mengikat; tulis di papan tulis.</li>
-        <li><b>Keputusan Rahasia</b> (60 detik). Isi lembar keputusan, serahkan tertutup.</li>
-        <li><b>Pengungkapan.</b> Fasilitator membuka semua keputusan dan menjalankan resolusi.</li>
+        <li><b>Rapat Tim</b> (3 menit). Bahas pilihan di dalam tim.</li>
+        <li><b>Negosiasi</b> (3 menit). Bebas bernegosiasi dan membuat kesepakatan dengan tim lain. Kesepakatan tidak mengikat; tulis di papan tulis.</li>
+        <li><b>Keputusan Rahasia</b> (1 menit). Isi lembar keputusan, serahkan tertutup.</li>
+        <li><b>Hasil.</b> Fasilitator membuka semua keputusan dan menjalankan resolusi.</li>
         <li><b>Halaman Depan.</b> Fasilitator membacakan apa yang terjadi. Kembalikan kartu kebijakan ke dek dan kocok.</li>
       </ol>
     </div>
     <div>
       <h2>Membaca kartu</h2>
       <p>Kartu menunjukkan arah dan besarnya dampak: ▲ kecil, ▲▲ sedang, ▲▲▲ besar. Angka pastinya ada di Buku Fasilitator, karena hasil akhirnya bergantung pada keputusan tim lain.</p>
-      <h2>Contoh pakta</h2>
+      <h2>Contoh kesepakatan</h2>
       <ul class="pacts">${PACT_TEMPLATES.slice(0, 3).map(p => `<li>${e(PACT_TERMS[p.a].text)}, asalkan ${e(PACT_TERMS[p.b].text.charAt(0).toLowerCase() + PACT_TERMS[p.b].text.slice(1))}.</li>`).join('')}</ul>
-      <p class="small">Pakta boleh apa saja yang bisa dicek dari keputusan yang dibuka. Fasilitator mencatat dan menilainya.</p>
+      <p class="small">Kesepakatan boleh apa saja yang bisa dicek dari keputusan yang dibuka. Fasilitator mencatat dan menilainya.</p>
       <h2>Kolaps</h2>
       <p>Diperiksa sekali, di akhir tahun. Negara kolaps jika Kas 0 (Bangkrut), Kepercayaan 0 (Lengser), Keresahan 10 (Anarki), atau Harga 10 (Hiperinflasi). Jika negara kolaps, <b>semua tim kalah</b>, kecuali Oknum.</p>
       <h2>Akhir permainan</h2>
@@ -209,7 +209,7 @@ function rulesPages(): string {
       <table class="score">
         <tr><th>Agenda tercapai</th><td>+${SCORE.agenda}</td></tr>
         <tr><th>Negara Sejahtera / Bertahan / Tertatih</th><td>+${SCORE.bonus.sejahtera} / +${SCORE.bonus.bertahan} / +${SCORE.bonus.tertatih} untuk semua</td></tr>
-        <tr><th>Pakta ditepati / dilanggar</th><td>+1 / −1</td></tr>
+        <tr><th>Kesepakatan ditepati / dilanggar</th><td>+1 / −1</td></tr>
         <tr><th>Tebakan agenda yang benar</th><td>+${SCORE.correctGuess} per tebakan</td></tr>
       </table>
       <p class="small">Indeks Negara = rata-rata Lapangan Kerja, Kepercayaan, (10 − Harga), dan (10 − Keresahan). Sejahtera ≥ 7, Bertahan 4–6, Tertatih ≤ 3.</p>
@@ -223,9 +223,9 @@ function decisionSheet(): string {
   return page(`
     <h1>Lembar Keputusan Tim</h1>
     <p class="roles">Tim: ${roles}</p>
-    <table class="decide"><tr><th></th><th>Kartu (kode, atau "tidak ada")</th><th>Tuas</th><th>Kekuatan khusus</th><th>Paraf Juru Bicara</th></tr>${rows}</table>
+    <table class="decide"><tr><th></th><th>Kartu (kode, atau "tidak ada")</th><th>Pilihan kebijakan</th><th>Kekuatan khusus</th><th>Paraf Jubir</th></tr>${rows}</table>
     <div class="hint">
-      <p><b>Tuas:</b> Pemerintah: pajak naik / tetap / turun · Bank Sentral: bunga naik / tahan / turun · Pengusaha: harga naik / tahan · Serikat Buruh: upah tidak / moderat / tinggi · Masyarakat: belanja / biasa / hemat.</p>
+      <p><b>Pilihan kebijakan:</b> Pemerintah: pajak naik / tetap / turun · Bank Sentral: bunga naik / tahan / turun · Pengusaha: harga naik / tahan · Serikat Buruh: upah tidak / moderat / tinggi · Masyarakat: belanja / biasa / hemat.</p>
       <p><b>Kekuatan khusus:</b> Bank Sentral: tolak Cetak Uang (ya/tidak) · Serikat Buruh: mogok (ya/tidak) · Masyarakat: Suara Publik (nama tim, atau kosong).</p>
       <p>Cetak 5 lembar, satu per tim. Potong per baris jika ingin diserahkan tiap tahun.</p>
     </div>`);
@@ -241,7 +241,7 @@ function facilitatorPages(): string {
       <li><b>Pembatalan.</b> Jika Pemerintah memainkan Cetak Uang dan Bank Sentral menolak: kartu batal, Kredibilitas +1. Jika Buruh mogok: Solidaritas −2, Kas −1, Keresahan +1, Modal −2, dan kartu Pengusaha batal.</li>
       <li><b>Kartu.</b> Terapkan semua kartu bersamaan (tabel di halaman berikut). Kartu dengan tag yang disebut kartu krisis bernilai ×2. Jika tahun lalu Kas berakhir ≤ 2, kartu Belanja negara bernilai setengah (dibulatkan ke nol). Suara Publik menggandakan efek Kepercayaan kartu tim yang dipilih. Taruh efek "tahun depan" di Jalur Kebijakan.</li>
       <li><b>Lobi.</b> Jika Masyarakat memainkan Investigasi: Lobi tahun ini terbongkar, begitu pula Lobi yang lolos tahun lalu (Modal −3, Kepercayaan −2, Keresahan +1). Jika tidak, lempar dadu: 1 = terbongkar media (Modal −2, Kepercayaan −2, Keresahan +1). Selain itu berhasil: Modal +3, Kas −2.</li>
-      <li><b>Tuas.</b> Pajak naik: Kas +2, Kepercayaan −1, Modal −1 (turun: kebalikannya). Bunga naik: Kredibilitas +1; tahun depan Harga −1, Kerja −1. Bunga turun: tahun depan Kerja +1, Harga +1. Harga naik: Modal +2, Harga +1, Kepercayaan −1. Upah tidak naik: Solidaritas −1. Upah moderat/tinggi (n = 1/2): Kepercayaan +n dan Modal −n, atau Harga +n jika Pengusaha menaikkan harga; upah tinggi juga Kerja −1, Solidaritas +1. Belanja: Kerja +1, Harga +1, Tabungan −1. Hemat: Harga −1, Kerja −1, Tabungan +1. Tuas yang dibekukan kartu krisis tidak berefek.</li>
+      <li><b>Pilihan kebijakan.</b> Pajak naik: Kas +2, Kepercayaan −1, Modal −1 (turun: kebalikannya). Bunga naik: Kredibilitas +1; tahun depan Harga −1, Kerja −1. Bunga turun: tahun depan Kerja +1, Harga +1. Harga naik: Modal +2, Harga +1, Kepercayaan −1. Upah tidak naik: Solidaritas −1. Upah moderat/tinggi (n = 1/2): Kepercayaan +n dan Modal −n, atau Harga +n jika Pengusaha menaikkan harga; upah tinggi juga Kerja −1, Solidaritas +1. Belanja: Kerja +1, Harga +1, Tabungan −1. Hemat: Harga −1, Kerja −1, Tabungan +1. Pilihan yang dibekukan kartu krisis tidak berefek.</li>
       <li><b>Jalur Kebijakan.</b> Terapkan semua efek yang jatuh tempo tahun ini, lalu buang.</li>
       <li><b>Aturan sistem.</b> Efek akhir tahun kartu krisis. Kas −${RULES.bebanRutinKas}. Harga +1 jika bunga di bawah ${RULES.inflasiBawaanDiBawahBunga}. Modal + ⌊Kerja ÷ ${RULES.labaUsahaPembagi}⌋. Tabungan +1 jika Kerja ≥ ${RULES.gajiMinKerja}. Keresahan +1 untuk setiap kondisi: Harga ≥ ${RULES.zonaResah.harga}, Kerja ≤ ${RULES.zonaResah.kerja}, Kepercayaan ≤ ${RULES.zonaResah.kepercayaan}. Tabungan −1 jika Harga ≥ 8.</li>
       <li><b>Cek kolaps</b> sekali: Kas 0, Kepercayaan 0, Keresahan 10, atau Harga 10. Catat semua yang terjadi; jika ada, permainan berakhir.</li>
@@ -260,11 +260,11 @@ function facilitatorPages(): string {
       <h1>Agenda</h1><table class="ref"><tr><th>Peran</th><th>Agenda</th><th>Syarat tercapai</th></tr>${agendaRows}</table>`) +
     page(`<h1>Catatan Sesi</h1>
       <p class="small">Nilai awal: Harga ${s.harga}, Kerja ${s.kerja}, Kas ${s.kas}, Kepercayaan ${s.kepercayaan}, Keresahan ${s.keresahan}, Bunga ${INITIAL_BUNGA}, Modal ${s.modal}, Solidaritas ${s.solidaritas}, Kredibilitas ${s.kredibilitas}, Tabungan ${s.tabungan}.</p>
-      <table class="log"><tr><th></th><th>Harga</th><th>Kerja</th><th>Kas</th><th>Keperc.</th><th>Keresahan</th><th>Bunga</th><th>Modal</th><th>Solid.</th><th>Kredib.</th><th>Tabungan</th><th>Catatan (pakta, momen penting)</th></tr>${logRows}</table>
+      <table class="log"><tr><th></th><th>Harga</th><th>Kerja</th><th>Kas</th><th>Keperc.</th><th>Keresahan</th><th>Bunga</th><th>Modal</th><th>Solid.</th><th>Kredib.</th><th>Tabungan</th><th>Catatan (kesepakatan, momen penting)</th></tr>${logRows}</table>
       <h2>Untuk playtest: catat setelah sesi</h2>
       <ol class="playtest">
         <li>Berapa menit fase Lobi benar-benar dipakai? Apakah tim saling mendatangi?</li>
-        <li>Pakta apa yang dibuat, dan mana yang dilanggar?</li>
+        <li>Kesepakatan apa yang dibuat, dan mana yang dilanggar?</li>
         <li>Kartu apa yang tidak pernah dipilih, dan kenapa?</li>
         <li>Di mana peserta bingung dengan aturan?</li>
         <li>Skor keseruan dari peserta (1–5), dan satu kalimat yang paling sering diucapkan saat debrief.</li>
@@ -292,7 +292,7 @@ function coverPage(): string {
         <tr><td>Buku Fasilitator</td><td>6 halaman</td><td>1, jangan dibagikan</td></tr>
       </table>
       <h2>Bahan tambahan</h2>
-      <p>1 dadu enam sisi · ±40 token kecil (koin, kancing, atau kertas) · 5 amplop untuk agenda · papan tulis atau kertas plano untuk mencatat pakta · timer.</p>
+      <p>1 dadu enam sisi · ±40 token kecil (koin, kancing, atau kertas) · 5 amplop untuk agenda · papan tulis atau kertas plano untuk mencatat kesepakatan · timer.</p>
       <h2>Menyiapkan</h2>
       <ol>
         <li>Cetak di A4, tanpa skala ("actual size"). Kartu berukuran 63 × 88 mm; cetak di kertas 160 gsm atau tempel ke karton.</li>
