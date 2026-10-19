@@ -6,7 +6,7 @@ import { Rng } from '../../engine/src/rng';
 import { cleanComment, validSurveyAnswers, type SurveyAnswers } from './content/survey';
 import { closeTiming, emptyTelemetry, noteAddTime, noteClientError, noteError, notePause, noteResume, openTiming, type StepEnd, type Telemetry } from './telemetry';
 import { isOknumIdentified, scoreGame, type TeamResult } from '../../engine/src/scoring';
-import { ROLES, type AgendaId, type Decision, type DecisionFor, type GameState, type Role, type YearDecisions } from '../../engine/src/types';
+import { ROLES, type AgendaId, type Decision, type DecisionFor, type GameMode, type GameState, type Role, type YearDecisions } from '../../engine/src/types';
 import { DONT_KNOW, QUIZ } from './content/quiz';
 import { initialDebrief, type DebriefState } from './debrief';
 import { buildFrontPage, type FrontPage } from './koran';
@@ -54,6 +54,8 @@ export interface RoomOptions {
   latihan?: boolean;
   /** Pre/post quiz: five questions on each phone before and after play. */
   kuis?: boolean;
+  /** Pemula or Lanjutan rules (engine GameMode); rooms saved before modes existed are Lanjutan. */
+  mode?: GameMode;
 }
 
 export type QuizStage = 'pra' | 'pasca';
@@ -372,7 +374,7 @@ export class Room {
     if (!this.s.players.length) throw new RoomError('belum-ada-pemain');
     for (const player of this.s.players) if (!player.role) this.placeInSmallestTeam(player);
     this.markEmptyTeamsOffline();
-    this.s.game = createGame({ seed: this.s.seed, oknum: this.s.options.oknum });
+    this.s.game = createGame({ seed: this.s.seed, oknum: this.s.options.oknum, mode: this.s.options.mode });
     this.s.phase = 'briefing';
     this.setTimer(null, now);
     this.touch(now);
@@ -442,6 +444,14 @@ export class Room {
         case 'koran':
           if (s.practice) {
             this.endPractice(now);
+          } else if (s.game!.ended && s.options.mode === 'pemula') {
+            // Pemula skips guessing the agendas: straight to the results.
+            this.finish();
+            s.debrief = initialDebrief();
+            s.phase = 'selesai';
+            s.step = null;
+            s.phaseEndsAt = null;
+            s.pausedMs = null;
           } else if (s.game!.ended) {
             s.phase = 'tebak';
             s.step = null;
@@ -472,7 +482,7 @@ export class Room {
     if (practice) {
       s.practice = { game: s.game!, pacts: s.pacts, years: s.years, usedVariants: s.usedVariants };
       // A throwaway country with the same starting board and a mild, rule-free crisis.
-      s.game = createGame({ seed: (s.seed ^ 0x5eed) >>> 0, firstCrisis: TUTORIAL_CRISIS.id });
+      s.game = createGame({ seed: (s.seed ^ 0x5eed) >>> 0, firstCrisis: TUTORIAL_CRISIS.id, mode: s.options.mode });
       s.pacts = [];
       s.years = [];
       s.usedVariants = [...s.usedVariants];
@@ -652,7 +662,9 @@ export class Room {
 
   proposePact(playerId: string, to: Role, fromTerm: PactTermId, toTerm: PactTermId, pactId: string, now: number): PactRecord {
     const from = this.requireLobbySpokesperson(playerId);
-    if (to === from || !PACT_TERMS[fromTerm] || !PACT_TERMS[toTerm] || PACT_TERMS[fromTerm].role !== from || PACT_TERMS[toTerm].role !== to) {
+    const mode = this.s.options.mode ?? 'lanjutan';
+    if (to === from || !PACT_TERMS[fromTerm] || !PACT_TERMS[toTerm] || PACT_TERMS[fromTerm].role !== from || PACT_TERMS[toTerm].role !== to
+      || PACT_TERMS[fromTerm].mode !== mode || PACT_TERMS[toTerm].mode !== mode) {
       throw new RoomError('pakta-salah');
     }
     const live = this.pactsThisYear().filter(p => p.status === 'diajukan' || p.status === 'disepakati');

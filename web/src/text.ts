@@ -107,3 +107,19 @@ export const PRACTICE_COACH: Record<YearStep, { main: string; phone: string; spo
     phone: 'Latihan hampir selesai. Tahun 1 dimulai dari papan awal; hasil latihan tidak dihitung.',
   },
 };
+
+/** Pemula's own words where the rules differ: three responses instead of cards and levers. */
+const PEMULA_COACH: Partial<Record<YearStep, { main: string; phone: string; spokesperson?: string }>> = {
+  rapat: {
+    main: 'Rapat Tim: setiap tim punya tiga pilihan respons untuk krisis ini. Setiap orang memilih satu di HP; akibatnya tertulis di kartunya.',
+    phone: 'Coba pilih satu dari tiga respons. Angka kuning di samping pilihan adalah jumlah anggota timmu yang memilihnya.',
+  },
+};
+
+export function coachFor(step: YearStep, pemula: boolean) {
+  return (pemula && PEMULA_COACH[step]) || PRACTICE_COACH[step];
+}
+
+export const STEP_HINT_PEMULA: Partial<Record<YearStep, string>> = {
+  rapat: 'Setiap tim punya tiga pilihan respons. Diskusikan di dalam tim dan pilih di HP. Jubir menekan Tim kami selesai bila sudah sepakat.',
+};

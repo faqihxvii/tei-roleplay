@@ -16,7 +16,15 @@ export type Effects = Partial<Record<Stat, number>>;
 export type Tag =
   | 'belanja' | 'bansos' | 'subsidi' | 'infrastruktur' | 'cetakUang'
   | 'investasi' | 'phk' | 'lobi' | 'investigasi' | 'dialog' | 'edukasi'
-  | 'rupiah' | 'ekspor';
+  | 'rupiah' | 'ekspor'
+  /** A wage demand (Mode Pemula's stand-in for the upah lever). */
+  | 'upah';
+
+/**
+ * Pemula: each crisis offers every team three responses written for it, and nothing else.
+ * Lanjutan: a hand of policy cards plus each role's lever and power (the full rules).
+ */
+export type GameMode = 'pemula' | 'lanjutan';
 
 export interface DelayedEffect {
   inYears: 1 | 2;
@@ -127,6 +135,8 @@ export interface GameState {
   rng: number;
   year: number;
   maxYears: number;
+  /** Missing on games saved before modes existed: those are Lanjutan. */
+  mode?: GameMode;
   stats: Stats;
   bunga: number;
   crisisId: string;

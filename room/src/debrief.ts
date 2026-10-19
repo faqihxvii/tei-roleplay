@@ -3,7 +3,7 @@ import { getCrisis } from '../../engine/src/content/crises';
 import { getCard } from '../../engine/src/content/policies';
 import { ROLE_LABEL } from '../../engine/src/content/roles';
 import { INITIAL_STATS } from '../../engine/src/game';
-import { PACT_TERMS } from '../../engine/src/pacts';
+import { pactTermText } from '../../engine/src/pacts';
 import { INDICATORS, ROLES, type Delta, type GameState, type Indicator, type Role, type Stats, type YearLog } from '../../engine/src/types';
 import { REAL_WORLD, type RealWorldNote } from './content/realWorld';
 import { causeLabel, causeRole, describeDecision, groupDeltas, isIndicator, STAT_NAME, type CauseGroup } from './labels';
@@ -342,7 +342,7 @@ export function history(s: RoomSnapshot): YearHistory[] {
       events: log.events,
       pacts: (record?.pactResults ?? []).map(r => {
         const p = s.pacts.find(x => x.id === r.pactId)!;
-        return { from: p.from, to: p.to, fromText: PACT_TERMS[p.fromTerm].text, toText: PACT_TERMS[p.toTerm].text, keptFrom: r.keptFrom, keptTo: r.keptTo };
+        return { from: p.from, to: p.to, fromText: pactTermText(p.fromTerm, log.crisisId), toText: pactTermText(p.toTerm, log.crisisId), keptFrom: r.keptFrom, keptTo: r.keptTo };
       }),
       headline: record?.frontPage.headline ?? '',
       subheadline: record?.frontPage.subheadline ?? '',

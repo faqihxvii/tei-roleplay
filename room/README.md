@@ -52,6 +52,15 @@ TEI_BASE=http://<alamat-jaringan>:5173 npm run room:e2e -- <folder-tangkapan-lay
 - Tim tanpa anggota saat briefing dimainkan lewat konsol fasilitator (Mode tanpa HP). Pemain yang datang terlambat masuk ke tim terkecil.
 - Snapshot disimpan segera setiap ganti fase atau ada pemain baru, dan maksimal 0,5 detik setelah perubahan lain. Server yang di-restart memulihkan semua ruangan.
 
+## Tingkat kesulitan
+
+Fasilitator memilih saat membuka ruangan (bawaan: Pemula).
+
+- **Pemula.** Setiap kartu krisis memberi tiap tim tiga pilihan respons yang ditulis khusus untuk krisis itu (`engine/src/content/responses.ts`), masing-masing dengan akibatnya tercetak di kartu. Tidak ada pilihan kebijakan tuas, kekuatan khusus, atau tebak agenda. Kesepakatan berbentuk "tim kami memilih respons X". Layar utama menampilkan tiga pilihan setiap tim selama Rapat Tim, supaya kelas bisa berdiskusi lintas meja. Beban rutin Kas baru berlaku mulai tahun 3, dan tiga agenda yang tidak cocok tanpa tuas (APBN Sehat, Ekspansi, Pengawas) tidak diundi. Di simulator, kelas campuran bertahan lima tahun sekitar 66% (`npm run sim -- --pemula`).
+- **Lanjutan.** Aturan lengkap: tangan tiga kartu kebijakan acak, pilihan kebijakan dan kekuatan tiap peran, dan tebak agenda di akhir. Tim yang punya kartu jawaban krisis tahun itu (kartu dengan tanda yang digandakan krisis) selalu mendapatkannya di tangan.
+
+Respons Pemula diubah menjadi kartu biasa (`rsp_<krisis><Peran><A|B|C>`), jadi validasi, resolusi, pengungkapan, dan pengecekan kesepakatan memakai jalur yang sama dengan Lanjutan.
+
 ## Putaran tahunan
 
 | Fase | Durasi bawaan | Yang terjadi |

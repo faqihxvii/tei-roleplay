@@ -10,6 +10,8 @@ import { chromium } from 'playwright';
 
 const OUT = process.argv[2];
 const BASE = process.env.TEI_BASE ?? 'http://127.0.0.1:5173';
+// Pemula (crisis responses only) by default; TEI_MODE=lanjutan plays the full rules with levers and guessing.
+const MODE = process.env.TEI_MODE === 'lanjutan' ? 'lanjutan' : 'pemula';
 if (OUT) mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--no-proxy-server'] });
 const errors = [];
@@ -41,6 +43,7 @@ const host = await (await browser.newContext({ viewport: { width: 1440, height: 
 host.on('pageerror', e => errors.push('host: ' + e.message));
 host.on('console', m => { if (m.type() === 'error') errors.push('host console: ' + m.text()); });
 await host.goto(BASE + '/host');
+await host.locator('input[name=mode]').nth(MODE === 'pemula' ? 0 : 1).check();
 await host.getByLabel(/Mode Oknum/).check();
 await host.getByLabel(/Tahun 0 latihan/).check();
 await host.getByLabel(/Kuis pra\/pasca/).check();
@@ -186,17 +189,21 @@ await host.locator('.frontpage').waitFor();
 await shot(host, 'y1-koran.png', true);
 // rest of the game
 for (let i = 0; i < 40; i++) {
-  if (await host.getByText('Tebak agenda').count()) break;
+  if (await host.locator('.topbar-title', { hasText: 'Tebak agenda' }).count() || await host.locator('.results').count()) break;
   await next();
   await host.waitForTimeout(150);
 }
-await shot(host, 'tebak.png');
-for (const [label, p] of Object.entries(roleOf)) {
-  if (await p.getByRole('button', { name: 'Kirim tebakan' }).count()) {
-    await p.locator('.guess').first().click();
-    if (label === 'Pemerintah') await shot(p, 'phone-tebak.png', true);
-    await p.getByRole('button', { name: 'Kirim tebakan' }).click();
+if (MODE === 'lanjutan') {
+  await shot(host, 'tebak.png');
+  for (const [label, p] of Object.entries(roleOf)) {
+    if (await p.getByRole('button', { name: 'Kirim tebakan' }).count()) {
+      await p.locator('.guess').first().click();
+      if (label === 'Pemerintah') await shot(p, 'phone-tebak.png', true);
+      await p.getByRole('button', { name: 'Kirim tebakan' }).click();
+    }
   }
+} else if (await host.locator('.topbar-title', { hasText: 'Tebak agenda' }).count()) {
+  errors.push('Pemula tidak boleh punya fase tebak agenda');
 }
 await host.locator('.results').waitFor({ timeout: 10000 });
 await shot(host, 'debrief-1-hasil.png', true);
@@ -297,7 +304,7 @@ await edisi.waitForFunction(() => [...document.images].every(i => i.complete && 
 await shot(edisi, 'edisi-khusus.png', true);
 // Every cue the main screen asked for, file or not. The print tab stays silent.
 const heard = new Set((await host.evaluate(() => window.__teiAudio ?? [])).map(c => c.cue));
-for (const cue of ['gabung', 'briefing', 'fase.krisis', 'fase.rapat', 'fase.lobi', 'fase.pengesahan', 'sah', 'fase.pengungkapan', 'kartu.buka', 'fase.koran', 'tebak', 'halaman', 'kuis.jawaban']) {
+for (const cue of ['gabung', 'briefing', 'fase.krisis', 'fase.rapat', 'fase.lobi', 'fase.pengesahan', 'sah', 'fase.pengungkapan', 'kartu.buka', 'fase.koran', ...(MODE === 'lanjutan' ? ['tebak'] : []), 'halaman', 'kuis.jawaban']) {
   if (!heard.has(cue)) errors.push(`cue ${cue} tidak terdengar`);
 }
 if (!heard.has('akhir.baik') && !heard.has('akhir.kolaps')) errors.push('cue akhir tidak terdengar');

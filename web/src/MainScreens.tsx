@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import type { Role } from '../../engine/src/types';
 import type { ClientMessage } from '../../room/src/protocol';
 import type { HostView, PublicStats, RevealView } from '../../room/src/views';
 import { CrisisArt, CrisisPhoto, endExpression, Portrait } from './art';
@@ -7,7 +8,7 @@ import { cueBus } from './audio/bus';
 import { revealCue } from './audio/derive';
 import { DUR, EASE, m } from './motion';
 import { Board, RoleMark, RoleName, TeiLogo, Timer, roleProps, useSequence } from './shared';
-import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL, INDICATOR_ORDER, PRACTICE_COACH, signed, STEP_HINT, STEP_LABEL } from './text';
+import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL, INDICATOR_ORDER, coachFor, signed, STEP_HINT, STEP_HINT_PEMULA, STEP_LABEL } from './text';
 
 // The projected main screen during the year loop and the end of the game. Text sized to be read
 // from the back row; one focus per phase (GDD, "UX/UI").
@@ -62,7 +63,8 @@ function StoryRail({ step }: { step: NonNullable<HostView['step']> }) {
 
 /** What the class does in this chapter, as one line under its headline. */
 function hintFor(view: HostView): string {
-  return view.practice ? PRACTICE_COACH[view.step!].main : STEP_HINT[view.step!];
+  const pemula = view.options.mode === 'pemula';
+  return view.practice ? coachFor(view.step!, pemula).main : (pemula && STEP_HINT_PEMULA[view.step!]) || STEP_HINT[view.step!];
 }
 
 export function YearScreen({ view, now, send }: { view: HostView; now: () => number; send: Send }) {
@@ -148,6 +150,8 @@ function ReadyMeter({ view }: { view: HostView }) {
 function TeamsStage({ view }: { view: HostView }) {
   const pengesahan = view.step === 'pengesahan';
   const signedCount = view.teams.filter(t => t.locked).length;
+  // Pemula: the class sees every team's three options, so talk can cross tables.
+  const options = (role: Role) => (view.options.mode === 'pemula' && !pengesahan ? view.console?.decisions[role]?.hand.map(c => c.name) : undefined);
   const status = (team: HostView['teams'][number]) => {
     if (team.locked) return null; // the stamp says it
     if (team.offline) return 'Diputuskan fasilitator';
@@ -165,16 +169,21 @@ function TeamsStage({ view }: { view: HostView }) {
             <h1 className="chapter-question">{view.crisis?.question ?? STEP_LABEL.rapat}</h1>
           </>
         )}
-        <p className="chapter-hint">{hintFor(view)}</p>
+        {!options('pemerintah') && <p className="chapter-hint">{hintFor(view)}</p>}
       </div>
       {!pengesahan && <ReadyMeter view={view} />}
       <section className="team-row" aria-label="Tim">
         {view.teams.map(team => {
           const done = team.locked || (!pengesahan && team.ready && !team.offline);
           return (
-            <div key={team.role} className={`team-tile role-card${done ? ' done' : ''}`} {...roleProps(team.role)}>
+            <div key={team.role} className={`team-tile role-card${done ? ' done' : ''}${options(team.role) ? ' with-options' : ''}`} {...roleProps(team.role)}>
               <Portrait role={team.role} expression={team.locked ? 'senang' : pengesahan && !team.offline ? 'panik' : 'tenang'} fallback={<RoleMark role={team.role} />} />
               <p className="text-md font-bold">{team.label}</p>
+              {options(team.role) && (
+                <ol className="tile-options" aria-label={`Pilihan ${team.label}`}>
+                  {options(team.role)!.map((name, i) => <li key={name}><span className="slot" aria-hidden="true">{'ABC'[i]}</span>{name}</li>)}
+                </ol>
+              )}
               {status(team) && <p className="status">{status(team)}</p>}
               {team.locked && <span className="stamp small" aria-label="Sah">SAH</span>}
             </div>

@@ -553,3 +553,40 @@ test('a session of five years can print a fresh headline every year', () => {
     assert.equal(new Set(headlines).size, headlines.length, `seed ${seed}: ${headlines.join(' | ')}`);
   }
 });
+
+// ---------- Mode Pemula ----------
+
+function pemulaInRapat(): Room {
+  const room = roomWith(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'], { oknum: false, mode: 'pemula' } as never);
+  room.assign('seimbang', 1, T0);
+  room.startBriefing(T0);
+  room.next(T0); // krisis
+  room.next(T0); // rapat
+  return room;
+}
+
+test('Pemula: phones vote on the three responses, kesepakatan name them, and the game skips guessing agendas', () => {
+  const room = pemulaInRapat();
+  const pem = spokesperson(room, 'pemerintah');
+  const ctx = playerView(room, pem).decision!;
+  assert.equal(ctx.mode, 'pemula');
+  assert.equal(ctx.hand.length, 3);
+  assert.deepEqual(ctx.viralTargets, []);
+  room.propose(pem, { ...neutralDecision('pemerintah'), cardId: ctx.hand[0]!.id } as Decision, T0);
+  assert.equal(room.majority('pemerintah').cardId, ctx.hand[0]!.id);
+  room.next(T0); // negosiasi
+  const usaha = spokesperson(room, 'pengusaha');
+  const lobby = playerView(room, usaha).lobby!;
+  assert.ok(lobby.terms.pengusaha.every(t => t.id.startsWith('pilih')), 'only response terms in Pemula');
+  assert.ok(lobby.suggestions.length >= 4, 'two suggested deals with each other team');
+  // A Lanjutan term is refused in Pemula.
+  assert.throws(() => room.proposePact(usaha, 'buruh', 'usahaTidakPhk', 'buruhTidakMogok', 'pX', T0), (e: RoomError) => e.code === 'pakta-salah');
+  const deal = lobby.suggestions.find(s => s.to === 'buruh')!;
+  room.proposePact(usaha, 'buruh', deal.fromTerm as never, deal.toTerm as never, 'pY', T0);
+  const shown = playerView(room, spokesperson(room, 'buruh')).pacts.find(p => p.id === 'pY')!;
+  assert.match(shown.fromText, /^Pengusaha memilih ".+"$/);
+  // Play to the end: no tebak phase in Pemula.
+  while (room.phase === 'tahun') room.next(T0);
+  assert.equal(room.phase, 'selesai');
+  assert.ok(hostView(room).results);
+});

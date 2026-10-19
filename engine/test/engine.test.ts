@@ -229,3 +229,66 @@ test('every crisis card follows the GDD card anatomy', async () => {
     assert.ok(card.concepts.length >= 1 && card.concepts.length <= 3, `${card.id}: 1–3 concept tags`);
   }
 });
+
+// ---------- Mode Pemula ----------
+
+test('Pemula: every crisis, the practice included, offers each team three responses with a trade-off', async () => {
+  const { CRISES_BY_ID } = await import('../src/content/crises');
+  const { getCard, responseCardsFor } = await import('../src/content/policies');
+  const good: Record<string, number> = { harga: -1, kerja: 1, kas: 1, kepercayaan: 1, keresahan: -1, modal: 1, solidaritas: 1, kredibilitas: 1, tabungan: 1 };
+  for (const crisisId of Object.keys(CRISES_BY_ID)) {
+    for (const role of ROLES) {
+      const ids = responseCardsFor(crisisId, role);
+      assert.equal(ids.length, 3, `${crisisId} ${role}`);
+      for (const id of ids) {
+        assert.match(id, /^[a-z]{2,4}_[a-zA-Z]{2,24}$/, `${id} must pass the protocol's card id check`);
+        const card = getCard(id);
+        assert.ok(card.name.length <= 32 && card.description.length <= 90, `${id} text too long`);
+        const signs = [card.effects, ...(card.delayed ?? []).map(d => d.effects)].flatMap(fx => Object.entries(fx).map(([stat, n]) => Math.sign(good[stat]! * n!)));
+        assert.ok(signs.includes(1) && signs.includes(-1), `${id} needs a benefit and a cost`);
+      }
+    }
+  }
+});
+
+test('Pemula: hands are the crisis responses, levers and powers are off, and five years resolve', async () => {
+  const { isLeverFrozen, canMogok } = await import('../src/game');
+  const { responseCardsFor } = await import('../src/content/policies');
+  let state = createGame({ seed: 7, mode: 'pemula' });
+  assert.equal(state.mode, 'pemula');
+  for (const lever of ['pajak', 'bunga', 'harga', 'upah', 'konsumsi'] as const) assert.ok(isLeverFrozen(state, lever));
+  assert.equal(canMogok({ ...state, stats: { ...state.stats, solidaritas: 5 } }), false);
+  while (!state.ended) {
+    for (const role of ROLES) assert.deepEqual(state.hands[role], responseCardsFor(state.crisisId, role));
+    const d = neutral();
+    for (const role of ROLES) (d[role] as { cardId: string | null }).cardId = state.hands[role][1]!;
+    state = resolveYear(state, d);
+  }
+  assert.ok(state.log.length >= 1);
+  assert.throws(() => resolveYear(createGame({ seed: 7, mode: 'pemula' }), { ...neutral(), bankSentral: { role: 'bankSentral', cardId: null, bunga: 0, tolakCetakUang: true } }), /no powers/);
+});
+
+test('Pemula draws only agendas it can reach', async () => {
+  const { agendasForRole } = await import('../src/content/agendas');
+  const ids = ROLES.flatMap(role => agendasForRole(role, 'pemula').map(a => a.id));
+  for (const id of ['apbnSehat', 'ekspansi', 'pengawas']) assert.ok(!ids.includes(id as never), id);
+  for (const role of ROLES) assert.ok(agendasForRole(role, 'pemula').length >= 1, role);
+});
+
+test('Lanjutan: whoever owns the card a crisis rewards is always dealt it', async () => {
+  const { cardsForRole, getCard } = await import('../src/content/policies');
+  for (let seed = 1; seed <= 40; seed++) {
+    let state = createGame({ seed });
+    while (!state.ended) {
+      const modifier = getCrisis(state.crisisId).modifier;
+      if (modifier.kind === 'scaleTag') {
+        for (const role of ROLES) {
+          if (cardsForRole(role).some(c => c.tags.includes(modifier.tag))) {
+            assert.ok(state.hands[role].some(id => getCard(id).tags.includes(modifier.tag)), `seed ${seed} year ${state.year} ${role}`);
+          }
+        }
+      }
+      state = resolveYear(state, neutral());
+    }
+  }
+});

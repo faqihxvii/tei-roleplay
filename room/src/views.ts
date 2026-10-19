@@ -2,10 +2,10 @@ import { agendasForRole, getAgenda } from '../../engine/src/content/agendas';
 import { getCrisis } from '../../engine/src/content/crises';
 import { getCard } from '../../engine/src/content/policies';
 import { ROLE_LABEL } from '../../engine/src/content/roles';
-import { canBelanja, canMogok, canPlay, INITIAL_STATS, isLeverFrozen } from '../../engine/src/game';
-import { PACT_TERMS, SUGGESTED_DEALS, termsForRole } from '../../engine/src/pacts';
+import { canBelanja, canMogok, canPlay, INITIAL_STATS, isLeverFrozen, isPemula } from '../../engine/src/game';
+import { PACT_TERMS, pactTermText, SUGGESTED_DEALS, termsForRole, type PactTermId } from '../../engine/src/pacts';
 import { getEnding, indexNegara, type Ending } from '../../engine/src/scoring';
-import { INDICATORS, ROLES, type Collapse, type Decision, type Effects, type GameState, type Indicator, type Lever, type Role, type Stat, type Stats } from '../../engine/src/types';
+import { INDICATORS, ROLES, type Collapse, type Decision, type Effects, type GameMode, type GameState, type Indicator, type Lever, type Role, type Stat, type Stats } from '../../engine/src/types';
 import { debriefView, history, type DebriefView, type YearHistory } from './debrief';
 import type { FrontPage } from './koran';
 import { causeRole, describeDecision, groupDeltas, isIndicator, OWN_RESOURCE, STAT_NAME, type CauseGroup } from './labels';
@@ -98,6 +98,8 @@ export interface DecisionContext {
   members: number;
   /** What the team plays if nobody locks in time. */
   majority: Decision;
+  /** Pemula: the hand is this crisis's three responses and there are no levers or powers. */
+  mode: GameMode;
 }
 
 export interface ResultsView {
@@ -264,13 +266,21 @@ function decisionContext(room: Room, role: Role): DecisionContext {
     frozen: (['pajak', 'bunga', 'harga', 'upah', 'konsumsi'] as Lever[]).filter(lever => isLeverFrozen(game, lever)),
     canMogok: canMogok(game),
     canBelanja: canBelanja(game),
-    viralTargets: ROLES.filter(r => r !== 'masyarakat'),
+    viralTargets: isPemula(game) ? [] : ROLES.filter(r => r !== 'masyarakat'),
     locked: s.locked[role] ?? null,
     tally: room.tally(role),
     proposers: room.members(role).filter(p => s.proposals[p.id]).length,
     members: room.members(role).length,
     majority: room.majority(role),
+    mode: game.mode ?? 'lanjutan',
   };
+}
+
+/** The crisis of a given year, so a Pemula kesepakatan reads with the response names of its year. */
+function crisisOfYear(room: Room, year: number): string | null {
+  const game = room.state.game;
+  if (!game) return null;
+  return game.log.find(l => l.year === year)?.crisisId ?? game.crisisId;
 }
 
 function pactView(room: Room, pact: PactRecord): PactView {
@@ -280,8 +290,8 @@ function pactView(room: Room, pact: PactRecord): PactView {
     id: pact.id,
     from: pact.from,
     to: pact.to,
-    fromText: PACT_TERMS[pact.fromTerm].text,
-    toText: PACT_TERMS[pact.toTerm].text,
+    fromText: pactTermText(pact.fromTerm, crisisOfYear(room, pact.year)),
+    toText: pactTermText(pact.toTerm, crisisOfYear(room, pact.year)),
     status: pact.status,
     result: result && { keptFrom: result.keptFrom, keptTo: result.keptTo },
   };
@@ -527,12 +537,19 @@ export function playerView(room: Room, playerId: string, cache: ViewCache = newV
   let lobby: PlayerView['lobby'] = null;
   if (role && s.phase === 'tahun' && s.step === 'lobi') {
     const terms = {} as Record<Role, { id: string; text: string }[]>;
-    for (const r of ROLES) terms[r] = termsForRole(r).map(t => ({ id: t.id, text: t.text }));
+    const mode = game?.mode ?? 'lanjutan';
+    const crisisId = game?.crisisId ?? null;
+    for (const r of ROLES) terms[r] = termsForRole(r, mode).map(t => ({ id: t.id, text: pactTermText(t.id, crisisId) }));
     const suggestions: NonNullable<PlayerView['lobby']>['suggestions'] = [];
-    for (const deal of SUGGESTED_DEALS) {
-      const [mine, theirs] = PACT_TERMS[deal.a].role === role ? [deal.a, deal.b] : PACT_TERMS[deal.b].role === role ? [deal.b, deal.a] : [null, null];
-      if (!mine || !theirs) continue;
-      suggestions.push({ to: PACT_TERMS[theirs].role, fromTerm: mine, toTerm: theirs, fromText: PACT_TERMS[mine].text, toText: PACT_TERMS[theirs].text });
+    const add = (mine: PactTermId, theirs: PactTermId) =>
+      suggestions.push({ to: PACT_TERMS[theirs].role, fromTerm: mine, toTerm: theirs, fromText: pactTermText(mine, crisisId), toText: pactTermText(theirs, crisisId) });
+    if (mode === 'pemula' && game) {
+      for (const other of ROLES.filter(r => r !== role)) for (const [mine, theirs] of goodPairs(game, role, other)) add(mine, theirs);
+    } else {
+      for (const deal of SUGGESTED_DEALS) {
+        const [mine, theirs] = PACT_TERMS[deal.a].role === role ? [deal.a, deal.b] : PACT_TERMS[deal.b].role === role ? [deal.b, deal.a] : [null, null];
+        if (mine && theirs) add(mine, theirs);
+      }
     }
     lobby = { terms, suggestions, maxPacts: MAX_PACTS_PER_TEAM };
   }
@@ -580,4 +597,20 @@ export function playerView(room: Room, playerId: string, cache: ViewCache = newV
     lobby,
     final,
   };
+}
+
+const GOOD_WHEN_UP: Partial<Record<Stat, number>> = { harga: -1, kerja: 1, kas: 1, kepercayaan: 1, keresahan: -1 };
+
+/** How good a response is for the country, from the effects printed on it. */
+function countryScore(cardId: string): number {
+  const card = getCard(cardId);
+  const all = [card.effects, ...(card.delayed ?? []).map(d => d.effects)];
+  return all.reduce((sum, fx) => sum + Object.entries(fx).reduce((a, [stat, n]) => a + (GOOD_WHEN_UP[stat as Stat] ?? 0) * (n ?? 0), 0), 0);
+}
+
+/** Pemula suggestions: the two pairings of this team's and the other team's responses best for the country. */
+function goodPairs(game: GameState, mine: Role, theirs: Role): [PactTermId, PactTermId][] {
+  const slotTerm = (role: Role, cardId: string) => termsForRole(role, 'pemula').find(t => t.slot === cardId.slice(-1))!.id;
+  const pairs = game.hands[mine].flatMap(a => game.hands[theirs].map(b => ({ a, b, score: countryScore(a) + countryScore(b) })));
+  return pairs.sort((x, y) => y.score - x.score).slice(0, 2).map(p => [slotTerm(mine, p.a), slotTerm(theirs, p.b)]);
 }

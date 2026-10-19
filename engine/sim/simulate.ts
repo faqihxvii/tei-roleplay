@@ -3,12 +3,14 @@ import { createGame, resolveYear } from '../src/game';
 import { Rng } from '../src/rng';
 import { checkPacts, PACT_TERMS, type Pact } from '../src/pacts';
 import { getEnding, isOknumIdentified, type Ending } from '../src/scoring';
-import { ROLES, type AgendaId, type Collapse, type Decision, type GameState, type Role, type YearDecisions } from '../src/types';
+import { ROLES, type AgendaId, type Collapse, type Decision, type GameMode, type GameState, type Role, type YearDecisions } from '../src/types';
 import { decide, harmOf, initialTrust, negotiate, predictAll, respondAll, voteOknum, type BotKind } from './bots';
 
 export interface SimOptions {
   /** Run the Lobi phase. Off = teams decide alone, for comparison. */
   pacts: boolean;
+  /** Pemula (crisis responses only) or Lanjutan (cards, levers, powers). */
+  mode?: GameMode;
 }
 
 export type Mix = 'kooperatif' | 'egois' | 'campuran' | 'acak' | 'oknum';
@@ -60,7 +62,7 @@ export function simulateMix(mix: Mix, games: number, baseSeed: number, options: 
 
   for (let i = 0; i < games; i++) {
     const seed = (baseSeed + i * 7919 + MIXES.indexOf(mix) * 1_000_003) >>> 0;
-    let state = createGame({ seed, oknum: mix === 'oknum' });
+    let state = createGame({ seed, oknum: mix === 'oknum', mode: options.mode });
     const rng = new Rng(seed ^ 0x9e3779b9);
     const kinds = botsFor(mix, state, rng);
     const trust = initialTrust();

@@ -14,7 +14,7 @@ import { useHaptics } from './haptics';
 import { AnimatedNumber, DUR, EASE, m } from './motion';
 import { Board, HoldButton, RoleMark, RoleName, StepAnnouncer, TeiLogo, Timer, roleProps } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
-import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, PRACTICE_COACH, STEP_LABEL, signed, whereLabel } from './text';
+import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, coachFor, STEP_LABEL, signed, whereLabel } from './text';
 
 const YEAR_STEPS = ['krisis', 'rapat', 'lobi', 'pengesahan', 'pengungkapan', 'koran'] as const;
 
@@ -255,7 +255,7 @@ function TeamTab({ view }: { view: PlayerView }) {
           <p className="text-xs text-on-inverse-muted">Jangan tunjukkan layar ini ke tim lain.</p>
         </div>
       )}
-      <RoleBriefCard role={team.role} open />
+      <RoleBriefCard role={team.role} open pemula={view.options.mode === 'pemula'} />
       <Members view={view} />
     </section>
   );
@@ -328,10 +328,13 @@ function TaskHead({ view }: { view: PlayerView }) {
   }, [where]);
   if (view.phase !== 'tahun' || !view.step) return null;
   const jubir = view.me.isSpokesperson;
+  const pemula = view.options.mode === 'pemula';
   const locked = !!view.decision?.locked;
   const task: Record<string, string> = {
     krisis: 'Baca krisisnya. Apa dampaknya bagi timmu?',
-    rapat: jubir ? 'Pilih kartu dan pilihan kebijakan bersama tim. Kalau sudah sepakat, tekan Tim kami selesai.' : 'Pilih satu kartu dan satu pilihan kebijakan. Suara terbanyak tim yang dipakai.',
+    rapat: pemula
+      ? jubir ? 'Pilih satu dari tiga respons bersama tim. Kalau sudah sepakat, tekan Tim kami selesai.' : 'Pilih satu dari tiga respons. Suara terbanyak tim yang dipakai.'
+      : jubir ? 'Pilih kartu dan pilihan kebijakan bersama tim. Kalau sudah sepakat, tekan Tim kami selesai.' : 'Pilih satu kartu dan satu pilihan kebijakan. Suara terbanyak tim yang dipakai.',
     lobi: jubir ? 'Kamu Jubir: datangi tim lain, ajukan dan jawab kesepakatan di bawah, lalu tekan Tim kami selesai.' : 'Bantu Jubir menawar ke tim lain. Tawaran yang masuk muncul di bawah.',
     pengesahan: locked ? 'Keputusan timmu sudah sah.' : jubir ? 'Kamu Jubir: tahan tombol SAH untuk mengesahkan keputusan tim.' : `Tunggu Jubir (${view.team?.spokesperson ?? '-'}) mengesahkan.`,
     pengungkapan: 'Lihat layar utama: keputusan semua tim dibuka satu per satu.',
@@ -359,7 +362,7 @@ function PhoneBody({ view, send, now }: { view: PlayerView; send: Send; now: () 
         </div>
         <Cast />
         {preQuiz}
-        <HowToPlay />
+        <HowToPlay pemula={view.options.mode === 'pemula'} />
       </section>
     );
   }
@@ -396,7 +399,7 @@ function PhoneBody({ view, send, now }: { view: PlayerView; send: Send; now: () 
   if (view.phase === 'selesai') return <ResultsScreen view={view} send={send} />;
 
   // A year in progress.
-  const coach = view.practice && view.step ? PRACTICE_COACH[view.step] : null;
+  const coach = view.practice && view.step ? coachFor(view.step, view.options.mode === 'pemula') : null;
   return (
     <section className="flex flex-col gap-4">
       <TaskHead view={view} />
@@ -424,12 +427,12 @@ function Cast() {
   );
 }
 
-function HowToPlay() {
+function HowToPlay({ pemula }: { pemula: boolean }) {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="kicker">Cara bermain</h2>
       <ol className="list flex flex-col gap-2">
-        <li><strong>Rapat dengan timmu.</strong> Pilih satu kartu kebijakan dan satu pilihan kebijakan di HP.</li>
+        <li><strong>Rapat dengan timmu.</strong> {pemula ? 'Setiap krisis memberi timmu tiga pilihan respons. Pilih satu di HP.' : 'Pilih satu kartu kebijakan dan satu pilihan kebijakan di HP.'}</li>
         <li><strong>Negosiasi dengan tim lain.</strong> Buat kesepakatan: "kami lakukan ini, kalian lakukan itu". Ditepati +1, dilanggar −1.</li>
         <li><strong>Jaga negara tetap hidup</strong> sambil diam-diam mengejar agenda rahasia timmu.</li>
       </ol>
@@ -438,22 +441,26 @@ function HowToPlay() {
 }
 
 /** What this role controls, its power and its friends (GDD, "Peran"), shared with the paper kit. */
-function RoleBriefCard({ role, open }: { role: Role; open: boolean }) {
+function RoleBriefCard({ role, open, pemula }: { role: Role; open: boolean; pemula: boolean }) {
   const brief = ROLE_BRIEF[role];
   return (
     <details className="card ruled" open={open}>
       <summary>Kartu peran: {ROLE_LABEL[role]}</summary>
       <div className="flex flex-col gap-3 pt-2">
         <p className="text-lg leading-snug"><Glossed text={brief.focus} /></p>
-        <h3 className="kicker mt-2">Pilihan kebijakan: {brief.lever.name}</h3>
-        <dl className="lever-list">
-          {brief.lever.options.map(([name, fx]) => (
-            <div key={name}><dt>{name}</dt><dd>{fx}</dd></div>
-          ))}
-        </dl>
-        <h3 className="kicker mt-2">Kekuatan: {brief.power.name}</h3>
-        <p><Glossed text={brief.power.text} /></p>
-        {brief.resource?.income && <p className="text-xs text-muted">{brief.resource.income}</p>}
+        {!pemula && (
+          <>
+            <h3 className="kicker mt-2">Pilihan kebijakan: {brief.lever.name}</h3>
+            <dl className="lever-list">
+              {brief.lever.options.map(([name, fx]) => (
+                <div key={name}><dt>{name}</dt><dd>{fx}</dd></div>
+              ))}
+            </dl>
+            <h3 className="kicker mt-2">Kekuatan: {brief.power.name}</h3>
+            <p><Glossed text={brief.power.text} /></p>
+            {brief.resource?.income && <p className="text-xs text-muted">{brief.resource.income}</p>}
+          </>
+        )}
         <p className="bg-sunken px-3 py-2 text-xs"><strong>Kawan dan lawan.</strong> {brief.allies}</p>
       </div>
     </details>
@@ -499,7 +506,7 @@ function DecideScreen({ view, send }: { view: PlayerView; send: Send }) {
   const form = (
     <>
       {view.step === 'rapat' && view.crisis && <p className="callout"><span className="kicker">Bahas di timmu</span><br /><Glossed text={view.crisis.question} /></p>}
-      <p className="text-xs text-copy"><strong className="text-ink">{ctx.proposers} dari {ctx.members}</strong> anggota sudah memilih. Angka di samping pilihan adalah jumlah suara.</p>
+      <p className="text-xs text-copy"><strong className="text-ink">{ctx.proposers} dari {ctx.members}</strong> anggota sudah memilih. Angka di samping pilihan adalah jumlah suara.{ctx.mode === 'pemula' ? ' Panah hijau baik untuk negara, merah buruk.' : ''}</p>
       {sealing && <p className="callout plain text-xs">{edited ? 'Yang akan disahkan: pilihanmu di bawah.' : 'Yang akan disahkan: pilihan terbanyak timmu (ditampilkan di bawah, ikut berubah bila suara berubah).'}</p>}
       <DecisionForm ctx={ctx} value={shown} onChange={change} />
       {!submitted && !sealing && <button className="btn" onClick={() => change(draft)}>Pilih ini</button>}

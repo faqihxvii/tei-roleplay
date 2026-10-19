@@ -55,13 +55,13 @@ function Choice<T>({ legend, field, value, options, onChange, disabled, tally, f
   );
 }
 
-function CardOption({ card, checked, onChange, disabled, count }: { card: CardView | null; checked: boolean; onChange: () => void; disabled: boolean; count: number }) {
+function CardOption({ card, checked, onChange, disabled, count, slot }: { card: CardView | null; checked: boolean; onChange: () => void; disabled: boolean; count: number; slot?: string }) {
   const unplayable = !!card && !card.playable;
   return (
     <label className={`policy${checked ? ' on' : ''}${unplayable ? ' off' : ''}`}>
       <input type="radio" name="cardId" checked={checked} onChange={onChange} disabled={disabled || unplayable} />
       <span className="policy-body">
-        <span className="policy-name">{card ? card.name : 'Tidak memainkan kartu'}<VoteBadge count={count} /></span>
+        <span className="policy-name">{slot && <span className="slot" aria-hidden="true">{slot}</span>}{card ? card.name : 'Tidak memainkan kartu'}<VoteBadge count={count} /></span>
         {card && <span className="policy-desc">{card.description}</span>}
         {card && (
           <span className="effects">
@@ -91,6 +91,18 @@ export function DecisionForm({ ctx, value, onChange, disabled = false, showVotes
   const tally = showVotes ? ctx.tally : undefined;
   const frozen = (lever: Lever) => ctx.frozen.includes(lever);
   const set = (patch: Partial<Decision>) => onChange({ ...value, ...patch } as Decision);
+
+  // Pemula: the three responses to this crisis are the whole decision.
+  if (ctx.mode === 'pemula') {
+    return (
+      <fieldset className="flex flex-col gap-3 responses" disabled={disabled}>
+        <legend>Pilih respons timmu <small className="text-muted">(satu)</small></legend>
+        {ctx.hand.map((card, i) => (
+          <CardOption key={card.id} card={card} slot={'ABC'[i]} checked={value.cardId === card.id} onChange={() => set({ cardId: card.id })} disabled={disabled} count={votes(tally, 'cardId', card.id)} />
+        ))}
+      </fieldset>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">

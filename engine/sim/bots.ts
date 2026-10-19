@@ -1,5 +1,5 @@
 import { getAgenda } from '../src/content/agendas';
-import { canBelanja, canMogok, checkCollapses, isLeverFrozen, playableCards, resolveYear } from '../src/game';
+import { canBelanja, canMogok, checkCollapses, isLeverFrozen, isPemula, playableCards, resolveYear } from '../src/game';
 import { PACT_TEMPLATES, PACT_TERMS, type Pact, type PactTermId } from '../src/pacts';
 import { Rng } from '../src/rng';
 import {
@@ -51,6 +51,7 @@ const STEPS: Step[] = [-1, 0, 1];
  * against "nobody else acts" they can only cost, so the level-0 guess leaves them out.
  */
 export function candidateDecisions(state: GameState, role: Role, toggles = false): Decision[] {
+  if (isPemula(state)) toggles = false; // Pemula has no powers to weigh
   const cards: (string | null)[] = [null, ...playableCards(state, role)];
   const out: Decision[] = [];
   for (const cardId of cards) {
