@@ -1,11 +1,12 @@
 // Builds the paper-prototype print kit from engine data, so the cards always match the
-// tuned rules. Usage: npm run print-kit  ->  engine/print/out/tei-kit-cetak.pdf (+ .html)
+// tuned rules. Usage: npm run print-kit [-- --pack 2026-10]  ->  engine/print/out/tei-kit-cetak.pdf (+ .html)
+// The crisis deck is the Klasik pack unless --pack names another (engine/src/content/packList.ts).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { AGENDAS } from '../src/content/agendas';
 import { ROLE_BRIEF } from '../src/content/briefs';
-import { CRISIS_CARDS } from '../src/content/crises';
+import { CLASSIC_PACK, packCards } from '../src/content/crises';
 import { POLICY_CARDS } from '../src/content/policies';
 import { GLOBAL_SHOCK_YEAR, HAND_SIZE, INITIAL_BUNGA, INITIAL_STATS, MAX_YEARS, RULES } from '../src/game';
 import { PACT_TEMPLATES, PACT_TERMS } from '../src/pacts';
@@ -19,6 +20,8 @@ import {
 const VERSION = 'v0.2';
 const OUT_DIR = path.join(import.meta.dirname, 'out');
 const CARDS_PER_PAGE = 9;
+const packArg = process.argv.indexOf('--pack');
+const CRISIS_CARDS = packCards(packArg >= 0 ? process.argv[packArg + 1] : CLASSIC_PACK);
 
 const cardCode = new Map<string, string>();
 for (const role of ROLES) {

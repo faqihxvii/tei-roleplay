@@ -67,6 +67,10 @@ Fasilitator memilih saat membuka ruangan (bawaan: Pemula).
 
 Respons Pemula diubah menjadi kartu biasa (`rsp_<krisis><Peran><A|B|C>`), jadi validasi, resolusi, pengungkapan, dan pengecekan kesepakatan memakai jalur yang sama dengan Lanjutan.
 
+## Paket krisis
+
+Fasilitator juga memilih paket krisis (bawaan: paket terbaru). **Paket terbaru (Okt 2026)** berisi tujuh krisis dari berita 19 September–19 Oktober 2026 yang sudah difiksikan. **Klasik** berisi dua belas krisis bawaan. Tahun 3 selalu mendapat kartu `global` dari paket yang dipilih. Cara menambah paket bulan berikutnya: `docs/paket-krisis.md`.
+
 ## Putaran tahunan
 
 | Fase | Durasi bawaan | Yang terjadi |

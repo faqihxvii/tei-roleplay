@@ -380,7 +380,7 @@ test('the debrief is driven by the facilitator and followed by the phones', () =
 });
 
 test('every crisis card has a sourced Di Dunia Nyata note', async () => {
-  const { CRISIS_CARDS } = await import('../../engine/src/content/crises');
+  const { ALL_CRISIS_CARDS: CRISIS_CARDS } = await import('../../engine/src/content/crises');
   const { REAL_WORLD } = await import('../src/content/realWorld');
   for (const card of CRISIS_CARDS) {
     const note = REAL_WORLD[card.id];

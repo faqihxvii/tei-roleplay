@@ -1,4 +1,5 @@
 import type { DelayedEffect, Effects, Role, Tag } from '../types';
+import { RESPONSES_2026_10 } from './packs/2026-10';
 
 // Mode Pemula: instead of a hand of policy cards plus levers, each crisis offers every team three
 // responses written for that crisis, each with its effects printed on it. One tap, and the link
@@ -29,7 +30,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     bankSentral: [
       { name: 'Tahan Uang Beredar', description: 'Harga diredam, kredit usaha ikut seret.', effects: { harga: -1, kerja: -1, kredibilitas: 1 } },
-      { name: 'Data Inflasi Tiap Pekan', description: 'Pasar tenang karena tahu angkanya, meski beras tetap mahal.', effects: { keresahan: -1, kredibilitas: 1 } },
+      { name: 'Data Inflasi Tiap Pekan', description: 'Pasar tenang karena tahu angkanya, meski beras tetap mahal.', effects: { keresahan: -1, kredibilitas: 1, modal: -1 } },
       { name: 'Bilang Inflasi Itu Sementara', description: 'Konferensi pers megah. Tidak ada yang percaya.', effects: { kepercayaan: -1, kredibilitas: -1, kerja: 1 } },
     ],
     pengusaha: [
@@ -56,7 +57,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     bankSentral: [
       { name: 'Kredit Murah untuk Petani', description: 'Petani bisa beli pupuk swasta, uang beredar bertambah.', effects: { kerja: 1, harga: 1 } },
-      { name: 'Pantau Harga Pangan Harian', description: 'Tidak menurunkan harga, tapi semua tahu masalahnya di mana.', effects: { keresahan: -1, kredibilitas: 1 } },
+      { name: 'Pantau Harga Pangan Harian', description: 'Tidak menurunkan harga, tapi semua tahu masalahnya di mana.', effects: { keresahan: -1, kredibilitas: 1, modal: -1 } },
       { name: 'Diam, Ini Bukan Urusan Moneter', description: 'Secara teknis benar. Secara sosial, dingin.', effects: { kredibilitas: 1, kepercayaan: -1 } },
     ],
     pengusaha: [
@@ -83,7 +84,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     bankSentral: [
       { name: 'Naikkan Bunga Redam Inflasi', description: 'Harga diredam, cicilan motor warga ikut naik.', effects: { harga: -1, kerja: -1, kredibilitas: 1 } },
-      { name: 'Jelaskan Arah Kebijakan Terbuka', description: 'Pasar paham rencananya, kepanikan reda.', effects: { keresahan: -1, kredibilitas: 1 } },
+      { name: 'Jelaskan Arah Kebijakan Terbuka', description: 'Pasar paham rencananya, kepanikan reda.', effects: { keresahan: -1, kredibilitas: 1, modal: -1 } },
       { name: 'Longgarkan Kredit Biar Ramai', description: 'Ekonomi hangat sebentar, inflasi menyusul tahun depan.', effects: { kerja: 1 }, delayed: [{ inYears: 1, effects: { harga: 1 } }] },
     ],
     pengusaha: [
@@ -147,7 +148,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     buruh: [
       { name: 'Tuntut Dana Pensiun Dijamin', description: 'Pensiunan bisa tidur, pengusaha makin hati-hati merekrut.', effects: { solidaritas: 1, kepercayaan: 1, kerja: -1 }, tags: ['upah'] },
-      { name: 'Edukasi Investasi untuk Anggota', description: 'Anggota tidak lagi percaya janji untung 20 persen.', effects: { solidaritas: 1, keresahan: -1 }, tags: ['edukasi'] },
+      { name: 'Edukasi Investasi untuk Anggota', description: 'Anggota tidak lagi percaya janji untung 20 persen.', effects: { solidaritas: 1, keresahan: -1, kerja: -1 }, tags: ['edukasi'] },
       { name: 'Geruduk Kantor Asuransi', description: 'Kantor dikepung, uangnya tetap tidak ada di brankas.', effects: { solidaritas: 2, keresahan: 1 } },
     ],
     masyarakat: [
@@ -163,7 +164,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
       { name: 'Imbau Warga Jangan Utang', description: 'Disampaikan lewat baliho yang dibiayai utang negara.', effects: { kas: 1, kepercayaan: -1, keresahan: 1 } },
     ],
     bankSentral: [
-      { name: 'Kampanye Literasi Pinjaman', description: 'Warga belajar membaca bunga, bukan cuma angka cair.', effects: { keresahan: -1, kredibilitas: 1 }, tags: ['edukasi'] },
+      { name: 'Kampanye Literasi Pinjaman', description: 'Warga belajar membaca bunga, bukan cuma angka cair.', effects: { keresahan: -1, kredibilitas: 1, modal: -1 }, tags: ['edukasi'] },
       { name: 'Kredit Mikro Resmi Bunga Rendah', description: 'Ada pilihan legal, uang beredar ikut bertambah.', effects: { kerja: 1, keresahan: -1 }, delayed: [{ inYears: 1, effects: { harga: 1 } }] },
       { name: 'Laporan Tahunan Setebal Bantal', description: 'Isinya lengkap, tidak ada yang membaca.', effects: { kredibilitas: 1, kepercayaan: -1 } },
     ],
@@ -174,7 +175,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     buruh: [
       { name: 'Tuntut Upah Cukup Tanpa Utang', description: 'Gaji naik agar buruh tidak perlu pinjol, harga ikut naik.', effects: { solidaritas: 1, kepercayaan: 1, harga: 1 }, tags: ['upah'] },
-      { name: 'Kelas Keuangan di Serikat', description: 'Anggota belajar membuat anggaran, rapat jadi lebih panjang.', effects: { keresahan: -1, solidaritas: 1 }, tags: ['edukasi'] },
+      { name: 'Kelas Keuangan di Serikat', description: 'Anggota belajar membuat anggaran, rapat jadi lebih panjang.', effects: { keresahan: -1, solidaritas: 1, kerja: -1 }, tags: ['edukasi'] },
       { name: 'Hadang Penagih di Gerbang Pabrik', description: 'Penagih kabur hari ini, utangnya tetap ada.', effects: { solidaritas: 2, keresahan: 1 } },
     ],
     masyarakat: [
@@ -218,7 +219,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     bankSentral: [
       { name: 'Kredit Motor Listrik Murah', description: 'Pengemudi hemat bensin, cicilan tetap jalan.', effects: { kerja: 1 }, delayed: [{ inYears: 1, effects: { harga: 1 } }] },
-      { name: 'Kampanye Keuangan Pengemudi', description: 'Belajar memisahkan uang bensin dan uang rumah.', effects: { keresahan: -1, kredibilitas: 1 }, tags: ['edukasi'] },
+      { name: 'Kampanye Keuangan Pengemudi', description: 'Belajar memisahkan uang bensin dan uang rumah.', effects: { keresahan: -1, kredibilitas: 1, modal: -1 }, tags: ['edukasi'] },
       { name: 'Anggap Ini Isu Ketenagakerjaan', description: 'Benar secara mandat, dingin di mata jalanan.', effects: { kredibilitas: 1, kepercayaan: -1 } },
     ],
     pengusaha: [
@@ -228,7 +229,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     buruh: [
       { name: 'Tuntut Tarif Minimum per Km', description: 'Pengemudi dapat upah layak, ongkos penumpang naik.', effects: { solidaritas: 1, kepercayaan: 1, harga: 1 }, tags: ['upah'] },
-      { name: 'Runding dengan Aplikator', description: 'Kompromi pelan-pelan, demo ditunda dulu.', effects: { keresahan: -1, solidaritas: 1 }, tags: ['dialog'] },
+      { name: 'Runding dengan Aplikator', description: 'Kompromi pelan-pelan, demo ditunda dulu.', effects: { keresahan: -1, solidaritas: 1, kerja: -1 }, tags: ['dialog'] },
       { name: 'Matikan Aplikasi Seminggu', description: 'Kota lumpuh, pengemudi juga tidak makan.', effects: { solidaritas: 2, kerja: -1, keresahan: 1 } },
     ],
     masyarakat: [
@@ -245,7 +246,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     bankSentral: [
       { name: 'Wajibkan Bank Verifikasi Ulang', description: 'Penipuan pakai data bocor dihadang, antrean bank memanjang.', effects: { keresahan: -1, kerja: -1, kredibilitas: 1 } },
-      { name: 'Edukasi Waspada Penipuan', description: 'Warga belajar tidak mengirim kode OTP ke siapa pun.', effects: { keresahan: -1, kredibilitas: 1 }, tags: ['edukasi'] },
+      { name: 'Edukasi Waspada Penipuan', description: 'Warga belajar tidak mengirim kode OTP ke siapa pun.', effects: { keresahan: -1, kredibilitas: 1, modal: -1 }, tags: ['edukasi'] },
       { name: 'Bilang Data Bank Aman Kok', description: 'Kalimat itu diucapkan tepat sebelum data bank bocor.', effects: { kredibilitas: -1, kepercayaan: -1, kerja: 1 } },
     ],
     pengusaha: [
@@ -255,7 +256,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     buruh: [
       { name: 'Tuntut Tunjangan Risiko Digital', description: 'Pekerja data dihargai, pengusaha menghitung ulang biaya.', effects: { solidaritas: 1, kepercayaan: 1, harga: 1 }, tags: ['upah'] },
-      { name: 'Latihan Keamanan Data Anggota', description: 'Anggota tidak lagi pakai tanggal lahir sebagai kata sandi.', effects: { keresahan: -1, solidaritas: 1 }, tags: ['edukasi'] },
+      { name: 'Latihan Keamanan Data Anggota', description: 'Anggota tidak lagi pakai tanggal lahir sebagai kata sandi.', effects: { keresahan: -1, solidaritas: 1, kerja: -1 }, tags: ['edukasi'] },
       { name: 'Demo Tuntut Menteri Mundur', description: 'Spanduk besar, menterinya cuti ke luar negeri.', effects: { solidaritas: 2, keresahan: 1 } },
     ],
     masyarakat: [
@@ -272,7 +273,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     bankSentral: [
       { name: 'Blokir Rekening Penampung Judi', description: 'Aliran uang bandar tersendat, bank sibuk memverifikasi.', effects: { keresahan: -1, kredibilitas: 1, kerja: -1 } },
-      { name: 'Edukasi Peluang dan Risiko', description: 'Warga belajar bahwa bandar selalu menang. Matematika menyelamatkan.', effects: { keresahan: -1, kredibilitas: 1 }, tags: ['edukasi'] },
+      { name: 'Edukasi Peluang dan Risiko', description: 'Warga belajar bahwa bandar selalu menang. Matematika menyelamatkan.', effects: { keresahan: -1, kredibilitas: 1, modal: -1 }, tags: ['edukasi'] },
       { name: 'Pura-pura Tidak Lihat Transfer', description: 'Transaksi ramai, angka ekonomi tampak sehat.', effects: { kerja: 1, kredibilitas: -1, keresahan: 1 } },
     ],
     pengusaha: [
@@ -282,7 +283,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     buruh: [
       { name: 'Tuntut Gaji Dibayar Mingguan', description: 'Uang tidak habis semalam, pengusaha repot menghitung.', effects: { solidaritas: 1, keresahan: -1, kerja: -1 }, tags: ['upah'] },
-      { name: 'Kelompok Pendamping Sesama Buruh', description: 'Teman sekerja saling menjaga dari aplikasi judi.', effects: { keresahan: -1, solidaritas: 1 }, tags: ['dialog'] },
+      { name: 'Kelompok Pendamping Sesama Buruh', description: 'Teman sekerja saling menjaga dari aplikasi judi.', effects: { keresahan: -1, solidaritas: 1, kerja: -1 }, tags: ['dialog'] },
       { name: 'Pinjam Kas Serikat untuk Korban', description: 'Korban tertolong, kas serikat kosong.', effects: { keresahan: -1, solidaritas: -1, kepercayaan: 1 } },
     ],
     masyarakat: [
@@ -352,7 +353,7 @@ export const RESPONSES: Record<string, ResponseSet> = {
       { name: 'Diam Saja, Nanti Juga Reda', description: 'Hemat tenaga, gosip makin liar.', effects: { kas: 1, keresahan: 1 } },
     ],
     bankSentral: [
-      { name: 'Umumkan Data Harga Asli', description: 'Angka resmi menenangkan pasar.', effects: { keresahan: -1, kredibilitas: 1 } },
+      { name: 'Umumkan Data Harga Asli', description: 'Angka resmi menenangkan pasar.', effects: { keresahan: -1, kredibilitas: 1, modal: -1 } },
       { name: 'Tahan Uang Beredar', description: 'Harga tenang, usaha agak seret.', effects: { harga: -1, kerja: -1 } },
       { name: 'Ikut Bilang Harga Akan Naik', description: 'Ekspektasi naik, harga ikut naik.', effects: { harga: 1, kerja: 1 } },
     ],
@@ -363,13 +364,15 @@ export const RESPONSES: Record<string, ResponseSet> = {
     ],
     buruh: [
       { name: 'Minta Kenaikan Gaji Antisipasi', description: 'Buruh tenang, harga sedikit naik.', effects: { solidaritas: 1, harga: 1 }, tags: ['upah'] },
-      { name: 'Sebarkan Info Resmi ke Anggota', description: 'Anggota tidak ikut memborong.', effects: { keresahan: -1, solidaritas: 1 }, tags: ['dialog'] },
+      { name: 'Sebarkan Info Resmi ke Anggota', description: 'Anggota tidak ikut memborong.', effects: { keresahan: -1, solidaritas: 1, kerja: -1 }, tags: ['dialog'] },
       { name: 'Ikut Memborong Gula', description: 'Dapur buruh aman, rak toko kosong.', effects: { solidaritas: 1, harga: 1 } },
     ],
     masyarakat: [
-      { name: 'Cek Fakta Sebelum Membagikan', description: 'Gosip berhenti di grup keluarga.', effects: { keresahan: -1, kepercayaan: 1 } },
+      { name: 'Cek Fakta Sebelum Membagikan', description: 'Gosip berhenti di grup keluarga.', effects: { keresahan: -1, kepercayaan: 1, tabungan: -1 } },
       { name: 'Cari Sumber Gosipnya', description: 'Ternyata dari akun jualan gula.', effects: { kepercayaan: 1, keresahan: 1 }, tags: ['investigasi'] },
-      { name: 'Borong Gula Sekarang Juga', description: 'Rumah penuh gula, harga benar-benar naik.', effects: { tabungan: -1, harga: 1 } },
+      { name: 'Borong Gula Sekarang Juga', description: 'Rumah penuh gula, harga benar-benar naik.', effects: { tabungan: -1, harga: 1, keresahan: -1 } },
     ],
   },
+  // Monthly packs keep their responses beside their cards (engine/src/content/packs).
+  ...RESPONSES_2026_10,
 };

@@ -220,7 +220,7 @@ test('the practice crisis can open a game but is never dealt into a real deck', 
 });
 
 test('every crisis card follows the GDD card anatomy', async () => {
-  const { CRISIS_CARDS, TUTORIAL_CRISIS } = await import('../src/content/crises');
+  const { ALL_CRISIS_CARDS: CRISIS_CARDS, TUTORIAL_CRISIS } = await import('../src/content/crises');
   const words = (s: string) => s.trim().split(/\s+/).length;
   for (const card of [...CRISIS_CARDS, TUTORIAL_CRISIS]) {
     assert.ok(words(card.title) <= 8, `${card.id}: title ≤ 8 words`);
@@ -236,7 +236,7 @@ test('Pemula: every crisis, the practice included, offers each team three respon
   const { CRISES_BY_ID } = await import('../src/content/crises');
   const { getCard, responseCardsFor } = await import('../src/content/policies');
   const good: Record<string, number> = { harga: -1, kerja: 1, kas: 1, kepercayaan: 1, keresahan: -1, modal: 1, solidaritas: 1, kredibilitas: 1, tabungan: 1 };
-  for (const crisisId of Object.keys(CRISES_BY_ID)) {
+  for (const crisisId of CRISES_BY_ID.keys()) {
     for (const role of ROLES) {
       const ids = responseCardsFor(crisisId, role);
       assert.equal(ids.length, 3, `${crisisId} ${role}`);
@@ -245,7 +245,8 @@ test('Pemula: every crisis, the practice included, offers each team three respon
         const card = getCard(id);
         assert.ok(card.name.length <= 32 && card.description.length <= 90, `${id} text too long`);
         const signs = [card.effects, ...(card.delayed ?? []).map(d => d.effects)].flatMap(fx => Object.entries(fx).map(([stat, n]) => Math.sign(good[stat]! * n!)));
-        assert.ok(signs.includes(1) && signs.includes(-1), `${id} needs a benefit and a cost`);
+        // A Lobi's benefit is the Lobi rule itself (Modal +3 unless it is exposed), not its printed effects.
+        assert.ok((signs.includes(1) || card.tags.includes('lobi')) && signs.includes(-1), `${id} needs a benefit and a cost`);
       }
     }
   }

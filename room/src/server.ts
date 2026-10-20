@@ -1,4 +1,5 @@
 import express from 'express';
+import { CRISIS_PACKS, LATEST_PACK } from '../../engine/src/content/crises';
 import { timingSafeEqual } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
@@ -114,7 +115,7 @@ export async function createRoomServer(options: RoomServerOptions) {
     let code = roomCode();
     while (rooms.has(code)) code = roomCode();
     const hostToken = newToken();
-    const room = Room.create({ code, hostToken, seed: newSeed(), options: { oknum: req.body?.oknum === true, latihan: req.body?.latihan === true, kuis: req.body?.kuis === true, mode: req.body?.mode === 'lanjutan' ? 'lanjutan' : 'pemula' }, tempo: req.body?.tempo === 'santai' ? 'santai' : 'normal', now: now() });
+    const room = Room.create({ code, hostToken, seed: newSeed(), options: { oknum: req.body?.oknum === true, latihan: req.body?.latihan === true, kuis: req.body?.kuis === true, mode: req.body?.mode === 'lanjutan' ? 'lanjutan' : 'pemula', crisisPack: CRISIS_PACKS.some(p => p.id === req.body?.crisisPack) ? req.body.crisisPack as string : LATEST_PACK }, tempo: req.body?.tempo === 'santai' ? 'santai' : 'normal', now: now() });
     rooms.set(code, { room, conns: new Set() });
     void persist(code);
     res.status(201).json({ code, hostToken });
