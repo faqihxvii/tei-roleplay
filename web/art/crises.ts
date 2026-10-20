@@ -239,6 +239,15 @@ export const CRISIS_ART: Record<string, { title: string; draw: () => Drawing }> 
   c_rupiah: { title: 'Uang rupiah meluncur turun, dolar terbang naik', draw: rupiah },
   c_resesi: { title: 'Kapal kargo dengan peti kemas kosong', draw: resesi },
   c_latihan: { title: 'Grup keluarga penuh pesan harga naik', draw: latihan },
+  // Paket Okt 2026: monthly packs reuse the cartoon of the nearest classic crisis with their own title,
+  // so a new pack needs no new drawing (docs/paket-krisis.md).
+  c_cabai: { title: 'Karung bahan pangan dengan label harga yang terbang', draw: beras },
+  c_makansiang: { title: 'Jatah makan siang sekolah dengan label harga yang terbang', draw: beras },
+  c_antrebbm: { title: 'Grafik harga bahan bakar menjebol langit-langit', draw: minyak },
+  c_pinjolguru: { title: 'Ponsel menawarkan pinjaman cair dengan kail', draw: pinjol },
+  c_phk26: { title: 'Pabrik tutup dengan gerbang dirantai', draw: phk },
+  c_potongan: { title: 'Helm pengemudi dan ponsel aplikasi', draw: ojol },
+  c_bursa: { title: 'Uang rupiah meluncur turun, dolar terbang naik', draw: rupiah },
 };
 
 export function crisisArt(id: string): string {

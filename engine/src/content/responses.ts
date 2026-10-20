@@ -1,4 +1,5 @@
 import type { DelayedEffect, Effects, Role, Tag } from '../types';
+import { RESPONSES_2026_10 } from './packs/2026-10';
 
 // Mode Pemula: instead of a hand of policy cards plus levers, each crisis offers every team three
 // responses written for that crisis, each with its effects printed on it. One tap, and the link
@@ -372,4 +373,6 @@ export const RESPONSES: Record<string, ResponseSet> = {
       { name: 'Borong Gula Sekarang Juga', description: 'Rumah penuh gula, harga benar-benar naik.', effects: { tabungan: -1, harga: 1 } },
     ],
   },
+  // Monthly packs keep their responses beside their cards (engine/src/content/packs).
+  ...RESPONSES_2026_10,
 };

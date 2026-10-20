@@ -1,5 +1,5 @@
 import { agendasForRole } from './content/agendas';
-import { CRISIS_CARDS, getCrisis } from './content/crises';
+import { getCrisis, packCards } from './content/crises';
 import { cardsForRole, getCard, responseCardsFor } from './content/policies';
 import { Rng } from './rng';
 import { RULES } from './rules';
@@ -36,6 +36,8 @@ export interface CreateGameOptions {
   firstCrisis?: string;
   /** Pemula (one response per team) or Lanjutan (cards, levers and powers); Lanjutan by default. */
   mode?: GameMode;
+  /** Which crisis pack the deck is drawn from (content/crises.ts CRISIS_PACKS); the classic deck by default. */
+  crisisPack?: string;
 }
 
 export const isPemula = (state: GameState) => state.mode === 'pemula';
@@ -51,8 +53,9 @@ export interface ResolveOptions {
 export function createGame(options: CreateGameOptions): GameState {
   const rng = new Rng(options.seed >>> 0);
 
-  const globals = rng.shuffle(CRISIS_CARDS.filter(card => card.category === 'global'));
-  const others = rng.shuffle(CRISIS_CARDS.filter(card => card.category !== 'global'));
+  const pack = packCards(options.crisisPack);
+  const globals = rng.shuffle(pack.filter(card => card.category === 'global'));
+  const others = rng.shuffle(pack.filter(card => card.category !== 'global'));
   const deck = others.slice(0, MAX_YEARS - 1).map(card => card.id);
   deck.splice(GLOBAL_SHOCK_YEAR - 1, 0, globals[0]!.id);
 

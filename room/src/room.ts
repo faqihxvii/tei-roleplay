@@ -56,6 +56,8 @@ export interface RoomOptions {
   kuis?: boolean;
   /** Pemula or Lanjutan rules (engine GameMode); rooms saved before modes existed are Lanjutan. */
   mode?: GameMode;
+  /** Crisis pack the deck is drawn from (engine CRISIS_PACKS); rooms saved before packs existed are Klasik. */
+  crisisPack?: string;
 }
 
 export type QuizStage = 'pra' | 'pasca';
@@ -374,7 +376,7 @@ export class Room {
     if (!this.s.players.length) throw new RoomError('belum-ada-pemain');
     for (const player of this.s.players) if (!player.role) this.placeInSmallestTeam(player);
     this.markEmptyTeamsOffline();
-    this.s.game = createGame({ seed: this.s.seed, oknum: this.s.options.oknum, mode: this.s.options.mode });
+    this.s.game = createGame({ seed: this.s.seed, oknum: this.s.options.oknum, mode: this.s.options.mode, crisisPack: this.s.options.crisisPack });
     this.s.phase = 'briefing';
     this.setTimer(null, now);
     this.touch(now);
@@ -482,7 +484,7 @@ export class Room {
     if (practice) {
       s.practice = { game: s.game!, pacts: s.pacts, years: s.years, usedVariants: s.usedVariants };
       // A throwaway country with the same starting board and a mild, rule-free crisis.
-      s.game = createGame({ seed: (s.seed ^ 0x5eed) >>> 0, firstCrisis: TUTORIAL_CRISIS.id, mode: s.options.mode });
+      s.game = createGame({ seed: (s.seed ^ 0x5eed) >>> 0, firstCrisis: TUTORIAL_CRISIS.id, mode: s.options.mode, crisisPack: s.options.crisisPack });
       s.pacts = [];
       s.years = [];
       s.usedVariants = [...s.usedVariants];

@@ -12,7 +12,14 @@
     "c_judol": "crisis/c_judol.svg",
     "c_rupiah": "crisis/c_rupiah.svg",
     "c_resesi": "crisis/c_resesi.svg",
-    "c_latihan": "crisis/c_latihan.svg"
+    "c_latihan": "crisis/c_latihan.svg",
+    "c_cabai": "crisis/c_cabai.svg",
+    "c_makansiang": "crisis/c_makansiang.svg",
+    "c_antrebbm": "crisis/c_antrebbm.svg",
+    "c_pinjolguru": "crisis/c_pinjolguru.svg",
+    "c_phk26": "crisis/c_phk26.svg",
+    "c_potongan": "crisis/c_potongan.svg",
+    "c_bursa": "crisis/c_bursa.svg"
   },
   "peran": {
     "pemerintah": {

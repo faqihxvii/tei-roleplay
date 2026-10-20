@@ -11,6 +11,8 @@ export interface SimOptions {
   pacts: boolean;
   /** Pemula (crisis responses only) or Lanjutan (cards, levers, powers). */
   mode?: GameMode;
+  /** Crisis pack to draw the deck from (klasik by default). */
+  crisisPack?: string;
 }
 
 export type Mix = 'kooperatif' | 'egois' | 'campuran' | 'acak' | 'oknum';
@@ -62,7 +64,7 @@ export function simulateMix(mix: Mix, games: number, baseSeed: number, options: 
 
   for (let i = 0; i < games; i++) {
     const seed = (baseSeed + i * 7919 + MIXES.indexOf(mix) * 1_000_003) >>> 0;
-    let state = createGame({ seed, oknum: mix === 'oknum', mode: options.mode });
+    let state = createGame({ seed, oknum: mix === 'oknum', mode: options.mode, crisisPack: options.crisisPack });
     const rng = new Rng(seed ^ 0x9e3779b9);
     const kinds = botsFor(mix, state, rng);
     const trust = initialTrust();

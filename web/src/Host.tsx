@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
+import { LATEST_PACK, PACK_CHOICES } from '../../engine/src/content/packList';
 import { ROLE_LABEL } from '../../engine/src/content/roles';
 import { ROLES, type Role } from '../../engine/src/types';
 import type { ClientMessage, ServerMessage } from '../../room/src/protocol';
@@ -38,6 +39,7 @@ export function Host() {
 
 function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string) => void }) {
   const [mode, setMode] = useState<'pemula' | 'lanjutan'>('pemula');
+  const [crisisPack, setCrisisPack] = useState(LATEST_PACK);
   const [oknum, setOknum] = useState(false);
   const [santai, setSantai] = useState(false);
   const [latihan, setLatihan] = useState(true);
@@ -49,7 +51,7 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/rooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode, oknum, latihan, kuis, tempo: santai ? 'santai' : 'normal' }) });
+      const res = await fetch('/api/rooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode, crisisPack, oknum, latihan, kuis, tempo: santai ? 'santai' : 'normal' }) });
       const body = (await res.json()) as { code?: string; hostToken?: string; message?: string };
       if (!res.ok || !body.code || !body.hostToken) throw new Error(body.message ?? 'Ruangan gagal dibuat.');
       onCreated(body.code, body.hostToken);
@@ -80,6 +82,15 @@ function CreateRoom({ onCreated }: { onCreated: (code: string, hostToken: string
           <input type="radio" name="mode" checked={mode === 'lanjutan'} onChange={() => setMode('lanjutan')} />
           <span><strong>Lanjutan.</strong> Kartu kebijakan, pilihan kebijakan tiap peran (pajak, bunga, harga, upah, konsumsi), kekuatan khusus, dan tebak agenda di akhir.</span>
         </label>
+      </fieldset>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="kicker">Paket krisis</legend>
+        {PACK_CHOICES.map(pack => (
+          <label key={pack.id} className="check">
+            <input type="radio" name="crisisPack" checked={crisisPack === pack.id} onChange={() => setCrisisPack(pack.id)} />
+            <span><strong>{pack.title}.</strong> {pack.blurb}</span>
+          </label>
+        ))}
       </fieldset>
       <label className="check">
         <input type="checkbox" checked={oknum} onChange={e => setOknum(e.target.checked)} />
@@ -194,6 +205,7 @@ function Lobby({ view, send }: { view: HostView; send: (m: ClientMessage) => voi
           <p className="count"><strong>{view.players.length}</strong> pemain · {connected} terhubung</p>
           <QuizCount view={view} stage="pra" />
           <p className="badge">{view.options.mode === 'lanjutan' ? 'Lanjutan' : 'Pemula'}</p>
+          <p className="badge">{PACK_CHOICES.find(pack => pack.id === (view.options.crisisPack ?? 'klasik'))?.title ?? 'Klasik'}</p>
           {view.options.oknum && <p className="badge">Mode Oknum aktif</p>}
           <div className="flex flex-wrap gap-2">
             <button className="btn" onClick={() => send({ t: 'assign', mode: 'acak' })} disabled={!view.players.length}>Bagi acak</button>

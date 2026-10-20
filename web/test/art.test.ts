@@ -16,7 +16,7 @@ test('committed illustrations match their source (run npm run art:build after ed
 
 test('every crisis card, the practice included, has an illustration', () => {
   const manifest = JSON.parse(artFiles().get('manifest.json')!) as { crisis: Record<string, string>; peran: Record<string, Record<string, string>> };
-  for (const id of Object.keys(CRISES_BY_ID)) assert.ok(manifest.crisis[id], `no art for ${id}`);
+  for (const id of CRISES_BY_ID.keys()) assert.ok(manifest.crisis[id], `no art for ${id}`);
   for (const role of ROLES) for (const expr of EXPRESSIONS) assert.ok(manifest.peran[role]?.[expr], `no ${role}-${expr}`);
 });
 
@@ -31,7 +31,7 @@ test('illustrations are small, titled, and use only the three riso inks', () => 
 });
 
 test('every crisis card has a credited, self-hosted front-page photo (npm run art:photos)', () => {
-  for (const id of Object.keys(CRISES_BY_ID)) {
+  for (const id of CRISES_BY_ID.keys()) {
     const credit = PHOTOS[id];
     assert.ok(credit, `no photo listed for ${id} in web/art/photos.json`);
     assert.match(credit.page, /^https:\/\/unsplash\.com\/photos\//, `${id}: source must be an Unsplash photo page`);

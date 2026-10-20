@@ -1,4 +1,6 @@
 import type { CrisisCard } from '../types';
+import { CLASSIC_PACK, LATEST_PACK, PACK_CHOICES, type PackChoice } from './packList';
+import { PACK_2026_10 } from './packs/2026-10';
 
 // Draft v0 crisis deck: 6 categories x 2 cards. Year 3 always draws from 'global'.
 
@@ -30,7 +32,26 @@ export const TUTORIAL_CRISIS: CrisisCard = {
   concepts: ['ekspektasi inflasi'],
 };
 
-export const CRISES_BY_ID: ReadonlyMap<string, CrisisCard> = new Map([...CRISIS_CARDS, TUTORIAL_CRISIS].map(card => [card.id, card]));
+/**
+ * Crisis packs: the classic deck plus one pack per month of real news (docs/paket-krisis.md). A pack
+ * needs at least one 'global' card (year 3's shock) and four others. Ids stay unique across packs, so
+ * snapshots, debriefs and exports can look any card up without knowing its pack.
+ */
+export interface CrisisPack extends PackChoice { cards: CrisisCard[] }
+
+const PACK_CARDS: Record<string, CrisisCard[]> = { '2026-10': PACK_2026_10, [CLASSIC_PACK]: CRISIS_CARDS };
+
+export const CRISIS_PACKS: readonly CrisisPack[] = PACK_CHOICES.map(choice => ({ ...choice, cards: PACK_CARDS[choice.id]! }));
+
+export { CLASSIC_PACK, LATEST_PACK };
+
+export function packCards(id: string | undefined): CrisisCard[] {
+  return (CRISIS_PACKS.find(pack => pack.id === id) ?? CRISIS_PACKS.find(pack => pack.id === CLASSIC_PACK)!).cards;
+}
+
+export const ALL_CRISIS_CARDS: readonly CrisisCard[] = CRISIS_PACKS.flatMap(pack => pack.cards);
+
+export const CRISES_BY_ID: ReadonlyMap<string, CrisisCard> = new Map([...ALL_CRISIS_CARDS, TUTORIAL_CRISIS].map(card => [card.id, card]));
 
 export function getCrisis(id: string): CrisisCard {
   const card = CRISES_BY_ID.get(id);

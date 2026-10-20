@@ -44,6 +44,8 @@ host.on('pageerror', e => errors.push('host: ' + e.message));
 host.on('console', m => { if (m.type() === 'error') errors.push('host console: ' + m.text()); });
 await host.goto(BASE + '/host');
 await host.locator('input[name=mode]').nth(MODE === 'pemula' ? 0 : 1).check();
+// Pemula plays the newest crisis pack (the default), Lanjutan the Klasik one, so CI covers both.
+if (MODE === 'lanjutan') await host.getByLabel(/^Klasik/).check();
 await host.getByLabel(/Mode Oknum/).check();
 await host.getByLabel(/Tahun 0 latihan/).check();
 await host.getByLabel(/Kuis pra\/pasca/).check();
