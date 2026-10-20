@@ -115,5 +115,68 @@
     "username": "zelebb",
     "alt": "Tangan memegang ponsel yang membuka aplikasi pesan",
     "focus": "center"
+  },
+  "c_cabai": {
+    "id": "1HZk4ptzNmY",
+    "page": "https://unsplash.com/photos/a-basket-full-of-red-peppers-sitting-on-a-table-1HZk4ptzNmY",
+    "image": "https://images.unsplash.com/photo-1672239927535-55cca0ecca52",
+    "photographer": "Cecep Rahmat",
+    "username": "cecepr",
+    "alt": "Keranjang penuh cabai merah di pasar tradisional",
+    "focus": "center"
+  },
+  "c_makansiang": {
+    "id": "mjuRSU6RvgU",
+    "page": "https://unsplash.com/photos/a-bunch-of-trays-filled-with-different-types-of-food-mjuRSU6RvgU",
+    "image": "https://images.unsplash.com/photo-1675647699232-76b8f533b006",
+    "photographer": "Richard R",
+    "username": "sepro",
+    "alt": "Deretan nampan makanan disiapkan di dapur besar",
+    "focus": "center"
+  },
+  "c_antrebbm": {
+    "id": "UhPLbQ78Rlk",
+    "page": "https://unsplash.com/photos/people-on-motorcycles-waiting-in-line-at-a-gas-station-UhPLbQ78Rlk",
+    "image": "https://images.unsplash.com/photo-1784369050292-d5cf517f4a00",
+    "photographer": "Irfan Erika",
+    "username": "irfanerika",
+    "alt": "Pengendara motor mengantre bensin di SPBU",
+    "focus": "center"
+  },
+  "c_pinjolguru": {
+    "id": "0O_XTc3XRCs",
+    "page": "https://unsplash.com/photos/man-holding-phone-and-sitting-while-putting-left-hand-on-his-face-0O_XTc3XRCs",
+    "image": "https://images.unsplash.com/photo-1561484893-abf918051d09",
+    "photographer": "Giang Vu",
+    "username": "junvutruong",
+    "alt": "Seorang pria memegang ponsel sambil menutup wajah, cemas",
+    "focus": "center"
+  },
+  "c_phkmassal": {
+    "id": "dh1EDCiQ6lg",
+    "page": "https://unsplash.com/photos/workers-sew-textiles-in-a-large-factory-setting-dh1EDCiQ6lg",
+    "image": "https://images.unsplash.com/photo-1741176505800-caaa3a52631a",
+    "photographer": "EqualStock",
+    "username": "equalstock",
+    "alt": "Pekerja menjahit di pabrik garmen yang luas",
+    "focus": "center"
+  },
+  "c_potongan": {
+    "id": "-g71Nce8Skk",
+    "page": "https://unsplash.com/photos/a-group-of-people-riding-motorcycles-down-a-street--g71Nce8Skk",
+    "image": "https://images.unsplash.com/photo-1690950966690-2f46f3d59fe6",
+    "photographer": "Fairuz Naufal Zaki",
+    "username": "zakstrv",
+    "alt": "Pengendara motor memadati jalan kota saat jam sibuk",
+    "focus": "center"
+  },
+  "c_bursa": {
+    "id": "RxbkUG80Rag",
+    "page": "https://unsplash.com/photos/stock-market-chart-shows-a-declining-trend-RxbkUG80Rag",
+    "image": "https://images.unsplash.com/photo-1745509267699-1b1db256601e",
+    "photographer": "Arturo Añez",
+    "username": "americanaez225",
+    "alt": "Grafik pasar saham yang terus menurun di layar",
+    "focus": "center"
   }
 }

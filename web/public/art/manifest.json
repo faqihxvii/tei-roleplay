@@ -17,7 +17,7 @@
     "c_makansiang": "crisis/c_makansiang.svg",
     "c_antrebbm": "crisis/c_antrebbm.svg",
     "c_pinjolguru": "crisis/c_pinjolguru.svg",
-    "c_phk26": "crisis/c_phk26.svg",
+    "c_phkmassal": "crisis/c_phkmassal.svg",
     "c_potongan": "crisis/c_potongan.svg",
     "c_bursa": "crisis/c_bursa.svg"
   },
@@ -132,6 +132,48 @@
       "alt": "Tangan memegang ponsel yang membuka aplikasi pesan",
       "credit": "Andrey Matveev / Unsplash",
       "source": "https://unsplash.com/photos/a-hand-holds-a-phone-with-a-whatsapp-screen-9S2AIYY-1Ik"
+    },
+    "c_cabai": {
+      "file": "foto/c_cabai.webp",
+      "alt": "Keranjang penuh cabai merah di pasar tradisional",
+      "credit": "Cecep Rahmat / Unsplash",
+      "source": "https://unsplash.com/photos/a-basket-full-of-red-peppers-sitting-on-a-table-1HZk4ptzNmY"
+    },
+    "c_makansiang": {
+      "file": "foto/c_makansiang.webp",
+      "alt": "Deretan nampan makanan disiapkan di dapur besar",
+      "credit": "Richard R / Unsplash",
+      "source": "https://unsplash.com/photos/a-bunch-of-trays-filled-with-different-types-of-food-mjuRSU6RvgU"
+    },
+    "c_antrebbm": {
+      "file": "foto/c_antrebbm.webp",
+      "alt": "Pengendara motor mengantre bensin di SPBU",
+      "credit": "Irfan Erika / Unsplash",
+      "source": "https://unsplash.com/photos/people-on-motorcycles-waiting-in-line-at-a-gas-station-UhPLbQ78Rlk"
+    },
+    "c_pinjolguru": {
+      "file": "foto/c_pinjolguru.webp",
+      "alt": "Seorang pria memegang ponsel sambil menutup wajah, cemas",
+      "credit": "Giang Vu / Unsplash",
+      "source": "https://unsplash.com/photos/man-holding-phone-and-sitting-while-putting-left-hand-on-his-face-0O_XTc3XRCs"
+    },
+    "c_phkmassal": {
+      "file": "foto/c_phkmassal.webp",
+      "alt": "Pekerja menjahit di pabrik garmen yang luas",
+      "credit": "EqualStock / Unsplash",
+      "source": "https://unsplash.com/photos/workers-sew-textiles-in-a-large-factory-setting-dh1EDCiQ6lg"
+    },
+    "c_potongan": {
+      "file": "foto/c_potongan.webp",
+      "alt": "Pengendara motor memadati jalan kota saat jam sibuk",
+      "credit": "Fairuz Naufal Zaki / Unsplash",
+      "source": "https://unsplash.com/photos/a-group-of-people-riding-motorcycles-down-a-street--g71Nce8Skk"
+    },
+    "c_bursa": {
+      "file": "foto/c_bursa.webp",
+      "alt": "Grafik pasar saham yang terus menurun di layar",
+      "credit": "Arturo Añez / Unsplash",
+      "source": "https://unsplash.com/photos/stock-market-chart-shows-a-declining-trend-RxbkUG80Rag"
     }
   }
 }

@@ -19,6 +19,13 @@ Semua foto dari [Unsplash](https://unsplash.com) di bawah [Lisensi Unsplash](htt
 | c_rupiah | Tangan menggenggam segepok uang rupiah | [Defrino Maasy](https://unsplash.com/@defrino) | [llemJ9uYRTk](https://unsplash.com/photos/hands-are-holding-a-bundle-of-indonesian-banknotes-llemJ9uYRTk) |
 | c_resesi | Peti kemas menumpuk di pelabuhan dengan derek | [PortCalls Asia](https://unsplash.com/@portcalls) | [mk8iOzSn2eI](https://unsplash.com/photos/shipping-containers-stacked-at-a-port-with-cranes-mk8iOzSn2eI) |
 | c_latihan | Tangan memegang ponsel yang membuka aplikasi pesan | [Andrey Matveev](https://unsplash.com/@zelebb) | [9S2AIYY-1Ik](https://unsplash.com/photos/a-hand-holds-a-phone-with-a-whatsapp-screen-9S2AIYY-1Ik) |
+| c_cabai | Keranjang penuh cabai merah di pasar tradisional | [Cecep Rahmat](https://unsplash.com/@cecepr) | [1HZk4ptzNmY](https://unsplash.com/photos/a-basket-full-of-red-peppers-sitting-on-a-table-1HZk4ptzNmY) |
+| c_makansiang | Deretan nampan makanan disiapkan di dapur besar | [Richard R](https://unsplash.com/@sepro) | [mjuRSU6RvgU](https://unsplash.com/photos/a-bunch-of-trays-filled-with-different-types-of-food-mjuRSU6RvgU) |
+| c_antrebbm | Pengendara motor mengantre bensin di SPBU | [Irfan Erika](https://unsplash.com/@irfanerika) | [UhPLbQ78Rlk](https://unsplash.com/photos/people-on-motorcycles-waiting-in-line-at-a-gas-station-UhPLbQ78Rlk) |
+| c_pinjolguru | Seorang pria memegang ponsel sambil menutup wajah, cemas | [Giang Vu](https://unsplash.com/@junvutruong) | [0O_XTc3XRCs](https://unsplash.com/photos/man-holding-phone-and-sitting-while-putting-left-hand-on-his-face-0O_XTc3XRCs) |
+| c_phkmassal | Pekerja menjahit di pabrik garmen yang luas | [EqualStock](https://unsplash.com/@equalstock) | [dh1EDCiQ6lg](https://unsplash.com/photos/workers-sew-textiles-in-a-large-factory-setting-dh1EDCiQ6lg) |
+| c_potongan | Pengendara motor memadati jalan kota saat jam sibuk | [Fairuz Naufal Zaki](https://unsplash.com/@zakstrv) | [-g71Nce8Skk](https://unsplash.com/photos/a-group-of-people-riding-motorcycles-down-a-street--g71Nce8Skk) |
+| c_bursa | Grafik pasar saham yang terus menurun di layar | [Arturo Añez](https://unsplash.com/@americanaez225) | [RxbkUG80Rag](https://unsplash.com/photos/stock-market-chart-shows-a-declining-trend-RxbkUG80Rag) |
 
 ## Huruf
 

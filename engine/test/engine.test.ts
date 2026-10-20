@@ -245,7 +245,8 @@ test('Pemula: every crisis, the practice included, offers each team three respon
         const card = getCard(id);
         assert.ok(card.name.length <= 32 && card.description.length <= 90, `${id} text too long`);
         const signs = [card.effects, ...(card.delayed ?? []).map(d => d.effects)].flatMap(fx => Object.entries(fx).map(([stat, n]) => Math.sign(good[stat]! * n!)));
-        assert.ok(signs.includes(1) && signs.includes(-1), `${id} needs a benefit and a cost`);
+        // A Lobi's benefit is the Lobi rule itself (Modal +3 unless it is exposed), not its printed effects.
+        assert.ok((signs.includes(1) || card.tags.includes('lobi')) && signs.includes(-1), `${id} needs a benefit and a cost`);
       }
     }
   }

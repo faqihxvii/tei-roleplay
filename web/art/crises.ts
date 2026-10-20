@@ -245,7 +245,7 @@ export const CRISIS_ART: Record<string, { title: string; draw: () => Drawing }> 
   c_makansiang: { title: 'Jatah makan siang sekolah dengan label harga yang terbang', draw: beras },
   c_antrebbm: { title: 'Grafik harga bahan bakar menjebol langit-langit', draw: minyak },
   c_pinjolguru: { title: 'Ponsel menawarkan pinjaman cair dengan kail', draw: pinjol },
-  c_phk26: { title: 'Pabrik tutup dengan gerbang dirantai', draw: phk },
+  c_phkmassal: { title: 'Pabrik tutup dengan gerbang dirantai', draw: phk },
   c_potongan: { title: 'Helm pengemudi dan ponsel aplikasi', draw: ojol },
   c_bursa: { title: 'Uang rupiah meluncur turun, dolar terbang naik', draw: rupiah },
 };

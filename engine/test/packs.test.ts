@@ -20,7 +20,7 @@ test('the pack list and the registry agree, newest first, Klasik kept', () => {
 test('crisis ids are unique across every pack and the practice', () => {
   const ids = [...ALL_CRISIS_CARDS, TUTORIAL_CRISIS].map(c => c.id);
   assert.equal(new Set(ids).size, ids.length);
-  for (const id of ids) assert.match(id, /^c_[a-z0-9]{2,16}$/, `${id}: response card ids are built from it`);
+  for (const id of ids) assert.match(id, /^c_[a-z]{2,16}$/, `${id}: response card ids are built from it`);
 });
 
 test('every pack fills a five-year deck with a global shock for year 3', () => {

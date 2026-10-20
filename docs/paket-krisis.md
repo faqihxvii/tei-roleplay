@@ -17,7 +17,7 @@ Kartu krisis yang paling terasa adalah yang beritanya masih diingat murid. Karen
 1. **Riset (19 bulan lalu–19 bulan ini).** Cari 6–8 berita ekonomi Indonesia yang ramai dibicarakan dan mudah dikenali murid: harga pangan, energi, pekerjaan, utang, digital, dan satu guncangan global. Buka setiap halaman sumbernya. Catat angka dan tanggalnya.
 2. **Salin paket terakhir.** Salin `engine/src/content/packs/2026-10.ts` menjadi `<yyyy-mm>.ts`, lalu ganti nama ekspornya (`PACK_2026_11`, `RESPONSES_2026_11`).
 3. **Tulis kartunya.** Satu kartu per berita:
-   - `id` diawali `c_`, huruf kecil dan angka saja, unik di semua paket (misalnya `c_gulanov`). Kunci responsnya adalah id tanpa `c_`.
+   - `id` diawali `c_`, huruf kecil saja, tanpa angka, unik di semua paket (misalnya `c_gulanov`). Kunci responsnya adalah id tanpa `c_`.
    - Paling sedikit **satu kartu `global`** (guncangan tahun 3) dan **empat kartu lain**.
    - Judul paling banyak 8 kata, narasi paling banyak 60 kata, satu pertanyaan diskusi yang diakhiri `?`, dan 1–3 konsep ekonomi.
    - `effects`: total besarnya sekitar 2, seperti kartu Klasik.
@@ -32,7 +32,7 @@ Kartu krisis yang paling terasa adalah yang beritanya masih diingat murid. Karen
 6. **Di Dunia Nyata.** Tambahkan satu catatan per kartu di `room/src/content/realWorld.ts`, paling banyak 50 kata, dengan URL `https://` ke berita aslinya.
 7. **Foto dan ilustrasi.**
    - Cari foto **gratis** di Unsplash (bukan Unsplash+), lalu tambahkan ke `web/art/photos.json` dengan nama fotografer dan alt teks berbahasa Indonesia.
-   - Jalankan `npm run art:photos`.
+   - Jalankan `npm run art:photos`. Di balik proxy (misalnya kontainer cloud), jalankan dengan `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=<bundel CA proxy>` agar unduhan tidak gagal.
    - Tambahkan baris ilustrasi di `web/art/crises.ts`, lalu jalankan `npm run art:build`.
 8. **Periksa.**
    ```bash
