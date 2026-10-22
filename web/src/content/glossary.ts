@@ -52,6 +52,19 @@ export const GLOSSARY: GlossaryEntry[] = [
   { term: 'resesi', text: 'Ekonomi menyusut beberapa bulan berturut-turut: produksi turun dan banyak orang kehilangan pekerjaan.' },
   { term: 'lapangan kerja', text: 'Seberapa mudah warga mendapat pekerjaan. Di papan, angka rendah berarti banyak pengangguran.' },
   { term: 'keresahan', text: 'Seberapa marah dan gelisah warga. Di papan, angka tinggi bisa berujung demo besar.' },
+  // Paket Okt 2026.
+  { term: 'penawaran dan permintaan', text: 'Harga naik kalau barang yang dijual (penawaran) lebih sedikit daripada yang ingin dibeli orang (permintaan), dan turun kalau sebaliknya.' },
+  { term: 'belanja negara', text: 'Uang yang dikeluarkan negara untuk program, gaji pegawai, subsidi, dan pembangunan. Dibayar dari Kas Negara.' },
+  { term: 'biaya peluang', text: 'Hal yang dikorbankan saat memilih sesuatu. Uang untuk satu program tidak bisa lagi dipakai untuk program lain.' },
+  { term: 'kelangkaan', text: 'Barang yang dibutuhkan lebih sedikit daripada yang ingin dibeli orang, sehingga muncul antrean atau harga naik.' },
+  { term: 'harga tertinggi', text: 'Batas harga yang ditetapkan pemerintah. Barang jadi murah, tetapi kalau batasnya terlalu rendah, penjual enggan menjual dan barang langka.' },
+  { term: 'bunga majemuk', text: 'Bunga yang dihitung dari utang ditambah bunga sebelumnya, sehingga utang membesar makin cepat kalau tidak dibayar.' },
+  { term: 'pengangguran', text: 'Orang yang ingin dan mampu bekerja tetapi belum mendapat pekerjaan.' },
+  { term: 'industri padat karya', text: 'Industri yang memakai banyak pekerja, seperti tekstil, sepatu, dan garmen. Mudah terpukul saat pesanan turun.' },
+  { term: 'regulasi harga', text: 'Aturan pemerintah tentang harga atau tarif, misalnya batas potongan aplikasi atau tarif minimum.' },
+  { term: 'beban biaya', text: 'Biaya yang harus ditanggung pelaku usaha atau pekerja. Kalau beban satu pihak dipangkas, sering pindah ke pihak lain.' },
+  { term: 'pasar modal', text: 'Tempat jual beli saham dan obligasi. Perusahaan mencari dana di sini, dan investor mencari untung.' },
+  { term: 'arus modal asing', text: 'Uang investor luar negeri yang masuk atau keluar. Kalau keluar beramai-ramai, harga saham dan rupiah bisa jatuh.' },
 ];
 
 const byTerm = new Map(GLOSSARY.map(e => [e.term.toLowerCase(), e]));

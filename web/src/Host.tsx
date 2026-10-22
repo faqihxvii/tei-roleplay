@@ -11,7 +11,7 @@ import { QuizCount } from './Quiz';
 import { Portrait } from './art';
 import { Diorama } from './Diorama';
 import { ReactionLayer, useReactionLayer } from './Reactions';
-import { RoleMark, roleProps, StepAnnouncer, TeiLogo } from './shared';
+import { Board, BoardLegend, RoleMark, roleProps, StepAnnouncer, TeiLogo } from './shared';
 import { whereLabel } from './text';
 import { EdisiKhusus } from './EdisiKhusus';
 import { GuessScreen, TopBar, YearScreen } from './MainScreens';
@@ -245,6 +245,12 @@ function Briefing({ view, send }: { view: HostView; send: (m: ClientMessage) => 
         </div>
         {view.stats && <Diorama stats={view.stats} />}
       </section>
+      {view.stats && (
+        <section className="grid items-start gap-6 lg:grid-cols-3" aria-label="Cara membaca papan negara">
+          <BoardLegend />
+          <div className="lg:col-span-2"><Board stats={view.stats} /></div>
+        </section>
+      )}
       <Teams view={view} />
     </>
   );
