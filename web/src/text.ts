@@ -26,6 +26,48 @@ export function zoneOf(stat: Indicator, value: number): 'aman' | 'bahaya' | 'kol
   return (z.worseWhen === 'tinggi' ? value >= z.danger : value <= z.danger) ? 'bahaya' : 'aman';
 }
 
+/** What each indicator measures, in one line a twelve-year-old can read. */
+export const INDICATOR_MEANING: Record<Indicator, string> = {
+  harga: 'Harga barang kebutuhan',
+  kerja: 'Warga yang punya pekerjaan',
+  kas: 'Uang yang dimiliki negara',
+  kepercayaan: 'Kepercayaan warga pada pemerintah',
+  keresahan: 'Kemarahan warga',
+};
+
+/** Which end of the bar is good. */
+export const goodWhen = (stat: Indicator): 'rendah' | 'tinggi' => (ZONES[stat].worseWhen === 'tinggi' ? 'rendah' : 'tinggi');
+
+export type IndicatorLevel = 'aman' | 'waspada' | 'bahaya' | 'kolaps';
+
+/** The status in one word, for the narrow strip under the projector. */
+export const STATUS_WORD: Record<IndicatorLevel, string> = { aman: 'Aman', waspada: 'Waspada', bahaya: 'Bahaya', kolaps: 'KOLAPS' };
+
+/**
+ * A bar's status in words: safe, one step from danger, in danger (with the steps left to collapse),
+ * or collapsed. The word carries the meaning, so the bar reads without its colours.
+ */
+export function statusOf(stat: Indicator, value: number): { level: IndicatorLevel; label: string; stepsToDanger: number } {
+  const z = ZONES[stat];
+  const zone = zoneOf(stat, value);
+  const worse = z.worseWhen === 'tinggi' ? 1 : -1;
+  const stepsToDanger = Math.max(0, (z.danger - value) * worse);
+  if (zone === 'kolaps') return { level: 'kolaps', label: 'KOLAPS', stepsToDanger: 0 };
+  if (zone === 'bahaya') {
+    const toCollapse = z.collapse === null ? null : (z.collapse - value) * worse;
+    return { level: 'bahaya', label: toCollapse === null ? 'Bahaya' : `Bahaya · ${toCollapse} lagi kolaps`, stepsToDanger: 0 };
+  }
+  if (stepsToDanger === 1) return { level: 'waspada', label: 'Waspada · 1 lagi bahaya', stepsToDanger };
+  return { level: 'aman', label: 'Aman', stepsToDanger };
+}
+
+/** The three lines that teach the board (projector briefing and the phone's Negara tab). */
+export const BOARD_LEGEND = [
+  'Panah "baik" menunjuk ujung yang bagus untuk negara.',
+  'Kotak bergaris merah (bergaris bawah merah) adalah zona bahaya.',
+  'Sampai ujung merah, negara kolaps dan semua tim kalah.',
+];
+
 export const STEP_LABEL: Record<YearStep, string> = {
   krisis: 'Krisis',
   rapat: 'Rapat Tim',

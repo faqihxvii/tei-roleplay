@@ -14,7 +14,7 @@ import { useHaptics } from './haptics';
 import { LinimasaFeed } from './Linimasa';
 import { AnimatedNumber, DUR, EASE, m } from './motion';
 import { ReactionBar } from './Reactions';
-import { Board, HoldButton, RoleMark, RoleName, StepAnnouncer, TeiLogo, Timer, roleProps } from './shared';
+import { Board, BoardLegend, HoldButton, RoleMark, RoleName, StepAnnouncer, TeiLogo, Timer, roleProps } from './shared';
 import { storage, useClockOffset, useRoomSocket } from './socket';
 import { COLLAPSE_LABEL, ENDING_LABEL, INDICATOR_LABEL as STAT_NAME, coachFor, STEP_LABEL, signed, whereLabel } from './text';
 
@@ -269,6 +269,7 @@ function CountryTab({ view }: { view: PlayerView }) {
   return (
     <section className="flex flex-col gap-4">
       {view.stats ? <Board stats={view.stats} /> : <p className="text-muted">Negara belum berjalan.</p>}
+      {view.stats && <BoardLegend className="card" />}
       {view.crisis && (
         <div className="card gap-1">
           <p className="kicker">Krisis tahun {view.year}</p>

@@ -2,9 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ROLE_CODE, ROLE_COLOR, ROLE_INK, ROLE_LABEL } from '../../engine/src/content/roles';
 import type { Role } from '../../engine/src/types';
 import type { PublicStats } from '../../room/src/views';
-import { AnimatedNumber, m, useReducedMotion } from './motion';
+import { AnimatedNumber, useReducedMotion } from './motion';
 import { formatSeconds, useSecondsLeft } from './socket';
-import { INDICATOR_LABEL, INDICATOR_ORDER, signed, ZONES, zoneOf } from './text';
+import { BOARD_LEGEND, goodWhen, INDICATOR_LABEL, INDICATOR_MEANING, INDICATOR_ORDER, signed, STATUS_WORD, statusOf, ZONES } from './text';
 
 
 /**
@@ -44,29 +44,43 @@ export function RoleName({ role }: { role: Role }) {
   return <span className="role-name"><RoleMark role={role} small />{ROLE_LABEL[role]}</span>;
 }
 
-/** The public board: five indicators on 0–10 with their danger zones, plus the policy rate. */
+/**
+ * The public board: five indicators on 0–10 plus the policy rate. Each bar is ten cells; the danger
+ * cells are outlined in red, a red cap marks the collapse end, an arrow names the good end, and a
+ * status word says how safe the indicator is right now, so a bar reads at a glance and without colour.
+ */
 export function Board({ stats, compact = false, strip = false, changes }: { stats: PublicStats; compact?: boolean; strip?: boolean; changes?: Partial<Record<keyof PublicStats, number>> }) {
   return (
     <section className={`board${compact || strip ? ' compact' : ''}${strip ? ' strip' : ''}`} aria-label="Papan Negara">
       {INDICATOR_ORDER.map(stat => {
         const value = stats[stat];
-        const zone = zoneOf(stat, value);
         const z = ZONES[stat];
+        const status = statusOf(stat, value);
+        const good = goodWhen(stat);
         const change = changes?.[stat];
+        const inDanger = (n: number) => (z.worseWhen === 'tinggi' ? n >= z.danger : n <= z.danger);
+        const cap = z.collapse !== null && <span className={`gauge-cap ${z.worseWhen}`} aria-hidden="true" />;
+        const pill = <span className={`gauge-status ${status.level}`}>{strip ? STATUS_WORD[status.level] : status.label}</span>;
+        const arrow = <span className="gauge-good">{good === 'rendah' ? '← baik' : 'baik →'}</span>;
+        const spoken = `${INDICATOR_LABEL[stat]} ${value} dari 10, ${good} lebih baik, ${status.level}${status.level === 'aman' ? `, ${status.stepsToDanger} lagi ke bahaya` : ''}`;
         return (
-          <div key={stat} className={`gauge ${zone}`}>
+          <div key={stat} className={`gauge ${status.level}`}>
             <div className="gauge-head">
               <span className="gauge-label">{INDICATOR_LABEL[stat]}</span>
               <span className="gauge-value">
-                <AnimatedNumber value={value} />
+                <AnimatedNumber value={value} /><small>/10</small>
                 {change ? <span className={`delta ${(z.worseWhen === 'tinggi') === change < 0 ? 'up' : 'down'}`}>{signed(change)}</span> : null}
               </span>
             </div>
-            <div className="gauge-track" role="meter" aria-valuemin={0} aria-valuemax={10} aria-valuenow={value} aria-label={`${INDICATOR_LABEL[stat]} ${value} dari 10${zone !== 'aman' ? `, ${zone}` : ''}`}>
-              <m.div className="gauge-fill" initial={false} animate={{ width: `${value * 10}%` }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} />
-              <div className={`gauge-danger ${z.worseWhen}`} style={z.worseWhen === 'tinggi' ? { left: `${(z.danger - 1) * 10}%` } : { width: `${z.danger * 10}%` }} />
+            {!compact && !strip && <p className="gauge-meaning">{INDICATOR_MEANING[stat]}</p>}
+            <div className="gauge-track" role="meter" aria-valuemin={0} aria-valuemax={10} aria-valuenow={value} aria-label={spoken}>
+              {z.worseWhen === 'rendah' && cap}
+              <span className="gauge-cells" aria-hidden="true">
+                {Array.from({ length: 10 }, (_, i) => <span key={i} className={`gauge-cell${i < value ? ' on' : ''}${inDanger(i + 1) ? ' zone' : ''}`} />)}
+              </span>
+              {z.worseWhen === 'tinggi' && cap}
             </div>
-            {!compact && zone !== 'aman' && <span className="gauge-zone">{zone === 'kolaps' ? 'KOLAPS' : 'Bahaya'}</span>}
+            <div className="gauge-foot">{good === 'rendah' ? <>{arrow}{pill}</> : <>{pill}{arrow}</>}</div>
           </div>
         );
       })}
@@ -75,8 +89,19 @@ export function Board({ stats, compact = false, strip = false, changes }: { stat
           <span className="gauge-label">Suku bunga</span>
           <span className="gauge-value">{stats.bunga}<small>/5</small></span>
         </div>
+        {!compact && !strip && <p className="gauge-meaning">Bunga pinjaman dari Bank Sentral</p>}
       </div>
     </section>
+  );
+}
+
+/** How to read the board, taught once on the projector briefing and kept on the phone's Negara tab. */
+export function BoardLegend({ className = '' }: { className?: string }) {
+  return (
+    <div className={`board-legend ${className}`}>
+      <p className="kicker">Cara membaca papan negara</p>
+      <ul>{BOARD_LEGEND.map(line => <li key={line}>{line}</li>)}</ul>
+    </div>
   );
 }
 

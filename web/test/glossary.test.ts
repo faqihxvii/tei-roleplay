@@ -8,7 +8,7 @@ import { GLOSSARY, gloss, lookup } from '../src/content/glossary';
 const terms = (text: string) => gloss(text).filter(p => typeof p !== 'string').map(p => (p as { term: { term: string } }).term.term);
 
 test('every crisis concept can be tapped for an explanation', () => {
-  for (const crisis of Object.values(CRISES_BY_ID)) for (const c of crisis.concepts) assert.ok(lookup(c), `no glossary entry for "${c}" (${crisis.id})`);
+  for (const crisis of CRISES_BY_ID.values()) for (const c of crisis.concepts) assert.ok(lookup(c), `no glossary entry for "${c}" (${crisis.id})`);
 });
 
 test('entries are short, unique, and end in a full stop', () => {
