@@ -55,7 +55,7 @@ jobs:
           TEI_BASE: http://127.0.0.1:8787
           TEI_MODE: lanjutan
       - if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-shots
           path: |
